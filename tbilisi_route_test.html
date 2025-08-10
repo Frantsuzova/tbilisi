@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Мой маршрут Тбилиси — тест</title>
+  <title>Мой маршрут Тбилиси</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
   <style>
     html, body, #map { height: 100%; margin: 0; padding: 0; }
-    .leaflet-control-zoom, .leaflet-control-attribution { font-size: 14px; }
+    .leaflet-control-locate a { font-size: 16px; }
   </style>
 </head>
 <body>
@@ -15,9 +16,11 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
+  <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
   <script>
-    // Вставляем твой KML как строку
-    const kmlString = `<?xml version="1.0" encoding="UTF-8"?>
+    // ВСТАВЬ СЮДА содержимое doc.kml между обратными апострофами `
+    const kmlString = `
+<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <name>парадки-ч1</name>
@@ -1256,36 +1259,50 @@
     </Folder>
   </Document>
 </kml>
-`;
 
-    // Парсим KML в XML
+    `;
+
+    // Парсим KML -> XML -> GeoJSON
     const parser = new DOMParser();
     const kmlXml = parser.parseFromString(kmlString, "application/xml");
-
-    // Конвертируем в GeoJSON
     const geojson = toGeoJSON.kml(kmlXml);
 
-    // Создаём карту
+    // Карта
     const map = L.map('map');
 
-    // OSM тайлы
+    // Тайлы OSM
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Добавляем слой с точками/линиями
+    // Кастомная иконка для точек
+    const myIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/RedDot.svg',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+
+    // Слой с данными
     const layer = L.geoJSON(geojson, {
+      pointToLayer: (feature, latlng) => L.marker(latlng, { icon: myIcon }),
       onEachFeature: (feature, layer) => {
-        const props = feature.properties || {};
-        const name = props.name || '';
-        const desc = props.description || '';
-        const html = `<strong>${name}</strong><br>${desc}`;
-        layer.bindPopup(html);
+        const p = feature.properties || {};
+        const name = p.name || '';
+        const desc = p.description || '';
+        layer.bindPopup(`<strong>${name}</strong><br>${desc}`);
       }
     }).addTo(map);
 
-    // Авто-центрирование
+    // Кнопка "Моё местоположение"
+    L.control.locate({
+      position: 'topleft',
+      setView: 'untilPan',
+      keepCurrentZoomLevel: true,
+      strings: { title: 'Показать моё местоположение' }
+    }).addTo(map);
+
+    // Фокус по данным
     try {
       map.fitBounds(layer.getBounds(), { padding: [20,20] });
     } catch (e) {
