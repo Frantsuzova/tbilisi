@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Мой маршрут Тбилиси — тест</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .leaflet-control-zoom, .leaflet-control-attribution { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
+  <script>
+    // Вставляем твой KML как строку
+    const kmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>парадки-ч1</name>
+    <description/>
+    <Style id="icon-1603-0F9D58-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-1.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1603-0F9D58-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-1.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1603-0F9D58-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1603-0F9D58-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1603-0F9D58-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-0288D1-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-6.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-0288D1-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-6.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-0288D1-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0288D1-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0288D1-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-0F9D58-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-5.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-0F9D58-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-5.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-0F9D58">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0F9D58-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0F9D58-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-0F9D58-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-5.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-0F9D58-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-5.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-0F9D58-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0F9D58-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0F9D58-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-FF5252-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-3.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-FF5252-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-3.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-FF5252-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-FF5252-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-FF5252-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-FFD600-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-2.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-FFD600-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-2.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-FFD600-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-FFD600-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-FFD600-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-FFEA00-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-4.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-FFEA00-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-4.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-FFEA00">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-FFEA00-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-FFEA00-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-FFEA00-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-4.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-FFEA00-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-4.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-FFEA00-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-FFEA00-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-FFEA00-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-10-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-10.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-10-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-10.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-10-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-10-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-10-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-11-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-11.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-11-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-11.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-11-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-11-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-11-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-12-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-12.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-12-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-12.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-12-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-12-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-12-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-13-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-13.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-13-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-13.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-13-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-13-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-13-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-14-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-14.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-14-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-14.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-14-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-14-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-14-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-15-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-15.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-15-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-15.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-15-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-15-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-15-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-16-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-16.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-16-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-16.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-16-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-16-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-16-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-7-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-7.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-7-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-7.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-7-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-7-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-7-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-8-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-8.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-8-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-8.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-8-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-8-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-8-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-ci-9-nodesc-normal">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-9.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-ci-9-nodesc-highlight">
+      <IconStyle>
+        <scale>0.7</scale>
+        <Icon>
+          <href>images/icon-9.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0.7</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-ci-9-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-ci-9-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-ci-9-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-1267FF-5000-nodesc-normal">
+      <LineStyle>
+        <color>ffff6712</color>
+        <width>5</width>
+      </LineStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="line-1267FF-5000-nodesc-highlight">
+      <LineStyle>
+        <color>ffff6712</color>
+        <width>7.5</width>
+      </LineStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="line-1267FF-5000-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-1267FF-5000-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-1267FF-5000-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>Untitled layer</name>
+      <Placemark>
+        <name>дом</name>
+        <styleUrl>#icon-1603-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8099382,41.6979145,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>обсерватория (вход мб через проспект)</name>
+        <styleUrl>#icon-1899-FFD600-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7896858,41.7167927,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>заброшка кинотеатр Апполо (20 лари)</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7934932,41.7154404,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Входная группа союза композиторов </name>
+        <description>К лестнице можно пройти в рабочее время индийского ресторана</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7952718,41.7142285,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Д. Кахидзе 10-1 (КОД: 680)</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7935102,41.7118341,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Д. Кахидзе 10-2 (КОД: 246)</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7935102,41.7118341,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная со спиральной деревянной лестницей 
+КОД: 135</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7930166,41.7120372,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Дмитрия Узнадзе, 53 </name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.796767,41.706586,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Санкт-Петербургской, 13 
+Код: 2479 поворот влево.</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7960399,41.7078154,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная Цкалобы Абазова </name>
+        <description><![CDATA[Проспект Давида Агмашенебели, 93.<br>Дверь закрыта на замок, однако есть хитрость - нужно позвонить по номеру и замок откроется: +995 599 036 270 ]]></description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7970818,41.7102242,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Агмашенебели, 96 </name>
+        <description>Вход свободный, альтернативный вход со двора, нужно обогнуть Макдоналдс и найти лестницу в углу здания, по которой можно подняться на второй этаж и попасть в парадную. </description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.797245,41.710095,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Э. Ниношвили 14 (дверь толкнуть)</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8019153,41.7106363,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Э. Ниношвили 11 </name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8017945,41.7103479,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная со спиральной лестницей 
+КОД: 38 </name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8032787,41.7089744,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Ромбовидная лестница </name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8022247,41.707536,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная Джагетянова + дворик</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.803538,41.706242,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная с деревянной лестницей</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8023688,41.7053345,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Агмашенебели, 26 - КОД: 248 </name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8019883,41.703804,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Смотровая с видом на Дом Юстиции</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8120799,41.6979998,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Кафедральный Собор Святой Троицы</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8166549,41.6988998,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Рике</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8104072,41.6948302,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Башня с часами театра марионеток</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8068825,41.6957713,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Церковь Рождества Пресвятой Богородицы
+</name>
+        <description>VI века. Самая старая церковь Тбилиси из сохранившихся. </description>
+        <styleUrl>#icon-1899-0F9D58</styleUrl>
+        <Point>
+          <coordinates>
+            44.8068724,41.6954791,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Резные синие балконы
+</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8054,41.6947402,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Сгоревшая армянская церковь Сурб-Ншан</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8047313,41.6943369,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Колокольня Ванкского собора</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8059285,41.6974064,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>поход к церкви св троицы и сет парадок</name>
+      <Placemark>
+        <name>поход к церкви св троицы и сет парадок</name>
+        <styleUrl>#line-1267FF-5000-nodesc</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            44.80976,41.69785,0
+            44.80979,41.69781,0
+            44.80987,41.6977,0
+            44.80991,41.69765,0
+            44.81001,41.6977,0
+            44.81009,41.69774,0
+            44.81022,41.6978,0
+            44.81023,41.69781,0
+            44.81027,41.69782,0
+            44.81029,41.69782,0
+            44.81031,41.69783,0
+            44.81032,41.69783,0
+            44.81035,41.69782,0
+            44.81043,41.69777,0
+            44.81053,41.69773,0
+            44.81092,41.69759,0
+            44.81106,41.69756,0
+            44.81137,41.69752,0
+            44.81146,41.6975,0
+            44.81161,41.69746,0
+            44.81165,41.6978,0
+            44.81166,41.69781,0
+            44.81168,41.69783,0
+            44.8117,41.69784,0
+            44.81178,41.69785,0
+            44.81181,41.69786,0
+            44.81186,41.6979,0
+            44.81189,41.69792,0
+            44.81196,41.69797,0
+            44.81201,41.69798,0
+            44.81206,41.69799,0
+            44.81207,41.69799,0
+            44.81208,41.69799,0
+            44.81211,41.69798,0
+            44.81216,41.69797,0
+            44.8122,41.69797,0
+            44.81224,41.69797,0
+            44.81227,41.69797,0
+            44.81233,41.69794,0
+            44.81238,41.69792,0
+            44.81244,41.69791,0
+            44.81252,41.69791,0
+            44.81279,41.69795,0
+            44.81289,41.69792,0
+            44.81376,41.69762,0
+            44.81385,41.69783,0
+            44.81392,41.69806,0
+            44.81397,41.69827,0
+            44.81457,41.69848,0
+            44.81494,41.69862,0
+            44.81527,41.69875,0
+            44.81623,41.6991,0
+            44.81654,41.69921,0
+            44.81665,41.6989,0
+            44.81654,41.69921,0
+            44.81703,41.69939,0
+            44.81713,41.69947,0
+            44.81632,41.69969,0
+            44.81625,41.69974,0
+            44.8158,41.69961,0
+            44.81561,41.69955,0
+            44.8151,41.69943,0
+            44.81506,41.69954,0
+            44.81504,41.69959,0
+            44.81484,41.6999,0
+            44.81468,41.7001,0
+            44.81426,41.70028,0
+            44.81411,41.70033,0
+            44.81406,41.70036,0
+            44.81354,41.70061,0
+            44.81301,41.70086,0
+            44.81292,41.70091,0
+            44.81269,41.70103,0
+            44.81257,41.7011,0
+            44.81249,41.70115,0
+            44.81243,41.70122,0
+            44.81233,41.70129,0
+            44.81218,41.70143,0
+            44.81189,41.70165,0
+            44.81178,41.70173,0
+            44.81139,41.702,0
+            44.81135,41.70203,0
+            44.8113,41.70204,0
+            44.81123,41.70204,0
+            44.81109,41.70206,0
+            44.81091,41.70209,0
+            44.81083,41.70213,0
+            44.81076,41.70218,0
+            44.81074,41.7022,0
+            44.81071,41.70224,0
+            44.81065,41.70232,0
+            44.81062,41.70236,0
+            44.81051,41.70252,0
+            44.8105,41.70252,0
+            44.81043,41.70262,0
+            44.81038,41.70267,0
+            44.81033,41.70271,0
+            44.81023,41.7028,0
+            44.81022,41.70281,0
+            44.81011,41.70288,0
+            44.81,41.70296,0
+            44.80989,41.70304,0
+            44.80988,41.70306,0
+            44.8098,41.70314,0
+            44.80971,41.70325,0
+            44.80963,41.70335,0
+            44.80959,41.70339,0
+            44.80953,41.70342,0
+            44.8094,41.70344,0
+            44.80925,41.70347,0
+            44.80918,41.70349,0
+            44.80907,41.70352,0
+            44.80896,41.70357,0
+            44.80887,41.70363,0
+            44.80883,41.70365,0
+            44.80863,41.70378,0
+            44.80845,41.70393,0
+            44.80832,41.70402,0
+            44.80821,41.70406,0
+            44.80808,41.7041,0
+            44.80798,41.70415,0
+            44.80789,41.70423,0
+            44.80782,41.7043,0
+            44.80775,41.70437,0
+            44.80768,41.70445,0
+            44.80763,41.70453,0
+            44.80754,41.70465,0
+            44.8074,41.70485,0
+            44.80729,41.70492,0
+            44.80716,41.70497,0
+            44.80718,41.70502,0
+            44.80716,41.70507,0
+            44.80691,41.70561,0
+            44.80656,41.70553,0
+            44.80555,41.7054,0
+            44.80554,41.7055,0
+            44.80496,41.70522,0
+            44.80449,41.70499,0
+            44.80419,41.70487,0
+            44.8038,41.70535,0
+            44.80316,41.70468,0
+            44.8031,41.70462,0
+            44.80251,41.70402,0
+            44.80215,41.70375,0
+            44.80206,41.70371,0
+            44.80215,41.70375,0
+            44.80251,41.70402,0
+            44.80202,41.70437,0
+            44.80173,41.70456,0
+            44.80224,41.70494,0
+            44.80267,41.70528,0
+            44.80246,41.70541,0
+            44.80267,41.70528,0
+            44.80339,41.70583,0
+            44.80319,41.70608,0
+            44.80294,41.70638,0
+            44.80243,41.70698,0
+            44.80208,41.70748,0
+            44.80243,41.70698,0
+            44.80288,41.70784,0
+            44.80289,41.70785,0
+            44.80299,41.70806,0
+            44.8034,41.70896,0
+            44.80336,41.70901,0
+            44.80306,41.70944,0
+            44.80261,41.71007,0
+            44.80228,41.71054,0
+            44.80216,41.71071,0
+            44.80215,41.71073,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>дом</name>
+        <styleUrl>#icon-ci-7-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8097622,41.697855,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Смотровая с видом на Дом Юстиции</name>
+        <styleUrl>#icon-ci-8-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8120777,41.6979855,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Кафедральный Собор Святой Троицы</name>
+        <styleUrl>#icon-ci-9-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8166549,41.6988998,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Агмашенебели, 26 - КОД: 248 </name>
+        <styleUrl>#icon-ci-10-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8020642,41.703712,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная с деревянной лестницей</name>
+        <styleUrl>#icon-ci-11-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8024605,41.7054131,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная Джагетянова + дворик</name>
+        <styleUrl>#icon-ci-12-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8031883,41.7060794,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Ромбовидная лестница </name>
+        <styleUrl>#icon-ci-13-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8020767,41.7074775,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная со спиральной лестницей 
+КОД: 38 </name>
+        <styleUrl>#icon-ci-14-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8033626,41.7090076,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Э. Ниношвили 11 </name>
+        <styleUrl>#icon-ci-15-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8022798,41.7105377,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Э. Ниношвили 14 (дверь толкнуть)</name>
+        <styleUrl>#icon-ci-16-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.802147,41.7107269,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>
+`;
+
+    // Парсим KML в XML
+    const parser = new DOMParser();
+    const kmlXml = parser.parseFromString(kmlString, "application/xml");
+
+    // Конвертируем в GeoJSON
+    const geojson = toGeoJSON.kml(kmlXml);
+
+    // Создаём карту
+    const map = L.map('map');
+
+    // OSM тайлы
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Добавляем слой с точками/линиями
+    const layer = L.geoJSON(geojson, {
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        const name = props.name || '';
+        const desc = props.description || '';
+        const html = `<strong>${name}</strong><br>${desc}`;
+        layer.bindPopup(html);
+      }
+    }).addTo(map);
+
+    // Авто-центрирование
+    try {
+      map.fitBounds(layer.getBounds(), { padding: [20,20] });
+    } catch (e) {
+      map.setView([41.6938, 44.8015], 14);
+    }
+  </script>
+</body>
+</html>
