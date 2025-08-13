@@ -3,6 +3,140 @@
   <Document>
     <name>парадки-ч1</name>
     <description/>
+    <Style id="icon-1534-0288D1-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-11.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1534-0288D1-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-11.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1534-0288D1">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1534-0288D1-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1534-0288D1-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1534-F9A825-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-9.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1534-F9A825-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-9.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1534-F9A825">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1534-F9A825-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1534-F9A825-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1534-FF5252-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-10.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1534-FF5252-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-10.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1534-FF5252">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1534-FF5252-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1534-FF5252-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1534-FF5252-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-10.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1534-FF5252-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-10.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1534-FF5252-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1534-FF5252-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1534-FF5252-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
     <Style id="icon-1603-0F9D58-nodesc-normal">
       <IconStyle>
         <scale>1</scale>
@@ -39,6 +173,72 @@
       <Pair>
         <key>highlight</key>
         <styleUrl>#icon-1603-0F9D58-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1834-673AB7-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-7.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1834-673AB7-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-7.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1834-673AB7">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1834-673AB7-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1834-673AB7-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-0288D1-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-6.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-0288D1-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-6.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-0288D1">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0288D1-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0288D1-highlight</styleUrl>
       </Pair>
     </StyleMap>
     <Style id="icon-1899-0288D1-nodesc-normal">
@@ -153,6 +353,114 @@
       <Pair>
         <key>highlight</key>
         <styleUrl>#icon-1899-0F9D58-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-673AB7-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-8.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-673AB7-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-8.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-673AB7">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-673AB7-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-673AB7-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-673AB7-nodesc-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-8.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-673AB7-nodesc-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-8.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-673AB7-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-673AB7-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-673AB7-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-FF5252-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-3.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-FF5252-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-3.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-FF5252">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-FF5252-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-FF5252-highlight</styleUrl>
       </Pair>
     </StyleMap>
     <Style id="icon-1899-FF5252-nodesc-normal">
@@ -309,416 +617,8 @@
         <styleUrl>#icon-1899-FFEA00-nodesc-highlight</styleUrl>
       </Pair>
     </StyleMap>
-    <Style id="icon-ci-10-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-10.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-10-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-10.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-10-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-10-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-10-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-11-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-11.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-11-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-11.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-11-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-11-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-11-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-12-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-12.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-12-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-12.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-12-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-12-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-12-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-13-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-13.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-13-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-13.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-13-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-13-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-13-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-14-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-14.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-14-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-14.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-14-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-14-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-14-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-15-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-15.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-15-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-15.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-15-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-15-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-15-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-16-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-16.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-16-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-16.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-16-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-16-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-16-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-7-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-7.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-7-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-7.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-7-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-7-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-7-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-8-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-8.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-8-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-8.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-8-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-8-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-8-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="icon-ci-9-nodesc-normal">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-9.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-ci-9-nodesc-highlight">
-      <IconStyle>
-        <scale>0.7</scale>
-        <Icon>
-          <href>images/icon-9.png</href>
-        </Icon>
-      </IconStyle>
-      <LabelStyle>
-        <scale>0.7</scale>
-      </LabelStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="icon-ci-9-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#icon-ci-9-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#icon-ci-9-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
-    <Style id="line-1267FF-5000-nodesc-normal">
-      <LineStyle>
-        <color>ffff6712</color>
-        <width>5</width>
-      </LineStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="line-1267FF-5000-nodesc-highlight">
-      <LineStyle>
-        <color>ffff6712</color>
-        <width>7.5</width>
-      </LineStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <StyleMap id="line-1267FF-5000-nodesc">
-      <Pair>
-        <key>normal</key>
-        <styleUrl>#line-1267FF-5000-nodesc-normal</styleUrl>
-      </Pair>
-      <Pair>
-        <key>highlight</key>
-        <styleUrl>#line-1267FF-5000-nodesc-highlight</styleUrl>
-      </Pair>
-    </StyleMap>
     <Folder>
-      <name>Untitled layer</name>
+      <name>город через парадки</name>
       <Placemark>
         <name>дом</name>
         <styleUrl>#icon-1603-0F9D58-nodesc</styleUrl>
@@ -752,7 +652,7 @@
         <styleUrl>#icon-1899-FFEA00</styleUrl>
         <Point>
           <coordinates>
-            44.7952718,41.7142285,0
+            44.7943759,41.7139242,0
           </coordinates>
         </Point>
       </Placemark>
@@ -761,7 +661,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.7935102,41.7118341,0
+            44.7937033,41.7119823,0
           </coordinates>
         </Point>
       </Placemark>
@@ -780,7 +680,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.7930166,41.7120372,0
+            44.7929361,41.7119131,0
           </coordinates>
         </Point>
       </Placemark>
@@ -789,7 +689,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.796767,41.706586,0
+            44.7967724,41.7066351,0
           </coordinates>
         </Point>
       </Placemark>
@@ -799,7 +699,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.7960399,41.7078154,0
+            44.7958575,41.7080257,0
           </coordinates>
         </Point>
       </Placemark>
@@ -809,7 +709,7 @@
         <styleUrl>#icon-1899-FFEA00</styleUrl>
         <Point>
           <coordinates>
-            44.7970818,41.7102242,0
+            44.7968431,41.7104204,0
           </coordinates>
         </Point>
       </Placemark>
@@ -819,7 +719,7 @@
         <styleUrl>#icon-1899-FFEA00</styleUrl>
         <Point>
           <coordinates>
-            44.797245,41.710095,0
+            44.7970492,41.7096985,0
           </coordinates>
         </Point>
       </Placemark>
@@ -828,7 +728,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8019153,41.7106363,0
+            44.8020011,41.7107664,0
           </coordinates>
         </Point>
       </Placemark>
@@ -837,7 +737,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8017945,41.7103479,0
+            44.8023926,41.7105301,0
           </coordinates>
         </Point>
       </Placemark>
@@ -853,10 +753,10 @@
       </Placemark>
       <Placemark>
         <name>Ромбовидная лестница </name>
-        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8022247,41.707536,0
+            44.8023937,41.7075871,0
           </coordinates>
         </Point>
       </Placemark>
@@ -874,7 +774,7 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8023688,41.7053345,0
+            44.8024975,41.7052344,0
           </coordinates>
         </Point>
       </Placemark>
@@ -883,12 +783,12 @@
         <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8019883,41.703804,0
+            44.8023893,41.7040012,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Смотровая с видом на Дом Юстиции</name>
+        <name>вид на город</name>
         <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
         <Point>
           <coordinates>
@@ -940,7 +840,7 @@
         <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8054,41.6947402,0
+            44.8052699,41.6947011,0
           </coordinates>
         </Point>
       </Placemark>
@@ -962,275 +862,912 @@
           </coordinates>
         </Point>
       </Placemark>
+      <Placemark>
+        <name>Парадная на Реваза Табукашвили, 14</name>
+        <description>Фактурная винтовая лестница. Внутри довольно темно. Парадная всегда открыта. Вход с Табукашвили в арку и всё время прямо до деревянных дверей.</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8013857,41.6975002,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Антона Пурцеладзе, 12</name>
+        <description>Вход в арку с улица Антона Пурцеладзе. Далее во дворе двигаетесь по диагонали в правый угол двора, там где маркер на карте. Двери голубоватого цвета - нужная вам парадная. Замка вроде бы нет, обычно двери открыты.</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8010766,41.6975583,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Руставели, 26</name>
+        <description>и музей</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7956424,41.7004713,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома Максима Ананова. КОД: 56(обычно не требуется)</name>
+        <description>Дом № 15 по Грибоедова. </description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7948834,41.7001804,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Читая, 20</name>
+        <description>выход и вход только с человеком</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8024753,41.7149002,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная с лестницей и шахматным полом</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.79806,41.7131613,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на З. Чавчавадзе, 11 с общим балконом</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7982081,41.7121301,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на З. Чавчавадзе с фонарем</name>
+        <description>вход - дверь черного цвета</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7974174,41.7117527,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная Джагетянова (дернуть рычажок)</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8033543,41.7064848,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>вид на город - смотровая площадка (красиво)</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8163605,41.6898353,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>мост мира</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8081493,41.6930147,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Сионский собор</name>
+        <description>в 1828 году венчался великий Александр Грибоедов с Нино Чавчавадзе. Построен в 6-7 веке.</description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            44.8075459,41.6914425,0
+          </coordinates>
+        </Point>
+      </Placemark>
     </Folder>
     <Folder>
-      <name>поход к церкви св троицы и сет парадок</name>
+      <name>город </name>
       <Placemark>
-        <name>поход к церкви св троицы и сет парадок</name>
-        <styleUrl>#line-1267FF-5000-nodesc</styleUrl>
-        <LineString>
-          <tessellate>1</tessellate>
-          <coordinates>
-            44.80976,41.69785,0
-            44.80979,41.69781,0
-            44.80987,41.6977,0
-            44.80991,41.69765,0
-            44.81001,41.6977,0
-            44.81009,41.69774,0
-            44.81022,41.6978,0
-            44.81023,41.69781,0
-            44.81027,41.69782,0
-            44.81029,41.69782,0
-            44.81031,41.69783,0
-            44.81032,41.69783,0
-            44.81035,41.69782,0
-            44.81043,41.69777,0
-            44.81053,41.69773,0
-            44.81092,41.69759,0
-            44.81106,41.69756,0
-            44.81137,41.69752,0
-            44.81146,41.6975,0
-            44.81161,41.69746,0
-            44.81165,41.6978,0
-            44.81166,41.69781,0
-            44.81168,41.69783,0
-            44.8117,41.69784,0
-            44.81178,41.69785,0
-            44.81181,41.69786,0
-            44.81186,41.6979,0
-            44.81189,41.69792,0
-            44.81196,41.69797,0
-            44.81201,41.69798,0
-            44.81206,41.69799,0
-            44.81207,41.69799,0
-            44.81208,41.69799,0
-            44.81211,41.69798,0
-            44.81216,41.69797,0
-            44.8122,41.69797,0
-            44.81224,41.69797,0
-            44.81227,41.69797,0
-            44.81233,41.69794,0
-            44.81238,41.69792,0
-            44.81244,41.69791,0
-            44.81252,41.69791,0
-            44.81279,41.69795,0
-            44.81289,41.69792,0
-            44.81376,41.69762,0
-            44.81385,41.69783,0
-            44.81392,41.69806,0
-            44.81397,41.69827,0
-            44.81457,41.69848,0
-            44.81494,41.69862,0
-            44.81527,41.69875,0
-            44.81623,41.6991,0
-            44.81654,41.69921,0
-            44.81665,41.6989,0
-            44.81654,41.69921,0
-            44.81703,41.69939,0
-            44.81713,41.69947,0
-            44.81632,41.69969,0
-            44.81625,41.69974,0
-            44.8158,41.69961,0
-            44.81561,41.69955,0
-            44.8151,41.69943,0
-            44.81506,41.69954,0
-            44.81504,41.69959,0
-            44.81484,41.6999,0
-            44.81468,41.7001,0
-            44.81426,41.70028,0
-            44.81411,41.70033,0
-            44.81406,41.70036,0
-            44.81354,41.70061,0
-            44.81301,41.70086,0
-            44.81292,41.70091,0
-            44.81269,41.70103,0
-            44.81257,41.7011,0
-            44.81249,41.70115,0
-            44.81243,41.70122,0
-            44.81233,41.70129,0
-            44.81218,41.70143,0
-            44.81189,41.70165,0
-            44.81178,41.70173,0
-            44.81139,41.702,0
-            44.81135,41.70203,0
-            44.8113,41.70204,0
-            44.81123,41.70204,0
-            44.81109,41.70206,0
-            44.81091,41.70209,0
-            44.81083,41.70213,0
-            44.81076,41.70218,0
-            44.81074,41.7022,0
-            44.81071,41.70224,0
-            44.81065,41.70232,0
-            44.81062,41.70236,0
-            44.81051,41.70252,0
-            44.8105,41.70252,0
-            44.81043,41.70262,0
-            44.81038,41.70267,0
-            44.81033,41.70271,0
-            44.81023,41.7028,0
-            44.81022,41.70281,0
-            44.81011,41.70288,0
-            44.81,41.70296,0
-            44.80989,41.70304,0
-            44.80988,41.70306,0
-            44.8098,41.70314,0
-            44.80971,41.70325,0
-            44.80963,41.70335,0
-            44.80959,41.70339,0
-            44.80953,41.70342,0
-            44.8094,41.70344,0
-            44.80925,41.70347,0
-            44.80918,41.70349,0
-            44.80907,41.70352,0
-            44.80896,41.70357,0
-            44.80887,41.70363,0
-            44.80883,41.70365,0
-            44.80863,41.70378,0
-            44.80845,41.70393,0
-            44.80832,41.70402,0
-            44.80821,41.70406,0
-            44.80808,41.7041,0
-            44.80798,41.70415,0
-            44.80789,41.70423,0
-            44.80782,41.7043,0
-            44.80775,41.70437,0
-            44.80768,41.70445,0
-            44.80763,41.70453,0
-            44.80754,41.70465,0
-            44.8074,41.70485,0
-            44.80729,41.70492,0
-            44.80716,41.70497,0
-            44.80718,41.70502,0
-            44.80716,41.70507,0
-            44.80691,41.70561,0
-            44.80656,41.70553,0
-            44.80555,41.7054,0
-            44.80554,41.7055,0
-            44.80496,41.70522,0
-            44.80449,41.70499,0
-            44.80419,41.70487,0
-            44.8038,41.70535,0
-            44.80316,41.70468,0
-            44.8031,41.70462,0
-            44.80251,41.70402,0
-            44.80215,41.70375,0
-            44.80206,41.70371,0
-            44.80215,41.70375,0
-            44.80251,41.70402,0
-            44.80202,41.70437,0
-            44.80173,41.70456,0
-            44.80224,41.70494,0
-            44.80267,41.70528,0
-            44.80246,41.70541,0
-            44.80267,41.70528,0
-            44.80339,41.70583,0
-            44.80319,41.70608,0
-            44.80294,41.70638,0
-            44.80243,41.70698,0
-            44.80208,41.70748,0
-            44.80243,41.70698,0
-            44.80288,41.70784,0
-            44.80289,41.70785,0
-            44.80299,41.70806,0
-            44.8034,41.70896,0
-            44.80336,41.70901,0
-            44.80306,41.70944,0
-            44.80261,41.71007,0
-            44.80228,41.71054,0
-            44.80216,41.71071,0
-            44.80215,41.71073,0
-          </coordinates>
-        </LineString>
-      </Placemark>
-      <Placemark>
-        <name>дом</name>
-        <styleUrl>#icon-ci-7-nodesc</styleUrl>
+        <name>сухой мост</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8097622,41.697855,0
+            44.8030459,41.7010292,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Смотровая с видом на Дом Юстиции</name>
-        <styleUrl>#icon-ci-8-nodesc</styleUrl>
+        <name>Национальная парламентская библиотека Грузии</name>
+        <description>читательский билет</description>
+        <styleUrl>#icon-1899-FF5252</styleUrl>
         <Point>
           <coordinates>
-            44.8120777,41.6979855,0
+            44.8006864,41.6971214,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Кафедральный Собор Святой Троицы</name>
-        <styleUrl>#icon-ci-9-nodesc</styleUrl>
+        <name>Грузинский музей изобразительных искусств + красивая арочная система</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8166549,41.6988998,0
+            44.7994413,41.6971416,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Парадная на Агмашенебели, 26 - КОД: 248 </name>
-        <styleUrl>#icon-ci-10-nodesc</styleUrl>
+        <name>Парадная на Георгия Чантурия, 6</name>
+        <description>толкнуть дверь</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
         <Point>
           <coordinates>
-            44.8020642,41.703712,0
+            44.7988183,41.6992022,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Парадная с деревянной лестницей</name>
-        <styleUrl>#icon-ci-11-nodesc</styleUrl>
+        <name>Мозаики в частном дворе</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8024605,41.7054131,0
+            44.7934364,41.7005279,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Парадная Джагетянова + дворик</name>
-        <styleUrl>#icon-ci-12-nodesc</styleUrl>
+        <name>Парадная на Грибоедова, 25</name>
+        <description>(40 или 38 или 4038) и в здании отель</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
         <Point>
           <coordinates>
-            44.8031883,41.7060794,0
+            44.7936206,41.7011273,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Ромбовидная лестница </name>
-        <styleUrl>#icon-ci-13-nodesc</styleUrl>
+        <name>Парадная на Грибоедова, 27. КОД: 38</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8020767,41.7074775,0
+            44.7933789,41.7013398,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Парадная со спиральной лестницей 
-КОД: 38 </name>
-        <styleUrl>#icon-ci-14-nodesc</styleUrl>
+        <name>Академия искусств</name>
+        <description>с 10 до 16 (12 лари). в центральный вход, идете прямо и поднимитесь по лестнице, после налево и в следующем помещении направо, сразу увидите дверь. За ней зеркальная комната, в а следующей будет сидеть смотрительница и собирать дань. </description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
         <Point>
           <coordinates>
-            44.8033626,41.7090076,0
+            44.7927361,41.7014267,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Парадная на Э. Ниношвили 11 </name>
-        <styleUrl>#icon-ci-15-nodesc</styleUrl>
+        <name>красивая узкая улица и лесенка</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
         <Point>
           <coordinates>
-            44.8022798,41.7105377,0
+            44.7915606,41.701749,0
           </coordinates>
         </Point>
       </Placemark>
       <Placemark>
-        <name>Парадная на Э. Ниношвили 14 (дверь толкнуть)</name>
-        <styleUrl>#icon-ci-16-nodesc</styleUrl>
+        <name>Парадная на Тамары Абакелия, 5</name>
+        <description>дернуть собачку</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
         <Point>
           <coordinates>
-            44.802147,41.7107269,0
+            44.7919414,41.7006084,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>вид на город</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7894075,41.7008951,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Церковь Михаила Тверского</name>
+        <description>находится старт тропы, ведущей на Мтацминду, Пантеон и Черепашье озеро.</description>
+        <styleUrl>#icon-1899-FF5252</styleUrl>
+        <Point>
+          <coordinates>
+            44.7890661,41.7007017,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>деревянная винтовая лестница</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7892113,41.703163,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>винтовая лесница во дворе</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7913764,41.7052251,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Тамрико Човелидзе, 7 (красиво очень)</name>
+        <description>по левую руку от вывески Лолита.</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7868573,41.7056943,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>парадная с барельефами (КОД: 79)</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7858091,41.7055924,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парк Мзиури</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7686775,41.709819,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>красивое метро Technical University</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7744916,41.7211439,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Дезертирский рынок</name>
+        <description>еда и атмосфера + секонд</description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            44.7938664,41.7209787,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Петропавловский собор (католики)</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8018942,41.7099781,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>TBC concept store</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7950434,41.7084915,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Церковь имени святого царя Давида</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8133631,41.689984,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Синий балкон дворца царицы Дареджан</name>
+        <description>Вход со стороны улицы Урбниси, 7. </description>
+        <styleUrl>#icon-1899-0F9D58</styleUrl>
+        <Point>
+          <coordinates>
+            44.8123307,41.6916031,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Храм Метехи</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.811254,41.690211,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Царь Вахтанг</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8106688,41.6903761,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>водопад</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8090438,41.6867608,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>ботсад</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8092572,41.6871221,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>цероковь св Николая</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.80917,41.687938,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>красивый закуток</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8125488,41.6869469,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>мать Грузия</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8045067,41.6883098,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>двор с ролс ройсом</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8097524,41.6895967,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная Калейдоскоп</name>
+        <description><![CDATA[4 Betlemi St, T'bilisi, Georgia]]></description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8056049,41.6898882,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>красивый закуток</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8043792,41.6897551,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>заброшка Мугнийская церковь святого Георгия</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.804188,41.690245,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Хроники Грузии</name>
+        <description>есть туалеты</description>
+        <styleUrl>#icon-1899-0F9D58</styleUrl>
+        <Point>
+          <coordinates>
+            44.8104191,41.770572,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>пляж - Тбилисское море</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8144316,41.7690235,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Зороастрийский храм огня</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8055995,41.688829,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома Хачатаряна</name>
+        <description>потолок</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8041116,41.6907173,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Площадь Гудиашвили</name>
+        <description>красивая площадь и отреставрированные здания</description>
+        <styleUrl>#icon-1899-0F9D58</styleUrl>
+        <Point>
+          <coordinates>
+            44.8037061,41.6910557,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома Вартанова (код 49)</name>
+        <description>старая деревянная дверь красного цвета</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8021833,41.6914876,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома братьев Сейлановых (код 1803#)</name>
+        <styleUrl>#icon-1899-FFEA00-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8013469,41.6906746,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>двор с кадилаком</name>
+        <description>Проход с улицы И. Мачабели в арку.</description>
+        <styleUrl>#icon-1899-0F9D58</styleUrl>
+        <Point>
+          <coordinates>
+            44.7999938,41.6910039,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Дом писателей Грузии
+</name>
+        <description>попробовать зайти внутрь. гл. дверь ИЛИ правее от кованной двери центрального входа есть черные ворота, они бывают открыты. Заходите в них и проходите до внутреннего двора. Там ресторан, просите пофотографировать, они не отказывают. И можно подняться на террасу дома, если она открыта то войти спокойно в него и пофотографировать.</description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            44.7997705,41.6902011,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома Калантарова </name>
+        <description><![CDATA[очень красиво, коды могут не подойти (1-я дверь - 14, 2-я дверь - 58).<br><br>Дом представляет собой один из самых ярких образцов псевдомавританского орнаментализма с двумя расписанными парадными. Главное парадное оформлено в мавританском стиле — сталактитами, исполненными в технике stucco, арками и цветным орнаментом; перила ажурной ковки, а плафон вестибюля украшен ковровым полихромным орнаментом в восточном стиле. Потолок вестибюля стеклянный, витраж, которого, к сожалению, утерян. Фасад дома украшают каменные балконы и надписи под окнами арабской вязью, но это всего лишь декор.]]></description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.7997831,41.6898112,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Деревянные балконы-галереи</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7978486,41.6897511,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная на Ладо Асатиани, 58</name>
+        <description>вход свободный</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.797013,41.6894106,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома Тер-Акоповой</name>
+        <description>часто открыта, старые деревянные двери бордового цвета</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.8014046,41.6898343,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Хогвартс</name>
+        <styleUrl>#icon-1899-0F9D58-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8021033,41.6895804,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>атмосферный закуток</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.8025914,41.6894439,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Парадная дома Шалимова (код 57)
+</name>
+        <description>деревянная дверь синеватого цвета</description>
+        <styleUrl>#icon-1899-FFEA00</styleUrl>
+        <Point>
+          <coordinates>
+            44.803204,41.6898828,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Черепашье озеро</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.754234,41.7005357,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Сванская башня</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7476796,41.699229,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>вид на город</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7519926,41.697739,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>озеро Лиси</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7393976,41.7420969,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>заброшка археологический музей</name>
+        <styleUrl>#icon-1899-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.766794,41.763709,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>музеи</name>
+      <Placemark>
+        <name>Национальный музей Грузии</name>
+        <description>30 лари</description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.800176,41.6960553,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>национальная библиотека</name>
+        <styleUrl>#icon-1899-673AB7-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.801391,41.6968342,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Музей истории Тбилиси</name>
+        <description><![CDATA[<img src="https://mymaps.usercontent.google.com/hostedimage/m/*/3ADbDBKs98TIzfVxxeZsjCbPYie6SSGxH_SvsHG5ep8ht84fgOgRXYjx8ieFrgj6pqgo-BJY0azVeVvSeEGvDDnbKMgttIUF3yiEVPbdBiXfGCYfReRiLWVWC7cNq8p5nlns4aQqTuu8p-mxhRi7MJnO4rlwHWNpxzj8ml0UURDvdPzaMLBVpLsJb-72NAWo_yEDAx4Wb9FueUx4ytrYvIELYKvEkESdjpxnNUvqMK8w7WrFwNx_bQkqJHp8zq_I?authuser=0&fife=s16383" height="200" width="auto" /><br><br>расположен в отреставрированном караван-сарае рядом с собором Сиони.<br>вторник - воскресенье с 10:00 до 18:00. Закрыт по понедельникам.<br>15 лари <br><br>(рядом еще музей вина)]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <ExtendedData>
+          <Data name="gx_media_links">
+            <value><![CDATA[https://mymaps.usercontent.google.com/hostedimage/m/*/3ADbDBKs98TIzfVxxeZsjCbPYie6SSGxH_SvsHG5ep8ht84fgOgRXYjx8ieFrgj6pqgo-BJY0azVeVvSeEGvDDnbKMgttIUF3yiEVPbdBiXfGCYfReRiLWVWC7cNq8p5nlns4aQqTuu8p-mxhRi7MJnO4rlwHWNpxzj8ml0UURDvdPzaMLBVpLsJb-72NAWo_yEDAx4Wb9FueUx4ytrYvIELYKvEkESdjpxnNUvqMK8w7WrFwNx_bQkqJHp8zq_I?authuser=0&fife=s16383]]></value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            44.8076872,41.691063,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Музей вина</name>
+        <description><![CDATA[вторник - воскресенье с 11:00 до 20:00; понедельник с 12:00 до 18:00.<br>15 лари]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.8082022,41.6912021,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Музей чая</name>
+        <description><![CDATA[вход свободный, это еще и магазин.<br>пн-сб - с 11:00 до 20:00. Закрыт по воскресеньям.<br>Церемония дегустации чая стоит 40 лари с человека и длится 1-1:30 часа. Максимальная группа: 4-5 человек.<br>в этом же здании есть винный погреб (магазин) ]]></description>
+        <styleUrl>#icon-1899-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.8011716,41.6909356,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Музей театра, музыки, кино и хореографии</name>
+        <description><![CDATA[<img src="https://mymaps.usercontent.google.com/hostedimage/m/*/3ADbDBKu9o-p-b0gHr9DF4LRs8UJ4bIgunP_fhEWVkYFBwnnmveJ9299Ua5cwE_HNFjv6tTr7DoRCkSZWtxuhGhXbamYcTiiWfq47p11MDs70G_Qhi6jX24d34yNeWZ7zq9133q_xFuHSBw0ykAdLukDNANRSbYJYTj6-a_U8aSwgi0AKQ4uPPhOs4UpJuFuJ0IEgyFXdLwvJG_Q4dHPOfo1FHCVKXrjkoRlgKI0nKufC862FGWK9aOX3GJ2u-54?authuser=0&fife=s16383" height="200" width="auto" /><br><br>вторник - воскресенье с 10:30 до 17:30; закрыт по понедельникам.<br>5 лари]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <ExtendedData>
+          <Data name="gx_media_links">
+            <value><![CDATA[https://mymaps.usercontent.google.com/hostedimage/m/*/3ADbDBKu9o-p-b0gHr9DF4LRs8UJ4bIgunP_fhEWVkYFBwnnmveJ9299Ua5cwE_HNFjv6tTr7DoRCkSZWtxuhGhXbamYcTiiWfq47p11MDs70G_Qhi6jX24d34yNeWZ7zq9133q_xFuHSBw0ykAdLukDNANRSbYJYTj6-a_U8aSwgi0AKQ4uPPhOs4UpJuFuJ0IEgyFXdLwvJG_Q4dHPOfo1FHCVKXrjkoRlgKI0nKufC862FGWK9aOX3GJ2u-54?authuser=0&fife=s16383]]></value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            44.7943,41.715744,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Государственный музей шелка
+</name>
+        <description>вторник-суббота с 11 утра до 6 вечера; закрыто по понедельникам и воскресеньям</description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.788106,41.721829,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Музей изобразительных искусств имени Шалвы Амиранашвили</name>
+        <description><![CDATA[средневековая грузинская рельефная скульптура, грузинское искусство с 1900 по 1930 год и Паоло Венециано - Василий Кандинский.<br>вход с улицы Ладо Гудиашвили.<br>ежедневно с 10:00 до 18:00. Закрыт по понедельникам.<br>40 лари (20 студенты)]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.802244,41.6955,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Национальная галерея</name>
+        <description><![CDATA[представлены картины выдающихся грузинских художников XX века.<br>Вторник - воскресенье с 10:00 до 18:00. Закрыт по понедельникам.<br>25 лари (10 лари студенты).<br><br>рядом: парк, церковь, парламент]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.798857,41.698274,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Галерея IArt</name>
+        <description><![CDATA[частная галерея современного искусства,<br>вход находится на крошечной улице Закария Курдиани.<br>каждый день с 12:00 до 20:00.<br>бесплатный вход]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.802918,41.703155,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Выставочный зал Ладо Гудиашвили</name>
+        <description><![CDATA[представлены работы художника с 1940 по 1950 и с 1960 по 1970 год.<br><br>хвалят яблочный пеламуш в кафе на 1 этаже.<br><br>вторник - воскресенье с 12:00 до 20:00. Закрыт по понедельникам.<br>15 лари.<br><br>вроде бы рядом библиотека, можно войти]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.8003706,41.697553,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Музей Тбилисской художественной академии</name>
+        <description><![CDATA[<img src="https://mymaps.usercontent.google.com/hostedimage/m/*/3ADbDBKtMFPP7hSa7caVImJ4xE-lAfBPf7rpDQ8xMuEfsx1gppHPWYdfdVmIs-SGXuqiSOlzZympymIma9AAIW8hjg69KJct4tlZJu57nZ-UmKALsgpZQ6TXMwZO57LkFfwWVL728dHQlHdyd4TL6X6iuZCTIWhbK6O5NtOkLkLwdxFn-xY1i52OZ4_Ow-_QDYSr2bAAuTEpVY_j_SZqku4ruT51NOsgoA8sB9CsLMBQkkLzs7ji3M3ujr5eW0Js?authuser=0&fife=s16383" height="200" width="auto" /><br><br>пн-пт с 11:00 до 17:30; закрыто по выходным<br>12 лари]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <ExtendedData>
+          <Data name="gx_media_links">
+            <value><![CDATA[https://mymaps.usercontent.google.com/hostedimage/m/*/3ADbDBKtMFPP7hSa7caVImJ4xE-lAfBPf7rpDQ8xMuEfsx1gppHPWYdfdVmIs-SGXuqiSOlzZympymIma9AAIW8hjg69KJct4tlZJu57nZ-UmKALsgpZQ6TXMwZO57LkFfwWVL728dHQlHdyd4TL6X6iuZCTIWhbK6O5NtOkLkLwdxFn-xY1i52OZ4_Ow-_QDYSr2bAAuTEpVY_j_SZqku4ruT51NOsgoA8sB9CsLMBQkkLzs7ji3M3ujr5eW0Js?authuser=0&fife=s16383]]></value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            44.792812,41.701474,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Тбилисский музей фотографии и мультимедиа
+</name>
+        <description><![CDATA[https://www.facebook.com/tbilisiphotographyandmultimediamuseum/<br>Пн-Пт с 12:00 до 19:00; Выходные с 14:00 до 20:00.<br>бесплатно.<br><br>рядом кафе Stamba и красиво]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.788221,41.7055448,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Дом писателей Грузии
+</name>
+        <description><![CDATA[небольшой музей, хорошие интерьеры + двор.<br>советуют кофе в Litera.<br>вторник - пятница с 11:00 до 20:00; суббота с 12:00 до 18:00. Закрыт по воскресеньям и понедельникам.<br>5 лари]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.7997326,41.6901976,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>музей книги</name>
+        <description><![CDATA[Вторник-пятница с 10:30 до 16:00. Закрыт по понедельникам и выходным.<br>бесплатно]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.8006477,41.697103,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Цифровое пространство Тбилиси
+</name>
+        <description><![CDATA[каждый день с 12 до 9 вечера.<br>40 лари]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.79698,41.699317,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Тбилисский государственный музей грузинской народной музыки и музыкальных инструментов</name>
+        <description><![CDATA[пн выходной<br>советуют экскурсию (5 лари)]]></description>
+        <styleUrl>#icon-1834-673AB7</styleUrl>
+        <Point>
+          <coordinates>
+            44.8092384,41.6895014,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>еда</name>
+      <Placemark>
+        <name>Terrace 21</name>
+        <description>классика грузинской кухни, домашнее вино, вид на Куру, работает с 11.00</description>
+        <styleUrl>#icon-1534-F9A825</styleUrl>
+        <Point>
+          <coordinates>
+            44.8103837,41.6887539,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Restaurant Pasanauri</name>
+        <description><![CDATA[выше среднего ценник, но хвалят хинкали и остальное.<br><br>рядом Мейдан Базар и музей муз.инструментов]]></description>
+        <styleUrl>#icon-1534-F9A825</styleUrl>
+        <Point>
+          <coordinates>
+            44.809746,41.689651,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Рача </name>
+        <description><![CDATA[Непримечательный интерьер, но вкусная и недорогая кухня. Белое домашнее вино хвалят, оплата - кэш<br>работает с 11.00]]></description>
+        <styleUrl>#icon-1534-FF5252</styleUrl>
+        <Point>
+          <coordinates>
+            44.8022838,41.6912416,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Kikodze Bar
+</name>
+        <description><![CDATA[дорого, но вкусно.<br>работает с 10.00<br>до 16.00 европейская кухня аля кафе, вечером - коктейли]]></description>
+        <styleUrl>#icon-1534-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            44.7806643,41.7082538,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>кофейня Buka’s Bakery</name>
+        <description><![CDATA[средний чек на человека — 25 лари.<br>тут выпечка]]></description>
+        <styleUrl>#icon-1534-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            44.7847779,41.7041252,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hello Breakfast</name>
+        <description><![CDATA[европейские завтраки.<br>Средний чек на двоих — 80 лари]]></description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <Point>
+          <coordinates>
+            44.784146,41.7041351,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Чебуречная</name>
+        <styleUrl>#icon-1534-FF5252-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            44.7684115,41.7270271,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Чашангири</name>
+        <description>есть меню на русском, чистый туалет, вкусная еда, народ советует завтраки, хачапури на шамуре и хинкали</description>
+        <styleUrl>#icon-1534-FF5252</styleUrl>
+        <Point>
+          <coordinates>
+            44.804589,41.693265,0
           </coordinates>
         </Point>
       </Placemark>
