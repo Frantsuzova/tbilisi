@@ -58,7 +58,7 @@ function stripHtmlToText(input) {
 function escapeHtml(s) {
   return String(s || '')
     .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
+    .replaceAll('<','&lt>')
     .replaceAll('>','&gt;')
     .replaceAll('"','&quot;')
     .replaceAll("'","&#39;");
@@ -199,12 +199,12 @@ L.control.scale({ imperial:false }).addTo(map);
 L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
 // ---------- Глобальные данные ----------
-let geoLayer = null;         // слой точек
 let shapesLayer = null;      // линии/полигоны
-const markersById = new Map();
+let clusterGroup = null;     // кластеры точек
+const markersById = new Map();  // ptIdx -> marker
 let boundsAll = null;
 let pointFeatures = [];      // только Point
-let lastSummaryBase = '';    // строка "лестницы X, парадные Y, ..."
+let lastSummaryBase = '';    // "лестницы X, парадные Y, ..."
 
 // ---------- ID иконки из стиля/порядка ----------
 function computeIconId(feature, styleHrefMap){
@@ -224,6 +224,7 @@ function renderGeoJSON(geojson, styleHrefMap){
   pointFeatures = feats.filter(f => f.geometry && f.geometry.type === 'Point');
   const shapeFeatures = feats.filter(f => !f.geometry || f.geometry.type !== 'Point');
 
+  // нормализация свойств точек
   pointFeatures.forEach((f,pi)=>{
     const p = f.properties || {};
     p._ptSeq = pi;
@@ -231,14 +232,24 @@ function renderGeoJSON(geojson, styleHrefMap){
     p.description = stripHtmlToText(p.description);
   });
 
+  // линии/полигоны
   if (shapesLayer) { try { map.removeLayer(shapesLayer); } catch(e){} }
   shapesLayer = shapeFeatures.length
     ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
     : null;
 
-  if (geoLayer) { try { map.removeLayer(geoLayer); } catch(e){} }
+  // кластеры: пересоздаём
+  if (clusterGroup) { try { map.removeLayer(clusterGroup); } catch(e){} }
+  clusterGroup = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    spiderfyOnMaxZoom: true,
+    disableClusteringAtZoom: 18,
+    maxClusterRadius: 48
+  });
   markersById.clear();
-  geoLayer = L.geoJSON(pointFeatures, {
+
+  // генерим маркеры и добавляем в кластеры
+  const tmp = L.geoJSON(pointFeatures, {
     pointToLayer: (feature, latlng) => {
       const hex = getStyleColor(feature, styleHrefMap);
       const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
@@ -257,10 +268,13 @@ function renderGeoJSON(geojson, styleHrefMap){
       const p = feature.properties || {};
       layer.bindPopup(makePopupHtml(p.name, p.description));
     }
-  }).addTo(map);
+  });
+  tmp.eachLayer(l => clusterGroup.addLayer(l));
+  clusterGroup.addTo(map);
 
+  // fitBounds по точкам + линиям
   try {
-    const group = L.featureGroup([geoLayer, shapesLayer].filter(Boolean));
+    const group = L.featureGroup([clusterGroup, shapesLayer].filter(Boolean));
     const b = group.getBounds();
     if (b.isValid()) { boundsAll = b; map.fitBounds(b, { padding:[20,20] }); }
     else { map.setView([41.6938,44.8015], 14); }
@@ -271,7 +285,7 @@ function renderGeoJSON(geojson, styleHrefMap){
   updateCounters();
   buildList();
   buildLegend();
-  applyVisibility(); // сразу применим фильтр по умолчанию
+  applyVisibility(); // применить текущий фильтр
 }
 
 // ---------- Подсчёт/легенда/список ----------
@@ -340,8 +354,10 @@ function isMatchProps(p, activeCat, qLower){
 }
 function fitToVisible(){
   const group = L.featureGroup();
-  markersById.forEach((marker)=>{
-    if (geoLayer && geoLayer.hasLayer(marker)) group.addLayer(marker);
+  clusterGroup.eachLayer(l=>{
+    // l: cluster или одиночный маркер; getBounds есть у обоих
+    if (l.getBounds) group.addLayer(l);
+    else if (l.getLatLng) group.addLayer(L.marker(l.getLatLng()));
   });
   const b = group.getBounds();
   if (b.isValid()) map.fitBounds(b, { padding:[20,20] });
@@ -360,21 +376,18 @@ function applyVisibility(){
     el.classList.toggle('hidden', !show);
   });
 
-  // Маркеры
+  // Маркеры: убрать все и добавить только совпадающие
+  clusterGroup.clearLayers();
   let visible = 0;
-  markersById.forEach((marker, ptIdx)=>{
-    const f = pointFeatures[ptIdx];
-    const p = f?.properties || {};
+  pointFeatures.forEach((f)=>{
+    const p = f.properties || {};
     const show = isMatchProps(p, activeCat, q);
-    if (show){
-      if (!geoLayer.hasLayer(marker)) geoLayer.addLayer(marker);
-      visible++;
-    } else {
-      if (geoLayer.hasLayer(marker)) geoLayer.removeLayer(marker);
-    }
+    if (!show) return;
+    const m = markersById.get(p._ptSeq);
+    if (m){ clusterGroup.addLayer(m); visible++; }
   });
 
-  // Обновим «Показано»
+  // Линии/полигоны остаются как есть
   const sub = document.getElementById('countCat');
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
   console.info(`[filter] shown ${visible} of ${pointFeatures.length} (cat=${activeCat}, q="${q}")`);
@@ -383,7 +396,8 @@ function applyVisibility(){
 // ---------- UI ----------
 document.getElementById('search').addEventListener('input', ()=> {
   applyVisibility();
-  // при желании: fitToVisible();
+  // при необходимости включи автозум при наборе:
+  // fitToVisible();
 });
 document.querySelectorAll('.chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
