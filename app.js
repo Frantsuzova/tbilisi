@@ -1,3 +1,5 @@
+// app.js — кластеры, цвета из KML, персональные PNG, фильтры, мобильный UI
+
 // ---------- Фолбэк-булавки (для легенды) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
@@ -33,35 +35,41 @@ function toText(v){
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
   if (Array.isArray(v)) return v.map(toText).filter(Boolean).join(' ');
   if (typeof v === 'object') {
-    const prefer = ['__cdata', '#cdata-section', '#text', 'text', 'value', 'content'];
+    const prefer = ['__cdata', '#cdata-section', '#text', 'text', 'value', 'content', 'description'];
     for (const k of prefer) if (k in v) return toText(v[k]);
-    const parts = [];
-    for (const x of Object.values(v)) {
-      const s = toText(x);
-      if (s) parts.push(s);
-    }
-    return parts.join(' ');
+    return Object.values(v).map(toText).filter(Boolean).join(' ');
   }
   return '';
 }
 function cleanText(v){
-  const s = toText(v).trim();
-  return (s === '[object Object]') ? '' : s.replace(/\[object Object\]/g, '').trim();
+  let s = toText(v);
+  s = s.replace(/\[object Object\]/gi, ' ');
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  return s;
 }
 function stripHtmlToText(input) {
   const html = cleanText(input);
+  if (!html) return '';
   const tmp = document.createElement('div');
-  tmp.innerHTML = html || '';
+  tmp.innerHTML = html;
   tmp.querySelectorAll('img, picture, source, iframe, video, audio, svg, script, style').forEach(el => el.remove());
-  return (tmp.textContent || '').replace(/\s+\n/g, '\n').replace(/\s{2,}/g, ' ').trim();
+  let t = (tmp.textContent || '').replace(/\s+\n/g, '\n').replace(/\s{2,}/g, ' ').trim();
+  t = t.replace(/\[object Object\]/gi, '').replace(/\s{2,}/g, ' ').trim();
+  return t;
 }
 function escapeHtml(s) {
   return String(s || '')
     .replaceAll('&','&amp;')
-    .replaceAll('<','&lt>')
+    .replaceAll('<','&lt;')
     .replaceAll('>','&gt;')
     .replaceAll('"','&quot;')
     .replaceAll("'","&#39;");
+}
+function makePopupHtml(name, description) {
+  const nameText = escapeHtml(cleanText(name)) || 'Без названия';
+  const descText = stripHtmlToText(description);
+  return descText ? `<strong>${nameText}</strong><br>${escapeHtml(descText)}`
+                  : `<strong>${nameText}</strong>`;
 }
 
 // ---------- Категории ----------
@@ -162,17 +170,12 @@ function svgPinIcon(hex){
   return L.divIcon({ className: 'pin-svg', html, iconSize: [w, h], iconAnchor: [ax, ay], popupAnchor: [0, -34] });
 }
 
-// ---------- Очистка KML/попапы ----------
+// ---------- Очистка KML ----------
 function sanitizeKmlString(txt){
   return String(txt)
     .replace(/<img\b[^>]*>/gi, '')
     .replace(/url\((['"]?)https?:\/\/mymaps\.usercontent\.google\.com\/[^)]+?\1\)/gi, 'none')
     .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
-}
-function makePopupHtml(name, description) {
-  const nameText = escapeHtml(cleanText(name)) || 'Без названия';
-  const descText = stripHtmlToText(description);
-  return descText ? `<strong>${nameText}</strong><br>${escapeHtml(descText)}` : `<strong>${nameText}</strong>`;
 }
 
 // ---------- Карта ----------
@@ -238,17 +241,15 @@ function renderGeoJSON(geojson, styleHrefMap){
     ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
     : null;
 
-  // кластеры: пересоздаём
+  // кластеры: пересоздаём (с фолбэком, если плагин не загрузился)
   if (clusterGroup) { try { map.removeLayer(clusterGroup); } catch(e){} }
-  clusterGroup = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    spiderfyOnMaxZoom: true,
-    disableClusteringAtZoom: 18,
-    maxClusterRadius: 48
-  });
+  const canCluster = (typeof L.markerClusterGroup === 'function');
+  clusterGroup = canCluster
+    ? L.markerClusterGroup({ showCoverageOnHover:false, spiderfyOnMaxZoom:true, disableClusteringAtZoom:18, maxClusterRadius:48 })
+    : L.layerGroup();
   markersById.clear();
 
-  // генерим маркеры и добавляем в кластеры
+  // генерим маркеры и добавляем в кластеры/группу
   const tmp = L.geoJSON(pointFeatures, {
     pointToLayer: (feature, latlng) => {
       const hex = getStyleColor(feature, styleHrefMap);
@@ -355,7 +356,6 @@ function isMatchProps(p, activeCat, qLower){
 function fitToVisible(){
   const group = L.featureGroup();
   clusterGroup.eachLayer(l=>{
-    // l: cluster или одиночный маркер; getBounds есть у обоих
     if (l.getBounds) group.addLayer(l);
     else if (l.getLatLng) group.addLayer(L.marker(l.getLatLng()));
   });
@@ -376,7 +376,7 @@ function applyVisibility(){
     el.classList.toggle('hidden', !show);
   });
 
-  // Маркеры: убрать все и добавить только совпадающие
+  // Маркеры: собрать заново видимые
   clusterGroup.clearLayers();
   let visible = 0;
   pointFeatures.forEach((f)=>{
@@ -387,7 +387,6 @@ function applyVisibility(){
     if (m){ clusterGroup.addLayer(m); visible++; }
   });
 
-  // Линии/полигоны остаются как есть
   const sub = document.getElementById('countCat');
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
   console.info(`[filter] shown ${visible} of ${pointFeatures.length} (cat=${activeCat}, q="${q}")`);
@@ -396,15 +395,13 @@ function applyVisibility(){
 // ---------- UI ----------
 document.getElementById('search').addEventListener('input', ()=> {
   applyVisibility();
-  // при необходимости включи автозум при наборе:
-  // fitToVisible();
 });
 document.querySelectorAll('.chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
     btn.dataset.active = 'true';
     applyVisibility();
-    fitToVisible(); // автозум по видимым при смене категории
+    fitToVisible();
   });
 });
 document.getElementById('btnShowAll').addEventListener('click', ()=>{
@@ -418,21 +415,18 @@ document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
 });
 
-// Плавающая кнопка «Меню» для мобилы
+// Плавающая кнопка «Меню» (мобила)
 const fab = document.getElementById('fabToggleUI');
 if (fab){
   fab.addEventListener('click', ()=> {
-    document.body.classList.toggle('ui-hidden'); // скрыть/показать панели
+    document.body.classList.toggle('ui-hidden');
   });
 }
-
-// по умолчанию на мобиле панели видимы
 function ensureMobileUI(){
   if (window.innerWidth <= 780) document.body.classList.remove('ui-hidden');
 }
 ensureMobileUI();
 window.addEventListener('resize', ensureMobileUI);
-
 
 // ---------- Загрузка KML ----------
 const kmlParam = new URLSearchParams(location.search).get('kml');
@@ -456,7 +450,7 @@ async function loadKmlAuto(){
   throw lastErr || new Error('KML not found');
 }
 
-// Пикер KML (без инлайна)
+// Пикер KML (без inline)
 function enableKmlPicker(){
   const bar = document.createElement('div');
   bar.className = 'panel kml-picker';
