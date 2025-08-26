@@ -181,9 +181,28 @@ function sanitizeKmlString(txt){
 // ---------- Карта (tap:false — фикс iOS жестов) ----------
 const map = L.map('map', {
   zoomControl: false,
-  tap: false,
-  wheelDebounceTime: 10
+  tap: false,               // iOS: отключаем tap-хендлер Leaflet
+  wheelDebounceTime: 10,
+  inertia: true
 });
+// iOS детект
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// На iOS принудительно включаем тач-жесты карты и гасим жесты системного зума страницы
+if (isIOS) {
+  map.touchZoom.enable();
+  map.dragging.enable();
+  map.doubleClickZoom.enable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+
+  // Запрещаем зум страницы "щипком", чтобы он не перехватывал пинч карты
+  ['gesturestart','gesturechange','gestureend'].forEach(type => {
+    document.addEventListener(type, e => e.preventDefault(), { passive: false });
+  });
+}
+
 const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 let currentTiles = null;
