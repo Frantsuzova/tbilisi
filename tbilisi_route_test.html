@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP: разрешаем картинки только с нужных доменов -->
+  <!-- CSP: блокируем внешние IMG из KML -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self' https: data:; img-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;">
 
@@ -127,8 +127,13 @@
     .count{ font-variant-numeric: tabular-nums; }
     .hidden{ display:none !important; }
 
-    /* Если вдруг какая-то IMG просочится в попап — глушим отображение */
+    /* Если IMG просочится в попап — глушим */
     .leaflet-popup-content img { display:none !important; max-width:0 !important; max-height:0 !important; }
+
+    /* --- ВЕРХ ПОВЕРХ КАРТЫ --- */
+    .panel { z-index: 1200; }
+    .leaflet-top, .leaflet-bottom { z-index: 1100; }
+    #map { position: relative; z-index: 0; }
 
     @media (max-width: 980px){
       .panel-header{ right: 16px; }
@@ -185,14 +190,14 @@
 
   <!-- Логика -->
   <script>
-    // ===== Базовые булавки (фолбэк) =====
+    /* Фолбэк-булавки */
     const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
     const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
     const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
     const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
     const IconYellow = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-yellow.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 
-    // ===== Персональные PNG (корень проекта) =====
+    /* Персональные PNG */
     const ICONS = { prefix: 'icon-', ext: 'png', count: 28, size: [32,32], anchor: [16,32], popupAnchor: [0,-28] };
     const iconCache = new Map();
     function personalIcon(id){
@@ -213,23 +218,15 @@
       imgExistsCache.set(url, p); return p;
     }
 
-    // ===== Утилиты =====
+    /* Утилиты */
     const normText = v => v==null ? "" : (typeof v==="string" ? v : Array.isArray(v) ? v.map(normText).join(" ") : (typeof v==="object" ? Object.values(v).map(normText).join(" ") : String(v)));
-
-    // Жёсткая очистка HTML описаний (срезаем <img>, <iframe>, медиа ДО парсинга DOM)
     function sanitizeKmlString(txt){
       return String(txt)
-        // вырезать любые <img ...> (особенно mymaps.usercontent.google.com)
         .replace(/<img\b[^>]*>/gi, '')
-        // вырезать inline background-image с mymaps
         .replace(/url\((['"]?)https?:\/\/mymaps\.usercontent\.google\.com\/[^)]+?\1\)/gi, 'none')
-        // блокируем <iframe>, <audio>, <video>, <source>, <script>
         .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
     }
-
-    // Безопасное преобразование HTML-описания в текст
     function stripHtmlToText(html) {
-      // HTML ещё может содержать «безопасные» теги — выпилим картинки/медиа
       const tmp = document.createElement('div');
       tmp.innerHTML = String(html || '');
       tmp.querySelectorAll('img, picture, source, iframe, video, audio, svg').forEach(el => el.remove());
@@ -249,7 +246,6 @@
       return descText ? `<strong>${nameText}</strong><br>${escapeHtml(descText)}`
                       : `<strong>${nameText}</strong>`;
     }
-
     function detectCategory(p){
       const name = normText(p?.name).toLowerCase();
       const desc = normText(p?.description).toLowerCase();
@@ -260,7 +256,7 @@
     }
     const CAT_LABEL = { stairs:"Лестницы", porches:"Парадные", special:"Особые", other:"Прочее" };
 
-    // KML стили: "#id" -> href (если надо вручную сопоставлять — заполните)
+    /* KML стили */
     const HREF_TO_ID = Object.create(null);
     function idFromHref(href){
       if (!href) return null;
@@ -299,7 +295,7 @@
       return byId;
     }
 
-    // ===== Карта и тайлы (light/dark) =====
+    /* Карта и тайлы (светлая/тёмная) */
     const map = L.map('map', { zoomControl:false });
     const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
@@ -327,7 +323,7 @@
     L.control.scale({ imperial:false }).addTo(map);
     const locateCtrl = L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
-    // ===== Данные/слои =====
+    /* Данные/слои */
     let geoLayer = null;
     const markersById = new Map();
     let boundsAll = null;
@@ -464,7 +460,7 @@
       });
     }
 
-    // UI события
+    /* События UI */
     document.getElementById('search').addEventListener('input', applyVisibility);
     document.querySelectorAll('.chip').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -484,7 +480,7 @@
       sb.style.display = (sb.style.display === 'none') ? '' : 'none';
     });
 
-    // ===== Загрузка KML =====
+    /* Загрузка KML (только относительные пути) */
     const kmlParam = new URLSearchParams(location.search).get('kml');
     const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
 
@@ -498,7 +494,7 @@
       for (const url of KML_CANDIDATES){
         try {
           const raw = await tryFetch(url);
-          const txt = sanitizeKmlString(raw);           // <<— вырезаем <img> до парсинга
+          const txt = sanitizeKmlString(raw);
           console.log('[KML] loaded from', url);
           return { txt, url };
         } catch(e){ lastErr = e; }
@@ -508,7 +504,7 @@
 
     function enableKmlPicker(){
       const bar = document.createElement('div');
-      bar.style.cssText = 'position:absolute;z-index:1000;left:50%;transform:translateX(-50%);top:16px;background:var(--panel-bg);padding:8px 10px;border-radius:12px;border:1px solid var(--panel-border);box-shadow:var(--shadow);display:flex;gap:8px;align-items:center;font:14px system-ui';
+      bar.style.cssText = 'position:absolute;z-index:1300;left:50%;transform:translateX(-50%);top:16px;background:var(--panel-bg);padding:8px 10px;border-radius:12px;border:1px solid var(--panel-border);box-shadow:var(--shadow);display:flex;gap:8px;align-items:center;font:14px system-ui';
       bar.innerHTML = `
         <span>Загрузить KML:</span>
         <input type="file" id="kmlFile" accept=".kml,.xml">
@@ -521,7 +517,7 @@
         const f = e.target.files?.[0]; if (!f) return;
         const fr = new FileReader();
         fr.onload = () => {
-          const txt = sanitizeKmlString(String(fr.result)); // <<— чистим
+          const txt = sanitizeKmlString(String(fr.result));
           const kmlXml  = new DOMParser().parseFromString(txt,'application/xml');
           const styleHrefMap = buildStyleHrefMap(kmlXml);
           const geojson = toGeoJSON.kml(kmlXml);
@@ -535,7 +531,7 @@
         if (!url) return;
         try {
           const raw = await tryFetch(url);
-          const txt = sanitizeKmlString(raw);           // <<— чистим
+          const txt = sanitizeKmlString(raw);
           const kmlXml  = new DOMParser().parseFromString(txt,'application/xml');
           const styleHrefMap = buildStyleHrefMap(kmlXml);
           const geojson = toGeoJSON.kml(kmlXml);
