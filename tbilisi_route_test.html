@@ -33,6 +33,7 @@
         --accent: #22d3ee;
       }
     }
+
     html, body, #map { height: 100%; margin: 0; padding: 0; }
     body { color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
 
@@ -49,7 +50,7 @@
 
     /* Шапка */
     .panel-header{
-      top: 16px; left: 16px; right: 360px; /* оставляем место для сайдбара */
+      top: 16px; left: 16px; right: 360px;
       padding: 12px 14px;
       display: grid;
       grid-template-columns: 1fr auto;
@@ -108,9 +109,7 @@
       padding:10px 10px; border-radius:12px; border:1px solid var(--panel-border); background: rgba(0,0,0,.03);
       margin-bottom:8px; cursor:pointer;
     }
-    @media (prefers-color-scheme: dark){
-      .item{ background: rgba(255,255,255,.04); }
-    }
+    @media (prefers-color-scheme: dark){ .item{ background: rgba(255,255,255,.04); } }
     .item h4{ margin:0; font-size: 13px; font-weight:600; }
     .item .meta{ grid-column:1/-1; color:var(--muted); font-size:12px; }
     .item .fly{ align-self:start; }
@@ -126,9 +125,11 @@
     }
     .legend img{ width:18px; height:18px; display:block; }
 
-    /* Мелочи */
     .count{ font-variant-numeric: tabular-nums; }
     .hidden{ display:none !important; }
+
+    /* На случай, если где-то просочится IMG в попап: глушим */
+    .leaflet-popup-content img { display:none !important; max-width:0 !important; max-height:0 !important; }
 
     /* Адаптив */
     @media (max-width: 980px){
@@ -176,9 +177,7 @@
 
   <!-- Легенда -->
   <div class="panel panel-legend">
-    <div class="legend-group" id="legend">
-      <!-- Заполним после загрузки -->
-    </div>
+    <div class="legend-group" id="legend"></div>
   </div>
 
   <!-- JS-библиотеки -->
@@ -188,14 +187,14 @@
 
   <!-- Логика -->
   <script>
-    // ====== Базовые иконки (фолбэк) ======
+    // ========= Базовые иконки (фолбэк) =========
     const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
     const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
     const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
     const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
     const IconYellow = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-yellow.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 
-    // ====== Персональные PNG (корень проекта) ======
+    // ========= Персональные PNG (корень проекта) =========
     const ICONS = { prefix: 'icon-', ext: 'png', count: 28, size: [32,32], anchor: [16,32], popupAnchor: [0,-28] };
     const iconCache = new Map();
     function personalIcon(id){
@@ -216,8 +215,30 @@
       imgExistsCache.set(url, p); return p;
     }
 
-    // ====== Утилиты ======
+    // ========= Утилиты =========
     const normText = v => v==null ? "" : (typeof v==="string" ? v : Array.isArray(v) ? v.map(normText).join(" ") : (typeof v==="object" ? Object.values(v).map(normText).join(" ") : String(v)));
+
+    function stripHtmlToText(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = String(html || '');
+      tmp.querySelectorAll('img, iframe, video, audio, source, svg, style, script').forEach(el => el.remove());
+      return (tmp.textContent || '').replace(/\s+\n/g, '\n').replace(/\s{2,}/g, ' ').trim();
+    }
+    function escapeHtml(s) {
+      return String(s || '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+    function makePopupHtml(name, description) {
+      const nameText = escapeHtml(normText(name)) || 'Без названия';
+      const descText = stripHtmlToText(description);
+      return descText ? `<strong>${nameText}</strong><br>${escapeHtml(descText)}`
+                      : `<strong>${nameText}</strong>`;
+    }
+
     function detectCategory(p){
       const name = normText(p?.name).toLowerCase();
       const desc = normText(p?.description).toLowerCase();
@@ -229,8 +250,8 @@
     const CAT_LABEL = { stairs:"Лестницы", porches:"Парадные", special:"Особые", other:"Прочее" };
     const CAT_FALLBACK_ICON = { stairs: IconGreen, porches: IconRed, special: IconYellow, other: IconBlue };
 
-    // KML стили: "#id" -> href
-    const HREF_TO_ID = Object.create(null); // заполнять при необходимости руками
+    // KML стили: "#id" -> href (при необходимости заполнить вручную нестандартные соответствия)
+    const HREF_TO_ID = Object.create(null);
     function idFromHref(href){
       if (!href) return null;
       if (HREF_TO_ID[href]) return HREF_TO_ID[href];
@@ -268,17 +289,13 @@
       return byId;
     }
 
-    // ====== Карта + тайлы с учётом темы ======
-    const map = L.map('map', { zoomControl:false }); // убираем дефолтный зум — добавим в правый верх
+    // ========= Карта + тайлы (light/dark) =========
+    const map = L.map('map', { zoomControl:false });
     const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     });
     const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     });
     let currentTiles = null;
     function setTilesByColorScheme(){
@@ -293,15 +310,15 @@
     setTilesByColorScheme();
     if (window.matchMedia) {
       const mm = window.matchMedia('(prefers-color-scheme: dark)');
-      mm.addEventListener?.('change', setTilesByColorScheme);
+      if (mm.addEventListener) mm.addEventListener('change', setTilesByColorScheme);
+      else if (mm.addListener) mm.addListener(setTilesByColorScheme);
     }
 
-    // UI-controls
     L.control.zoom({ position:'topright' }).addTo(map);
     L.control.scale({ imperial:false }).addTo(map);
     const locateCtrl = L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
-    // ====== Данные/слои ======
+    // ========= Данные/слои =========
     let geoLayer = null;
     const markersById = new Map(); // _seq -> marker
     let boundsAll = null;
@@ -317,13 +334,11 @@
     }
 
     function renderGeoJSON(geojson, styleHrefMap){
-      // присваиваем последовательность
       if (Array.isArray(geojson.features)) {
         geojson.features.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
       }
       allFeatures = geojson.features || [];
 
-      // создаём слой
       geoLayer = L.geoJSON(geojson, {
         pointToLayer: (feature, latlng) => {
           const marker = L.marker(latlng, { icon: IconBlue });
@@ -335,24 +350,21 @@
           marker.featureProps = feature.properties;
           return marker;
         },
-        style: { weight:3 },
         onEachFeature: (feature, layer) => {
           const p = feature.properties || {};
-          layer.bindPopup(`<strong>${normText(p.name) || 'Без названия'}</strong><br>${normText(p.description)}`);
+          layer.bindPopup(makePopupHtml(p.name, p.description));
         }
       }).addTo(map);
 
-      // границы
       try { boundsAll = geoLayer.getBounds(); if (boundsAll.isValid()) map.fitBounds(boundsAll, { padding:[20,20] }); }
       catch { map.setView([41.6938,44.8015], 14); }
 
-      // UI: счётчики, список, легенда
       updateCounters();
       buildList();
       buildLegend();
     }
 
-    // ====== UI: счётчики, список, фильтры, поиск ======
+    // ========= UI: счётчики, список, фильтры, поиск =========
     function updateCounters(){
       const total = allFeatures.length;
       const cats = { stairs:0, porches:0, special:0, other:0 };
@@ -386,25 +398,31 @@
         const p = f.properties || {};
         const seq = p._seq;
         const cat = detectCategory(p);
+
         const item = document.createElement('div');
         item.className = 'item';
         item.dataset.cat = cat;
+
         item.innerHTML = `
-          <h4>${normText(p.name) || 'Без названия'}</h4>
+          <h4>${escapeHtml(normText(p.name) || 'Без названия')}</h4>
           <button class="btn fly">К точке</button>
-          <div class="meta">${CAT_LABEL[cat]} · ${normText(p.description)}</div>
+          <div class="meta"></div>
         `;
+        const meta = item.querySelector('.meta');
+        const descText = stripHtmlToText(p.description);
+        const short = descText.length > 180 ? descText.slice(0, 180) + '…' : descText;
+        meta.textContent = `${CAT_LABEL[cat]} · ${short}`;
+
         item.addEventListener('click', (e)=>{
-          if (e.target.closest('.fly')) {
-            // клик по кнопке
-          }
           const m = markersById.get(seq);
           if (!m) return;
           map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 17), { duration: .8 });
           setTimeout(()=>m.openPopup(), 850);
         });
+
         list.appendChild(item);
       });
+      applyVisibility(); // учесть активный фильтр и поиск
     }
 
     function applyVisibility(){
@@ -422,12 +440,11 @@
         el.classList.toggle('hidden', !(matchCat && matchText));
       });
 
-      // маркеры
-      markersById.forEach((marker, seq)=>{
+      markersById.forEach((marker)=>{
         const p = marker.featureProps || {};
         const cat = marker.featureCat || 'other';
         const name = normText(p.name).toLowerCase();
-        const desc = normText(p.description).toLowerCase();
+        const desc = stripHtmlToText(p.description).toLowerCase();
         const matchCat = activeCat==='all' || cat===activeCat;
         const matchText = !q || name.includes(q) || desc.includes(q);
         const shouldShow = matchCat && matchText;
@@ -439,7 +456,7 @@
       });
     }
 
-    // события UI
+    // События UI
     document.getElementById('search').addEventListener('input', applyVisibility);
     document.querySelectorAll('.chip').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -451,14 +468,16 @@
     document.getElementById('btnShowAll').addEventListener('click', ()=>{
       if (boundsAll && boundsAll.isValid()) map.fitBounds(boundsAll, { padding:[20,20] });
     });
-    document.getElementById('btnLocate').addEventListener('click', ()=> locateCtrl.start() );
+    document.getElementById('btnLocate').addEventListener('click', ()=> {
+      // у locatecontrol есть собственная кнопка, но оставим дубликат в шапке
+      document.querySelector('.leaflet-control-locate a')?.click();
+    });
     document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
       const sb = document.getElementById('sidebar');
-      if (sb.style.display === 'none'){ sb.style.display = ''; }
-      else { sb.style.display = 'none'; }
+      sb.style.display = (sb.style.display === 'none') ? '' : 'none';
     });
 
-    // ====== Загрузка KML (только относительные пути) ======
+    // ========= Загрузка KML (только относительные пути) =========
     const kmlParam = new URLSearchParams(location.search).get('kml');
     const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
 
