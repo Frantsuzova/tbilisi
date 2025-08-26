@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
   <style>
@@ -15,49 +14,41 @@
 <body>
   <div id="map"></div>
 
-  <!-- Библиотеки -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 
-  <!-- Логика -->
   <script>
-    // ---------- Фолбэк-булавка ----------
+    // --- фолбэк-иконка ---
     const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
     const IconBlue = L.icon({
       iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",
       shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41]
     });
 
-    // ---------- Локальные PNG в корне: ./icon-1.png … ./icon-28.png ----------
-    const ICONS = { prefix: 'icon-', ext: 'png', count: 28, size: [32,32], anchor: [16,32], popupAnchor: [0,-28] };
+    // --- персональные иконки в корне: ./icon-1.png … ./icon-28.png ---
+    const ICONS = { prefix:'icon-', ext:'png', count:28, size:[32,32], anchor:[16,32], popupAnchor:[0,-28] };
     const iconCache = new Map();
     function personalIcon(id){
       if (!id || id < 1 || id > ICONS.count) return null;
       if (iconCache.has(id)) return iconCache.get(id);
-      const ic = L.icon({
-        iconUrl: `${ICONS.prefix}${id}.${ICONS.ext}`,
-        iconSize: ICONS.size, iconAnchor: ICONS.anchor, popupAnchor: ICONS.popupAnchor
-      });
-      iconCache.set(id, ic);
-      return ic;
+      const ic = L.icon({ iconUrl: `${ICONS.prefix}${id}.${ICONS.ext}`, iconSize: ICONS.size, iconAnchor: ICONS.anchor, popupAnchor: ICONS.popupAnchor });
+      iconCache.set(id, ic); return ic;
     }
 
-    // Проверка наличия PNG (чтобы не было квадратика с "?")
     const imgExistsCache = new Map();
     function imageExists(url){
       if (imgExistsCache.has(url)) return imgExistsCache.get(url);
-      const p = new Promise(resolve=>{
+      const p = new Promise(res=>{
         const im = new Image();
-        im.onload = ()=>resolve(true);
-        im.onerror = ()=>resolve(false);
+        im.onload = ()=>res(true);
+        im.onerror = ()=>res(false);
         im.src = url + (url.includes('?')?'&':'?') + 'v=' + Date.now();
       }).then(ok=>{ imgExistsCache.set(url, ok); return ok; });
       imgExistsCache.set(url, p);
       return p;
     }
 
-    // ---------- Утилиты ----------
     function normText(v){
       if (v==null) return "";
       if (typeof v==="string") return v;
@@ -66,10 +57,7 @@
       return String(v);
     }
 
-    // Если URL иконки в KML нестандартный и без числа — добавьте сюда ручные соответствия:
-    const HREF_TO_ID = Object.create(null);
-    // Пример:
-    // HREF_TO_ID["https://maps.gstatic.com/mapfiles/ms2/micons/blue-pushpin.png"] = 7;
+    const HREF_TO_ID = Object.create(null); // при необходимости заполните вручную
 
     function idFromHref(href){
       if (!href) return null;
@@ -81,71 +69,55 @@
       return (n>=1 && n<=ICONS.count) ? n : null;
     }
 
-    // Построить карту стилей: "#styleId" -> href иконки
     function buildStyleHrefMap(kmlXml){
       const byId = Object.create(null);
-
-      // <Style id="..."><IconStyle><Icon><href>...</href>
       kmlXml.querySelectorAll('Style[id]').forEach(st=>{
         const id = st.getAttribute('id');
-        const hrefEl = st.querySelector('IconStyle Icon href');
-        const href = hrefEl ? hrefEl.textContent.trim() : null;
+        const href = st.querySelector('IconStyle Icon href')?.textContent?.trim();
         if (id && href) byId['#'+id] = href;
       });
-
-      // <StyleMap id="..."><Pair><key>normal</key><styleUrl>#style</styleUrl>
       kmlXml.querySelectorAll('StyleMap[id]').forEach(sm=>{
         const id = sm.getAttribute('id');
-        let href = null;
-        let target = null;
+        let href = null, target = null;
         sm.querySelectorAll('Pair').forEach(p=>{
           const key = p.querySelector('key')?.textContent?.trim();
           if (!target && key === 'normal') target = p;
         });
         if (!target) target = sm.querySelector('Pair');
-        if (target) {
+        if (target){
           const styleUrl = target.querySelector('styleUrl')?.textContent?.trim();
           if (styleUrl && byId[styleUrl]) href = byId[styleUrl];
         }
-        if (!href) {
+        if (!href){
           const innerHref = sm.querySelector('IconStyle Icon href')?.textContent?.trim();
           if (innerHref) href = innerHref;
         }
         if (id && href) byId['#'+id] = href;
       });
-
       return byId;
     }
 
-    // Локальный id: по href из KML, иначе по порядку
     function computeIconId(feature, styleHrefMap){
       const p = feature.properties || {};
       const href = typeof p.styleUrl === 'string' ? (styleHrefMap[p.styleUrl] || null) : null;
-      const idFromKml = idFromHref(href);
-      if (idFromKml) return idFromKml;
+      const fromKml = idFromHref(href);
+      if (fromKml) return fromKml;
       const seq = Number.isFinite(p._seq) ? p._seq : 0;
       return ((seq % ICONS.count) + 1);
     }
 
-    // ---------- Карта ----------
+    // --- карта ---
     const map = L.map('map');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    L.control.locate({
-      position:'topleft', setView:'untilPan', keepCurrentZoomLevel:true,
-      strings:{ title:'Показать моё местоположение' }
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
+    L.control.locate({ position:'topleft', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
     function renderGeoJSON(geojson, styleHrefMap){
       if (Array.isArray(geojson.features)) {
         geojson.features.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
       }
-
       const layer = L.geoJSON(geojson, {
         pointToLayer: (feature, latlng) => {
-          const marker = L.marker(latlng, { icon: IconBlue }); // сначала фолбэк
+          const marker = L.marker(latlng, { icon: IconBlue });
           const id = computeIconId(feature, styleHrefMap);
           const url = `${ICONS.prefix}${id}.${ICONS.ext}`;
           imageExists(url).then(ok => { if (ok) marker.setIcon(personalIcon(id)); });
@@ -156,23 +128,12 @@
           layer.bindPopup(`<strong>${normText(p.name)}</strong><br>${normText(p.description)}`);
         }
       }).addTo(map);
-
-      try { map.fitBounds(layer.getBounds(), { padding:[20,20] }); }
-      catch { map.setView([41.6938,44.8015],14); }
+      try { map.fitBounds(layer.getBounds(), { padding:[20,20] }); } catch { map.setView([41.6938,44.8015],14); }
     }
 
-    // ---------- Загрузка KML (без лишних 404) ----------
+    // --- загрузка KML: ТОЛЬКО относительные пути ---
     const kmlParam = new URLSearchParams(location.search).get('kml');
-    const isRootPage = location.pathname === '/' || location.pathname.endsWith('/index.html');
-
-    // Сначала относительные; абсолютный /doc.kml — только если страница в корне домена
-    const KML_CANDIDATES = [
-      kmlParam,
-      './doc.kml',
-      'doc.kml',
-      '../doc.kml',
-      ...(isRootPage ? ['/doc.kml'] : [])
-    ].filter(Boolean);
+    const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
 
     async function tryFetch(url){
       const r = await fetch(url, { cache: 'no-store' });
@@ -187,10 +148,7 @@
           const txt = await tryFetch(url);
           console.log('[KML] loaded from', url);
           return { txt, url };
-        } catch(e){
-          lastErr = e;
-          // без шумных warn
-        }
+        } catch(e){ lastErr = e; }
       }
       throw lastErr || new Error('KML not found');
     }
@@ -230,10 +188,7 @@
           const geojson = toGeoJSON.kml(kmlXml);
           renderGeoJSON(geojson, styleHrefMap);
           bar.remove();
-        } catch(e){
-          alert('Не удалось загрузить по URL');
-          console.error(e);
-        }
+        } catch(e){ alert('Не удалось загрузить по URL'); console.error(e); }
       });
     }
 
