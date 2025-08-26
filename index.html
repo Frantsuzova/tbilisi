@@ -3,39 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  
-
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP: без инлайна; разрешаем только нужные домены -->
+  <!-- CSP без inline-кода -->
   <meta http-equiv="Content-Security-Policy" content="
-  default-src 'self' https: data:;
-  script-src  'self' https://unpkg.com https://cdn.jsdelivr.net;
-  style-src   'self'  https://unpkg.com https://cdn.jsdelivr.net;
-  img-src     'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
-  connect-src 'self' https:;
-  object-src  'none';
+    default-src 'self' https: data:;
+    script-src  'self' https://unpkg.com https://cdn.jsdelivr.net;
+    style-src   'self' https://unpkg.com https://cdn.jsdelivr.net;
+    img-src     'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
+    connect-src 'self' https:;
+    object-src  'none';
   ">
 
-  <!-- Внешние стили библиотек -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
+  <!-- Vendor CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
-  <!-- Наши стили -->
+  <!-- App CSS -->
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
   <div id="map"></div>
 
-  <!-- Шапка -->
+  <!-- Верхняя панель -->
   <div class="panel panel-header" id="headerPanel">
     <div>
       <div class="title">Мой маршрут Тбилиси</div>
-      <div class="subtitle"><span class="count" id="countTotal">0</span> точек · <span class="count" id="countCat"></span></div>
+      <div class="subtitle">
+        <span class="count" id="countTotal">0</span> точек ·
+        <span class="count" id="countCat"></span>
+      </div>
     </div>
     <div class="actions">
       <button class="btn" id="btnShowAll" title="Показать все точки">Показать всё</button>
@@ -65,12 +64,13 @@
     <div class="legend-group" id="legend"></div>
   </div>
 
-  <!-- Библиотеки -->
+  <!-- Vendor JS: порядок важен -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 
-  <!-- Наш код -->
+  <!-- App JS -->
   <script src="app.js"></script>
 </body>
 </html>
