@@ -20,7 +20,7 @@
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 
-  <!-- Ваш код -->
+  <!-- код -->
   <script>
     // --- Фолбэк-булавка (если персональная PNG не загрузилась) ---
     const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
@@ -66,7 +66,7 @@
       return String(v);
     }
 
-    // Ручные соответствия, если href из KML не содержит номера (заполните при необходимости)
+    // Ручные соответствия, если href из KML не содержит номера (заполнить при необходимости)
     const HREF_TO_ID = Object.create(null);
     // Примеры:
     // HREF_TO_ID["https://maps.gstatic.com/mapfiles/ms2/micons/blue-pushpin.png"] = 7;
@@ -165,10 +165,31 @@
     }
 
     // --- Загрузка KML ---
+    const kmlParam = new URLSearchParams(location.search).get('kml');
+    const isRootPage = location.pathname === '/' || location.pathname.endsWith('/index.html');
     const KML_CANDIDATES = [
-      new URLSearchParams(location.search).get('kml') || '',
-      '/doc.kml', './doc.kml', '../doc.kml'
-    ].filter(Boolean);
+                    kmlParam,
+                    './doc.kml',
+                    'doc.kml',
+                    '../doc.kml',
+                    ...(isRootPage ? ['/doc.kml'] : [])
+                  ].filter(Boolean);
+
+    async function loadKmlAuto(){
+    let lastErr;
+    for (const url of KML_CANDIDATES){
+      try {
+        const txt = await tryFetch(url);
+        console.log('[KML] loaded from', url);
+        return { txt, url };
+      } catch(e){
+        // комментируем подробные warn'ы, чтобы не засорять консоль
+        // console.warn('[KML]', e.message);
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('KML not found');
+  }
 
     async function tryFetch(url){
       const r = await fetch(url, { cache: 'no-store' });
