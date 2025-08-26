@@ -172,3 +172,39 @@ body:not(.ui-hidden) .panel-sidebar{
   width: 240px; border:1px solid var(--panel-border);
   background: var(--chip-bg); border-radius: 8px; padding: 6px 8px; color: var(--text);
 }
+
+/* === FIX: порядок слоёв на мобиле (iOS/Chrome) === */
+
+/* Карта — самый низкий слой */
+#map{
+  position: relative;  /* или fixed; inset:0; если нужен фуллскрин без прокрутки страницы */
+  z-index: 0;
+  transform: translateZ(0);            /* отдельный композитный слой для карты */
+  -webkit-transform: translateZ(0);
+}
+
+/* Все leaflet-слои и контролы ниже наших панелей */
+.leaflet-pane,
+.leaflet-control-container,
+.leaflet-top,
+.leaflet-bottom{
+  z-index: 1000 !important;
+}
+
+/* Наши панели и FAB — гарантированно выше */
+.panel,
+.fab,
+.kml-picker{
+  position: fixed;                     /* выносим из потока и из-под карты */
+  z-index: 3000 !important;            /* выше leaflet */
+  transform: translateZ(0);            /* отдельный композитный слой — фикс для iOS */
+  -webkit-transform: translateZ(0);
+  pointer-events: auto;
+}
+
+/* На случай, если backdrop-filter создавал странный контекст — включаем обе версии */
+.panel{
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+}
+
