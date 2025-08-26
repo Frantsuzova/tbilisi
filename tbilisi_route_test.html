@@ -5,9 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP: блокируем внешние IMG из KML -->
+  <!-- CSP: разрешаем inline CSS/JS, блокируем посторонние IMG -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' https: data:; img-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;">
+        content="
+          default-src 'self' https: data:;
+          script-src  'self' https: 'unsafe-inline';
+          style-src   'self' https: 'unsafe-inline';
+          img-src     'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
+        ">
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -130,7 +135,7 @@
     /* Если IMG просочится в попап — глушим */
     .leaflet-popup-content img { display:none !important; max-width:0 !important; max-height:0 !important; }
 
-    /* --- ВЕРХ ПОВЕРХ КАРТЫ --- */
+    /* Поверх карты и контролов */
     .panel { z-index: 1200; }
     .leaflet-top, .leaflet-bottom { z-index: 1100; }
     #map { position: relative; z-index: 0; }
