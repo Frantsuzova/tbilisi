@@ -1,4 +1,4 @@
-// ---------- Фолбэк-булавки (для легенды и запасного варианта) ----------
+// ---------- Фолбэк-булавки (для легенды) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
@@ -64,7 +64,7 @@ function escapeHtml(s) {
     .replaceAll("'","&#39;");
 }
 
-// ---------- Категории (для фильтров/списка/легенды) ----------
+// ---------- Категории ----------
 function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
@@ -75,11 +75,9 @@ function detectCategory(p){
 }
 const CAT_LABEL = { stairs:"Лестницы", porches:"Парадные", special:"Особые", other:"Прочее" };
 
-// ---------- Стили из KML: styleUrl → href ----------
-const HREF_TO_ID = Object.create(null);
+// ---------- styleUrl → href ----------
 function idFromHref(href){
   if (!href) return null;
-  if (HREF_TO_ID[href]) return HREF_TO_ID[href];
   const fn = href.split('?')[0].split('#')[0].split('/').pop() || "";
   const m = fn.match(/(?:^|[^\d])([1-9]\d{0,2})(?=\D|$)/);
   if (!m) return null;
@@ -114,7 +112,7 @@ function buildStyleHrefMap(kmlXml){
   return byId;
 }
 
-// ---------- Цвет из href (My Maps) и SVG-пин ----------
+// ---------- Цвет из href + SVG-пин ----------
 function extractHexFromHref(href){
   if (!href) return null;
   const m = href.match(/(?:[?&#]color=)(?:0x)?([0-9a-fA-F]{6,8})/);
@@ -152,23 +150,19 @@ function getStyleColor(feature, styleHrefMap){
 function svgPinIcon(hex){
   const fill = (hex || '#2b7bff').toLowerCase();
   const stroke = '#08213a';
-  const w = 26, h = 40;   // размеры пина
-  const ax = Math.round(w/2), ay = h; // якорь внизу
+  const w = 26, h = 40, ax = Math.round(w/2), ay = h;
   const html =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 26 40" aria-hidden="true">
       <defs><filter id="s" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
-        <feOffset dx="0" dy="1" result="o"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dx="0" dy="1" result="o"/>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
       <path filter="url(#s)" d="M13 0C6 0 0.5 5.4 0.5 12.3c0 8.9 10.4 18.8 11.2 19.6.7.7 1.8.7 2.6 0 .8-.8 11.2-10.7 11.2-19.6C25.5 5.4 20 0 13 0z" fill="${fill}" stroke="${stroke}" stroke-width="1"/>
       <circle cx="13" cy="12" r="4.2" fill="#fff" opacity="0.95"/>
     </svg>`;
-  return L.divIcon({
-    className: 'pin-svg',
-    html, iconSize: [w, h], iconAnchor: [ax, ay], popupAnchor: [0, -34]
-  });
+  return L.divIcon({ className: 'pin-svg', html, iconSize: [w, h], iconAnchor: [ax, ay], popupAnchor: [0, -34] });
 }
 
-// ---------- Очистка KML от внешних IMG ----------
+// ---------- Очистка KML/попапы ----------
 function sanitizeKmlString(txt){
   return String(txt)
     .replace(/<img\b[^>]*>/gi, '')
@@ -178,8 +172,7 @@ function sanitizeKmlString(txt){
 function makePopupHtml(name, description) {
   const nameText = escapeHtml(cleanText(name)) || 'Без названия';
   const descText = stripHtmlToText(description);
-  return descText ? `<strong>${nameText}</strong><br>${escapeHtml(descText)}`
-                  : `<strong>${nameText}</strong>`;
+  return descText ? `<strong>${nameText}</strong><br>${escapeHtml(descText)}` : `<strong>${nameText}</strong>`;
 }
 
 // ---------- Карта ----------
@@ -205,12 +198,15 @@ L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
 L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
-// ---------- Данные/слои ----------
-let geoLayer = null;
+// ---------- Глобальные данные ----------
+let geoLayer = null;         // слой точек
+let shapesLayer = null;      // линии/полигоны
 const markersById = new Map();
 let boundsAll = null;
-let allFeatures = [];
+let pointFeatures = [];      // только Point
+let lastSummaryBase = '';    // строка "лестницы X, парадные Y, ..."
 
+// ---------- ID иконки из стиля/порядка ----------
 function computeIconId(feature, styleHrefMap){
   const p = feature.properties || {};
   const href = typeof p.styleUrl === 'string' ? (styleHrefMap[p.styleUrl] || null) : null;
@@ -220,35 +216,41 @@ function computeIconId(feature, styleHrefMap){
   return ((seq % ICONS.count) + 1);
 }
 
+// ---------- Рендер GeoJSON ----------
 function renderGeoJSON(geojson, styleHrefMap){
-  if (Array.isArray(geojson.features)) {
-    geojson.features.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
-  }
-  allFeatures = geojson.features || [];
+  const feats = Array.isArray(geojson.features) ? geojson.features : [];
+  feats.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
 
-  // Нормализуем свойства сразу
-  allFeatures.forEach(f=>{
+  pointFeatures = feats.filter(f => f.geometry && f.geometry.type === 'Point');
+  const shapeFeatures = feats.filter(f => !f.geometry || f.geometry.type !== 'Point');
+
+  pointFeatures.forEach((f,pi)=>{
     const p = f.properties || {};
+    p._ptSeq = pi;
     p.name = cleanText(p.name);
     p.description = stripHtmlToText(p.description);
   });
 
-  geoLayer = L.geoJSON(geojson, {
-    pointToLayer: (feature, latlng) => {
-      // 1) Цвет из стиля твоей карты
-      const hex = getStyleColor(feature, styleHrefMap);
+  if (shapesLayer) { try { map.removeLayer(shapesLayer); } catch(e){} }
+  shapesLayer = shapeFeatures.length
+    ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
+    : null;
 
-      // 2) Базовая иконка — SVG нужного цвета
+  if (geoLayer) { try { map.removeLayer(geoLayer); } catch(e){} }
+  markersById.clear();
+  geoLayer = L.geoJSON(pointFeatures, {
+    pointToLayer: (feature, latlng) => {
+      const hex = getStyleColor(feature, styleHrefMap);
       const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
 
-      // 3) Если есть персональная PNG icon-N.png — она перекрывает SVG
       const id = computeIconId(feature, styleHrefMap);
       const url = `${ICONS.prefix}${id}.${ICONS.ext}`;
       imageExists(url).then(ok => { if (ok) marker.setIcon(personalIcon(id)); });
 
-      markersById.set(feature.properties._seq, marker);
-      marker.featureCat = detectCategory(feature.properties);
-      marker.featureProps = feature.properties;
+      const p = feature.properties || {};
+      markersById.set(p._ptSeq, marker);
+      marker.featureCat = detectCategory(p);
+      marker.featureProps = p;
       return marker;
     },
     onEachFeature: (feature, layer) => {
@@ -257,24 +259,30 @@ function renderGeoJSON(geojson, styleHrefMap){
     }
   }).addTo(map);
 
-  try { boundsAll = geoLayer.getBounds(); if (boundsAll.isValid()) map.fitBounds(boundsAll, { padding:[20,20] }); }
-  catch { map.setView([41.6938,44.8015], 14); }
+  try {
+    const group = L.featureGroup([geoLayer, shapesLayer].filter(Boolean));
+    const b = group.getBounds();
+    if (b.isValid()) { boundsAll = b; map.fitBounds(b, { padding:[20,20] }); }
+    else { map.setView([41.6938,44.8015], 14); }
+  } catch {
+    map.setView([41.6938,44.8015], 14);
+  }
 
   updateCounters();
   buildList();
   buildLegend();
+  applyVisibility(); // сразу применим фильтр по умолчанию
 }
 
-// ---------- UI ----------
+// ---------- Подсчёт/легенда/список ----------
 function updateCounters(){
-  const total = allFeatures.length;
+  const total = pointFeatures.length;
   const cats = { stairs:0, porches:0, special:0, other:0 };
-  allFeatures.forEach(f => { cats[detectCategory(f.properties)]++; });
+  pointFeatures.forEach(f => { cats[detectCategory(f.properties)]++; });
   document.getElementById('countTotal').textContent = total;
-  document.getElementById('countCat').textContent =
-    `лестницы ${cats.stairs}, парадные ${cats.porches}, особые ${cats.special}, прочее ${cats.other}`;
+  lastSummaryBase = `лестницы ${cats.stairs}, парадные ${cats.porches}, особые ${cats.special}, прочее ${cats.other}`;
+  document.getElementById('countCat').textContent = lastSummaryBase;
 }
-
 function buildLegend(){
   const el = document.getElementById('legend');
   el.innerHTML = '';
@@ -291,19 +299,17 @@ function buildLegend(){
     el.appendChild(box);
   });
 }
-
 function buildList(){
   const list = document.getElementById('list');
   list.innerHTML = '';
-  allFeatures.forEach(f=>{
+  pointFeatures.forEach(f=>{
     const p = f.properties || {};
-    const seq = p._seq;
+    const ptIdx = p._ptSeq;
     const cat = detectCategory(p);
 
     const item = document.createElement('div');
     item.className = 'item';
     item.dataset.cat = cat;
-
     item.innerHTML = `
       <h4>${escapeHtml(cleanText(p.name) || 'Без названия')}</h4>
       <div class="meta"></div>
@@ -313,7 +319,7 @@ function buildList(){
     meta.textContent = `${CAT_LABEL[cat]} · ${short}`;
 
     item.addEventListener('click', ()=>{
-      const m = markersById.get(seq);
+      const m = markersById.get(ptIdx);
       if (!m) return;
       map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 17), { duration: .8 });
       setTimeout(()=>m.openPopup(), 850);
@@ -321,47 +327,70 @@ function buildList(){
 
     list.appendChild(item);
   });
-  applyVisibility();
 }
 
+// ---------- Фильтрация/видимость/автозум ----------
+function isMatchProps(p, activeCat, qLower){
+  const cat = detectCategory(p);
+  const name = cleanText(p.name).toLowerCase();
+  const desc = cleanText(p.description).toLowerCase();
+  const matchCat  = (activeCat === 'all') || (cat === activeCat);
+  const matchText = !qLower || name.includes(qLower) || desc.includes(qLower);
+  return matchCat && matchText;
+}
+function fitToVisible(){
+  const group = L.featureGroup();
+  markersById.forEach((marker)=>{
+    if (geoLayer && geoLayer.hasLayer(marker)) group.addLayer(marker);
+  });
+  const b = group.getBounds();
+  if (b.isValid()) map.fitBounds(b, { padding:[20,20] });
+}
 function applyVisibility(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const activeCatBtn = document.querySelector('.chip[data-active="true"]');
   const activeCat = activeCatBtn ? activeCatBtn.dataset.cat : 'all';
 
-  const list = Array.from(document.querySelectorAll('#list .item'));
-  list.forEach(el=>{
-    const cat = el.dataset.cat;
-    const name = el.querySelector('h4').textContent.toLowerCase();
-    const meta = el.querySelector('.meta').textContent.toLowerCase();
-    const matchCat = activeCat==='all' || cat===activeCat;
-    const matchText = !q || name.includes(q) || meta.includes(q);
-    el.classList.toggle('hidden', !(matchCat && matchText));
+  // Список — порядок 1:1 с pointFeatures
+  const items = Array.from(document.querySelectorAll('#list .item'));
+  items.forEach((el, idx)=>{
+    const f = pointFeatures[idx];
+    const p = f?.properties || {};
+    const show = isMatchProps(p, activeCat, q);
+    el.classList.toggle('hidden', !show);
   });
 
-  markersById.forEach((marker)=>{
-    const p = marker.featureProps || {};
-    const cat = marker.featureCat || 'other';
-    const name = cleanText(p.name).toLowerCase();
-    const desc = cleanText(p.description).toLowerCase();
-    const matchCat = activeCat==='all' || cat===activeCat;
-    const matchText = !q || name.includes(q) || desc.includes(q);
-    const shouldShow = matchCat && matchText;
-    if (shouldShow){
+  // Маркеры
+  let visible = 0;
+  markersById.forEach((marker, ptIdx)=>{
+    const f = pointFeatures[ptIdx];
+    const p = f?.properties || {};
+    const show = isMatchProps(p, activeCat, q);
+    if (show){
       if (!geoLayer.hasLayer(marker)) geoLayer.addLayer(marker);
+      visible++;
     } else {
       if (geoLayer.hasLayer(marker)) geoLayer.removeLayer(marker);
     }
   });
+
+  // Обновим «Показано»
+  const sub = document.getElementById('countCat');
+  if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
+  console.info(`[filter] shown ${visible} of ${pointFeatures.length} (cat=${activeCat}, q="${q}")`);
 }
 
-// Кнопки/фильтры
-document.getElementById('search').addEventListener('input', applyVisibility);
+// ---------- UI ----------
+document.getElementById('search').addEventListener('input', ()=> {
+  applyVisibility();
+  // при желании: fitToVisible();
+});
 document.querySelectorAll('.chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
     btn.dataset.active = 'true';
     applyVisibility();
+    fitToVisible(); // автозум по видимым при смене категории
   });
 });
 document.getElementById('btnShowAll').addEventListener('click', ()=>{
@@ -439,7 +468,7 @@ function enableKmlPicker(){
   bar.querySelector('#kmlCloseBtn').addEventListener('click', ()=> bar.remove());
 }
 
-// Bootstrap
+// ---------- Bootstrap ----------
 (async ()=>{
   try {
     const { txt } = await loadKmlAuto();
