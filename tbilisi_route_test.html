@@ -17,125 +17,130 @@
 <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
 <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 <script>
-  // --- Цветные булавки (фолбэк) ---
-  const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
-  const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
-  const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
-  const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
-  const IconYellow = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-yellow.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+  // --- Фолбэк-булавки (если локальная PNG не определена/не найдена) ---
+  const SHADOW="https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
+  const IconBlue  = L.icon({iconUrl:"https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",  shadowUrl:SHADOW,iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});
 
-  // --- Персональные иконки ---
-  const ICONS = {
-    basePath: 'icons/',     // Папка с иконками
-    prefix: 'icon-',        // Имя файла до номера
-    ext: 'png',             // Расширение
-    count: 28,              // Сколько файлов
-    size: [32, 32],         // Подстройте под реальные размеры PNG
-    anchor: [16, 32],       // Точка "острия" — середина по X, низ по Y
-    popupAnchor: [0, -28]
-  };
-
-  const personalIconCache = new Map();
-  function personalIconById(id) {
-    if (!id || id < 1 || id > ICONS.count) return null;
-    if (personalIconCache.has(id)) return personalIconCache.get(id);
-    const icon = L.icon({
-      iconUrl: `${ICONS.basePath}${ICONS.prefix}${id}.${ICONS.ext}`,
-      iconSize: ICONS.size,
-      iconAnchor: ICONS.anchor,
-      popupAnchor: ICONS.popupAnchor
+  // --- Локальные PNG в КОРНЕ: ./icon-1.png ... ./icon-28.png ---
+  const ICONS = { prefix:'icon-', ext:'png', count:28, size:[32,32], anchor:[16,32], popupAnchor:[0,-28] };
+  const iconCache=new Map();
+  function personalIcon(id){
+    if(!id||id<1||id>ICONS.count) return null;
+    if(iconCache.has(id)) return iconCache.get(id);
+    const ic=L.icon({
+      iconUrl:`${ICONS.prefix}${id}.${ICONS.ext}`, // КОРЕНЬ
+      iconSize:ICONS.size, iconAnchor:ICONS.anchor, popupAnchor:ICONS.popupAnchor
     });
-    personalIconCache.set(id, icon);
-    return icon;
+    iconCache.set(id,ic); return ic;
   }
 
-  // — Нормализация текста
-  function normText(v) {
-    if (v == null) return "";
-    if (typeof v === "string") return v;
-    if (Array.isArray(v)) return v.map(normText).join(" ");
-    if (typeof v === "object") return Object.values(v).map(normText).join(" ");
-    return String(v);
+  // --- Утилиты ---
+  const normText=v=>v==null?"":Array.isArray(v)?v.map(normText).join(" "):typeof v==="object"?Object.values(v).map(normText).join(" "):String(v);
+  const fallbackIcon=()=>IconBlue;
+
+  // Явные соответствия, если в href нет номера. ДОПИШИТЕ при необходимости:
+  // Пример: 'https://maps.gstatic.com/mapfiles/ms2/micons/blue-pushpin.png': 7
+  const HREF_TO_ID = Object.create(null);
+
+  // Извлечь номер 1..28 из имени файла href (если он там есть)
+  function inferIdFromHref(href){
+    if(!href) return null;
+    if(HREF_TO_ID[href]) return HREF_TO_ID[href];
+    const name = href.split('?')[0].split('#')[0].split('/').pop(); // файл без query/hash
+    const m = name && name.match(/(\d{1,3})(?!\d)/); // берем последнее число
+    if(!m) return null;
+    const id = parseInt(m[1],10);
+    return (id>=1 && id<=ICONS.count) ? id : null;
   }
 
-  // — Парс номера иконки из name/description
-  function parseIconIdFromProps(p) {
-    const text = (normText(p?.name) + ' ' + normText(p?.description)).toLowerCase();
-    // шаблоны: "#12", "№12", "icon-12", "[12]"
-    const m = text.match(/(?:#|№|\bicon-|\[)(\d{1,3})\b/);
-    if (!m) return null;
-    const n = parseInt(m[1], 10);
-    return Number.isFinite(n) ? n : null;
+  // --- Разбор KML-стилей: styleId -> href ---
+  function buildStyleHrefMap(kmlXml){
+    const byId = Object.create(null);
+
+    // 1) Простые <Style id="..."><IconStyle><Icon><href>...</href>
+    kmlXml.querySelectorAll('Style[id]').forEach(st=>{
+      const id = st.getAttribute('id');
+      const href = st.querySelector('IconStyle Icon href')?.textContent?.trim();
+      if(id && href) byId['#'+id] = href;
+    });
+
+    // 2) <StyleMap id="..."> c Pair key="normal"/"highlight"
+    //    берём normal; если там styleUrl -> разыменуем в byId
+    kmlXml.querySelectorAll('StyleMap[id]').forEach(sm=>{
+      const id = sm.getAttribute('id');
+      let href = null;
+
+      // сначала попробуем прямой href внутри целевого стиля (через styleUrl)
+      const normalUrl = sm.querySelector('Pair > key:nth-child(1):matches(key:contains("normal")), Pair key')
+        ? sm.querySelector('Pair key:contains("normal") ~ styleUrl, Pair:has(> key:contains("normal")) styleUrl')
+        : null;
+      const styleUrlText = normalUrl ? normalUrl.textContent.trim() : null;
+      if(styleUrlText && byId[styleUrlText]){
+        href = byId[styleUrlText];
+      }
+
+      // запасной путь: иногда внутри StyleMap бывает вложенный Style (редко)
+      if(!href){
+        const innerHref = sm.querySelector('IconStyle Icon href')?.textContent?.trim();
+        if(innerHref) href = innerHref;
+      }
+      if(id && href) byId['#'+id] = href;
+    });
+
+    return byId;
   }
 
-  // — Ваши цветовые правила как запасной вариант
-  function fallbackColorIcon(feature) {
-    const name = normText(feature?.properties?.name).toLowerCase();
-    const desc = normText(feature?.properties?.description).toLowerCase();
-    if (name.includes("лестниц") || desc.includes("лестниц")) return IconGreen;
-    if (name.includes("парадн")  || desc.includes("парадн"))  return IconRed;
-    if (name.includes("обсерватор") || desc.includes("обсерватор") ||
-        name.includes("apollo") || name.includes("аполло"))    return IconYellow;
-    return IconBlue;
-  }
-
-  // — Главная функция выбора иконки: персональная > фолбэк
-  function chooseIcon(feature) {
+  // --- Выбор иконки для фичи: из href -> локальный id -> PNG в корне ---
+  function chooseIconForFeature(feature, styleHrefMap){
     const p = feature.properties || {};
-    // 1) Из текста
-    let id = parseIconIdFromProps(p);
-    // 2) Из порядка (если не указан)
-    if (!id) {
-      const seq = Number.isFinite(p._seq) ? (p._seq + 1) : null;
-      if (seq) id = ((seq - 1) % ICONS.count) + 1;
-    }
-    const personal = personalIconById(id);
-    return personal || fallbackColorIcon(feature);
+    // приоритет 1: inline href из KML, пришедший как styleUrl (через карту стилей)
+    const href = p.styleUrl ? styleHrefMap[p.styleUrl] || null : null;
+    const idFromHref = inferIdFromHref(href);
+
+    // приоритет 2: если нет id в href — по порядку, чтобы было стабильно
+    const seq = Number.isFinite(p._seq) ? p._seq : 0;
+    const idBySeq = ((seq % ICONS.count) + 1);
+
+    const id = idFromHref || idBySeq;
+    return personalIcon(id) || fallbackIcon();
   }
 
   // --- Карта ---
   const map = L.map('map');
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+  L.control.locate({position:'topleft',setView:'untilPan',keepCurrentZoomLevel:true,strings:{title:'Показать моё местоположение'}}).addTo(map);
 
-  L.control.locate({
-    position:'topleft', setView:'untilPan', keepCurrentZoomLevel:true,
-    strings:{ title:'Показать моё местоположение' }
-  }).addTo(map);
-
-  // --- Загрузка KML рядом как doc.kml ---
+  // --- Загрузка KML ---
   fetch('doc.kml')
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-    .then(kmlText => {
-      const kmlXml  = new DOMParser().parseFromString(kmlText, 'application/xml');
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(kmlText=>{
+      const kmlXml = new DOMParser().parseFromString(kmlText,'application/xml');
+      const styleHrefMap = buildStyleHrefMap(kmlXml);          // styleId -> href
       const geojson = toGeoJSON.kml(kmlXml);
 
-      // Пронумеруем фичи для стабильной последовательности
-      if (Array.isArray(geojson.features)) {
-        geojson.features.forEach((f, i) => {
-          f.properties = Object.assign({}, f.properties, { _seq: i });
-        });
+      // стабилизируем порядок для резервного варианта
+      if(Array.isArray(geojson.features)){
+        geojson.features.forEach((f,i)=>{ f.properties = Object.assign({}, f.properties, {_seq:i}); });
       }
 
-      const layer = L.geoJSON(geojson, {
-        pointToLayer: (feature, latlng) => L.marker(latlng, { icon: chooseIcon(feature) }),
-        style: { weight: 3 },
+      const layer = L.geoJSON(geojson,{
+        pointToLayer: (feature, latlng) => L.marker(latlng,{ icon: chooseIconForFeature(feature, styleHrefMap) }),
         onEachFeature: (feature, layer) => {
           const p = feature.properties || {};
           layer.bindPopup(`<strong>${normText(p.name)}</strong><br>${normText(p.description)}`);
         }
       }).addTo(map);
 
-      try { map.fitBounds(layer.getBounds(), { padding:[20,20] }); }
-      catch { map.setView([41.6938, 44.8015], 14); }
+      try{ map.fitBounds(layer.getBounds(),{padding:[20,20]}); }
+      catch{ map.setView([41.6938,44.8015],14); }
     })
-    .catch(err => {
-      console.error('KML load error:', err);
-      map.setView([41.6938, 44.8015], 14);
-      alert('Не удалось загрузить doc.kml. Проверь путь/имя файла.');
+    .catch(err=>{
+      console.error('KML load error:',err);
+      map.setView([41.6938,44.8015],14);
+      alert('Не удалось загрузить doc.kml.');
     });
 </script>
+
 
 </body>
 </html>
