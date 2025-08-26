@@ -1,4 +1,4 @@
-// app.js — кластеры, цвета из KML, персональные PNG, фильтры, фиксы мобилы
+// app.js — кластеры, цвета из KML, персональные PNG, фильтры, фиксы iOS
 
 // ---------- Фолбэк-булавки (легенда) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
