@@ -1,6 +1,6 @@
-// app.js — кластеры, цвета из KML, персональные PNG, фильтры, мобильный UI
+// app.js — кластеры, цвета из KML, персональные PNG, фильтры, фиксы мобилы
 
-// ---------- Фолбэк-булавки (для легенды) ----------
+// ---------- Фолбэк-булавки (легенда) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
@@ -178,8 +178,12 @@ function sanitizeKmlString(txt){
     .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
 }
 
-// ---------- Карта ----------
-const map = L.map('map', { zoomControl:false });
+// ---------- Карта (tap:false — фикс iOS жестов) ----------
+const map = L.map('map', {
+  zoomControl: false,
+  tap: false,
+  wheelDebounceTime: 10
+});
 const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 let currentTiles = null;
@@ -202,14 +206,14 @@ L.control.scale({ imperial:false }).addTo(map);
 L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
 // ---------- Глобальные данные ----------
-let shapesLayer = null;      // линии/полигоны
-let clusterGroup = null;     // кластеры точек
-const markersById = new Map();  // ptIdx -> marker
+let shapesLayer = null;
+let clusterGroup = null;
+const markersById = new Map();
 let boundsAll = null;
-let pointFeatures = [];      // только Point
-let lastSummaryBase = '';    // "лестницы X, парадные Y, ..."
+let pointFeatures = [];
+let lastSummaryBase = '';
 
-// ---------- ID иконки из стиля/порядка ----------
+// ---------- Иконка из стиля/порядка ----------
 function computeIconId(feature, styleHrefMap){
   const p = feature.properties || {};
   const href = typeof p.styleUrl === 'string' ? (styleHrefMap[p.styleUrl] || null) : null;
@@ -227,7 +231,6 @@ function renderGeoJSON(geojson, styleHrefMap){
   pointFeatures = feats.filter(f => f.geometry && f.geometry.type === 'Point');
   const shapeFeatures = feats.filter(f => !f.geometry || f.geometry.type !== 'Point');
 
-  // нормализация свойств точек
   pointFeatures.forEach((f,pi)=>{
     const p = f.properties || {};
     p._ptSeq = pi;
@@ -235,13 +238,11 @@ function renderGeoJSON(geojson, styleHrefMap){
     p.description = stripHtmlToText(p.description);
   });
 
-  // линии/полигоны
   if (shapesLayer) { try { map.removeLayer(shapesLayer); } catch(e){} }
   shapesLayer = shapeFeatures.length
     ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
     : null;
 
-  // кластеры: пересоздаём (с фолбэком, если плагин не загрузился)
   if (clusterGroup) { try { map.removeLayer(clusterGroup); } catch(e){} }
   const canCluster = (typeof L.markerClusterGroup === 'function');
   clusterGroup = canCluster
@@ -249,7 +250,6 @@ function renderGeoJSON(geojson, styleHrefMap){
     : L.layerGroup();
   markersById.clear();
 
-  // генерим маркеры и добавляем в кластеры/группу
   const tmp = L.geoJSON(pointFeatures, {
     pointToLayer: (feature, latlng) => {
       const hex = getStyleColor(feature, styleHrefMap);
@@ -273,20 +273,17 @@ function renderGeoJSON(geojson, styleHrefMap){
   tmp.eachLayer(l => clusterGroup.addLayer(l));
   clusterGroup.addTo(map);
 
-  // fitBounds по точкам + линиям
   try {
     const group = L.featureGroup([clusterGroup, shapesLayer].filter(Boolean));
     const b = group.getBounds();
     if (b.isValid()) { boundsAll = b; map.fitBounds(b, { padding:[20,20] }); }
     else { map.setView([41.6938,44.8015], 14); }
-  } catch {
-    map.setView([41.6938,44.8015], 14);
-  }
+  } catch { map.setView([41.6938,44.8015], 14); }
 
   updateCounters();
   buildList();
   buildLegend();
-  applyVisibility(); // применить текущий фильтр
+  applyVisibility();
 }
 
 // ---------- Подсчёт/легенда/список ----------
@@ -367,7 +364,6 @@ function applyVisibility(){
   const activeCatBtn = document.querySelector('.chip[data-active="true"]');
   const activeCat = activeCatBtn ? activeCatBtn.dataset.cat : 'all';
 
-  // Список — порядок 1:1 с pointFeatures
   const items = Array.from(document.querySelectorAll('#list .item'));
   items.forEach((el, idx)=>{
     const f = pointFeatures[idx];
@@ -376,7 +372,6 @@ function applyVisibility(){
     el.classList.toggle('hidden', !show);
   });
 
-  // Маркеры: собрать заново видимые
   clusterGroup.clearLayers();
   let visible = 0;
   pointFeatures.forEach((f)=>{
@@ -393,9 +388,7 @@ function applyVisibility(){
 }
 
 // ---------- UI ----------
-document.getElementById('search').addEventListener('input', ()=> {
-  applyVisibility();
-});
+document.getElementById('search').addEventListener('input', ()=> { applyVisibility(); });
 document.querySelectorAll('.chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
@@ -415,7 +408,7 @@ document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
 });
 
-// Плавающая кнопка «Меню» (мобила)
+// FAB «Меню» (мобила)
 const fab = document.getElementById('fabToggleUI');
 if (fab){
   fab.addEventListener('click', ()=> {
