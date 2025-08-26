@@ -48,12 +48,17 @@ function sanitizeKmlString(txt){
     .replace(/url\((['"]?)https?:\/\/mymaps\.usercontent\.google\.com\/[^)]+?\1\)/gi, 'none')
     .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
 }
-function stripHtmlToText(html) {
+function stripHtmlToText(input) {
+  const html = normText(input);           // <<— сначала нормализуем
   const tmp = document.createElement('div');
   tmp.innerHTML = String(html || '');
   tmp.querySelectorAll('img, picture, source, iframe, video, audio, svg').forEach(el => el.remove());
-  return (tmp.textContent || '').replace(/\s+\n/g, '\n').replace(/\s{2,}/g, ' ').trim();
+  return (tmp.textContent || '')
+    .replace(/\s+\n/g, '\n')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
+
 function escapeHtml(s) {
   return String(s || '')
     .replaceAll('&','&amp;')
