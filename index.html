@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP без inline-кода -->
+  <!-- CSP: без inline CSS/JS -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https: data:;
     script-src  'self' https://unpkg.com https://cdn.jsdelivr.net;
@@ -13,6 +13,7 @@
     img-src     'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
     connect-src 'self' https:;
     object-src  'none';
+    frame-ancestors 'none';
   ">
 
   <!-- Vendor CSS -->
@@ -22,12 +23,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <!-- App CSS -->
-  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="app.css?v=20250826a" />
 </head>
 <body>
   <div id="map"></div>
-  <button id="fabToggleUI" class="fab" aria-label="Меню">Меню</button>
-
 
   <!-- Верхняя панель -->
   <div class="panel panel-header" id="headerPanel">
@@ -66,6 +65,9 @@
     <div class="legend-group" id="legend"></div>
   </div>
 
+  <!-- Кнопка меню для мобилы -->
+  <button id="fabToggleUI" class="fab" aria-label="Меню">Меню</button>
+
   <!-- Vendor JS: порядок важен -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
@@ -73,6 +75,6 @@
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 
   <!-- App JS -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20250826a"></script>
 </body>
 </html>
