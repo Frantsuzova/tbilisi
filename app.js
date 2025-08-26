@@ -418,6 +418,22 @@ document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
 });
 
+// Плавающая кнопка «Меню» для мобилы
+const fab = document.getElementById('fabToggleUI');
+if (fab){
+  fab.addEventListener('click', ()=> {
+    document.body.classList.toggle('ui-hidden'); // скрыть/показать панели
+  });
+}
+
+// по умолчанию на мобиле панели видимы
+function ensureMobileUI(){
+  if (window.innerWidth <= 780) document.body.classList.remove('ui-hidden');
+}
+ensureMobileUI();
+window.addEventListener('resize', ensureMobileUI);
+
+
 // ---------- Загрузка KML ----------
 const kmlParam = new URLSearchParams(location.search).get('kml');
 const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
