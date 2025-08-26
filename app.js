@@ -27,7 +27,20 @@ function imageExists(url){
 }
 
 // ====== Утилиты ======
-const normText = v => v==null ? "" : (typeof v==="string" ? v : Array.isArray(v) ? v.map(normText).join(" ") : (typeof v==="object" ? Object.values(v).map(normText).join(" ") : String(v)));
+function normText(v){
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return String(v);
+  if (Array.isArray(v)) return v.map(normText).filter(Boolean).join(" ");
+  if (typeof v === "object") {
+    // Частые кейсы из toGeoJSON / KML
+    if ("value" in v) return normText(v.value);
+    if ("text"  in v) return normText(v.text);
+    // Безопасная свёртка без String(obj):
+    return Object.values(v).map(normText).filter(Boolean).join(" ");
+  }
+  return "";
+}
 
 function sanitizeKmlString(txt){
   return String(txt)
