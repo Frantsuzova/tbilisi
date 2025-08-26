@@ -1,4 +1,4 @@
-// ---------- Фолбэк-булавки ----------
+// ---------- Фолбэк-булавки (для легенды и запасного варианта) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
@@ -64,7 +64,7 @@ function escapeHtml(s) {
     .replaceAll("'","&#39;");
 }
 
-// ---------- Категории/иконки ----------
+// ---------- Категории (для фильтров/списка/легенды) ----------
 function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
@@ -75,7 +75,7 @@ function detectCategory(p){
 }
 const CAT_LABEL = { stairs:"Лестницы", porches:"Парадные", special:"Особые", other:"Прочее" };
 
-// ---------- Стили из KML ----------
+// ---------- Стили из KML: styleUrl → href ----------
 const HREF_TO_ID = Object.create(null);
 function idFromHref(href){
   if (!href) return null;
@@ -112,6 +112,60 @@ function buildStyleHrefMap(kmlXml){
     if (id && href) byId['#'+id] = href;
   });
   return byId;
+}
+
+// ---------- Цвет из href (My Maps) и SVG-пин ----------
+function extractHexFromHref(href){
+  if (!href) return null;
+  const m = href.match(/(?:[?&#]color=)(?:0x)?([0-9a-fA-F]{6,8})/);
+  if (m) {
+    const hex = m[1].toLowerCase();
+    return '#' + (hex.length === 8 ? hex.slice(2) : hex).padStart(6, '0');
+  }
+  return null;
+}
+function guessNamedColorFromHref(href){
+  if (!href) return null;
+  const s = href.toLowerCase();
+  if (/(red|_rd\b|-red|red-)/.test(s)) return '#d33';
+  if (/(blue|blu|ltblue|ltblu)/.test(s)) return '#2b7bff';
+  if (/(green|grn)/.test(s)) return '#2cad5b';
+  if (/(yellow|ylw)/.test(s)) return '#f5c400';
+  if (/(orange|ora)/.test(s)) return '#ff8a00';
+  if (/(violet|purple)/.test(s)) return '#8a5cff';
+  if (/(pink|magenta)/.test(s)) return '#ff4fa3';
+  if (/(gray|grey|gry)/.test(s)) return '#7a7a7a';
+  if (/black/.test(s)) return '#111111';
+  if (/(white|wht)/.test(s)) return '#ffffff';
+  return null;
+}
+function getStyleColor(feature, styleHrefMap){
+  const p = feature?.properties || {};
+  const styleUrl = typeof p.styleUrl === 'string' ? p.styleUrl : null;
+  const href = styleUrl ? (styleHrefMap[styleUrl] || null) : null;
+  let hex = extractHexFromHref(href);
+  if (hex) return hex;
+  hex = guessNamedColorFromHref(href);
+  if (hex) return hex;
+  return null;
+}
+function svgPinIcon(hex){
+  const fill = (hex || '#2b7bff').toLowerCase();
+  const stroke = '#08213a';
+  const w = 26, h = 40;   // размеры пина
+  const ax = Math.round(w/2), ay = h; // якорь внизу
+  const html =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 26 40" aria-hidden="true">
+      <defs><filter id="s" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+        <feOffset dx="0" dy="1" result="o"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path filter="url(#s)" d="M13 0C6 0 0.5 5.4 0.5 12.3c0 8.9 10.4 18.8 11.2 19.6.7.7 1.8.7 2.6 0 .8-.8 11.2-10.7 11.2-19.6C25.5 5.4 20 0 13 0z" fill="${fill}" stroke="${stroke}" stroke-width="1"/>
+      <circle cx="13" cy="12" r="4.2" fill="#fff" opacity="0.95"/>
+    </svg>`;
+  return L.divIcon({
+    className: 'pin-svg',
+    html, iconSize: [w, h], iconAnchor: [ax, ay], popupAnchor: [0, -34]
+  });
 }
 
 // ---------- Очистка KML от внешних IMG ----------
@@ -181,10 +235,17 @@ function renderGeoJSON(geojson, styleHrefMap){
 
   geoLayer = L.geoJSON(geojson, {
     pointToLayer: (feature, latlng) => {
-      const marker = L.marker(latlng, { icon: IconBlue });
+      // 1) Цвет из стиля твоей карты
+      const hex = getStyleColor(feature, styleHrefMap);
+
+      // 2) Базовая иконка — SVG нужного цвета
+      const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
+
+      // 3) Если есть персональная PNG icon-N.png — она перекрывает SVG
       const id = computeIconId(feature, styleHrefMap);
       const url = `${ICONS.prefix}${id}.${ICONS.ext}`;
       imageExists(url).then(ok => { if (ok) marker.setIcon(personalIcon(id)); });
+
       markersById.set(feature.properties._seq, marker);
       marker.featureCat = detectCategory(feature.properties);
       marker.featureProps = feature.properties;
