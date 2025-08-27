@@ -4,10 +4,9 @@
   --text: #0f172a;
   --muted: #475569;
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #2563eb;
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
-  --accent: #0ea5e9;
+  --accent: #0ea5e9; /* цвет кнопки и активного chip */
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -16,7 +15,6 @@
     --text: #e5e7eb;
     --muted: #94a3b8;
     --chip-bg: rgba(255,255,255,.06);
-    --chip-active: #60a5fa;
     --shadow: 0 8px 24px rgba(0,0,0,.40);
     --accent: #22d3ee;
   }
@@ -43,9 +41,11 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   border:1px solid var(--panel-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  pointer-events:none;
+  pointer-events:none;               /* по умолчанию — «прозрачна» */
 }
 .panel *{ pointer-events:auto; }
+.panel-header{ pointer-events:auto; } /* хэдер кликабелен полностью */
+.panel-sidebar{ pointer-events:auto; } /* сайдбар кликабелен/скроллится */
 
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
@@ -81,7 +81,7 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   background:var(--chip-bg);
   border-radius:999px; padding:6px 10px; cursor:pointer; font-size:12px;
 }
-.chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
+.chip[data-active="true"]{ background:var(--accent); color:#04121a; border-color:transparent; }
 
 /* Сайдбар */
 .panel-sidebar{
@@ -91,7 +91,13 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 }
 .sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
 .sidebar-title{ font-weight:600; }
-.sidebar-body{ padding:8px 8px 12px; overflow:auto; }
+.sidebar-body{
+  padding:8px 8px 12px;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+  touch-action: pan-y;
+  flex: 1 1 auto;                    /* занимает остаток */
+}
 .item{
   display:grid; grid-template-columns:1fr auto; gap:4px 8px;
   padding:10px 10px; border-radius:12px; border:1px solid var(--panel-border);
