@@ -73,8 +73,12 @@ function detectCategory(p){
   const desc = cleanText(p?.description).toLowerCase();
 
   // 1) Храмы/церкви
-  if (/(храм|церкв|собор|монастыр|кост(?:е|ё)л)/.test(name) || /(храм|церкв|собор|монастыр|кост(?:е|ё)л)/.test(desc))
+  if (
+    /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(name) ||
+    /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(desc)
+  ) {
     return 'temples';
+  }
 
   // 2) Лестницы
   if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';
