@@ -1,4 +1,5 @@
-/* Фолбэк-булавки для легенды/иконок по умолчанию (легенды уже нет, но оставим ссылки) */
+// Цвета из KML, персональные иконки, фильтры, фиксы iOS. Легенды нет.
+
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
@@ -26,7 +27,7 @@ function imageExists(url){
   imgExistsCache.set(url, p); return p;
 }
 
-/* Текст/HTML нормализация */
+/* Текст/HTML */
 function toText(v){
   if (v == null) return '';
   if (typeof v === 'string') return v;
@@ -72,21 +73,19 @@ function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
 
-  // 1) Храмы/церкви
-  if (
-    /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(name) ||
-    /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(desc)
-  ) {
+  // Храмы/церкви — учитываем «церковь», «церкви», «церковный», и т.п.
+  if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(name) ||
+      /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(desc)) {
     return 'temples';
   }
 
-  // 2) Лестницы
+  // Лестницы
   if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';
 
-  // 3) Парадные
+  // Парадные
   if (name.includes('парадн')  || desc.includes('парадн'))  return 'porches';
 
-  // 4) Остальное
+  // Остальное
   return 'other';
 }
 const CAT_LABEL = {
@@ -402,15 +401,24 @@ function applyVisibility(){
 }
 
 /* UI */
-document.getElementById('search').addEventListener('input', ()=> { applyVisibility(); });
+const searchInput = document.getElementById('search');
+
+searchInput.addEventListener('input', ()=> { applyVisibility(); });
+
 document.querySelectorAll('.chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
+    // активируем выбранную категорию
     document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
     btn.dataset.active = 'true';
+
+    // Сбрасываем поиск, чтобы категория показала все свои метки
+    if (searchInput.value.trim() !== '') searchInput.value = '';
+
     applyVisibility();
     fitToVisible();
   });
 });
+
 document.getElementById('btnShowAll').addEventListener('click', ()=>{
   if (boundsAll && boundsAll.isValid()) map.fitBounds(boundsAll, { padding:[20,20] });
 });
@@ -453,7 +461,7 @@ async function loadKmlAuto(){
   throw lastErr || new Error('KML not found');
 }
 
-/* Пикер KML */
+/* Пикер KML (если нет файла) */
 function enableKmlPicker(){
   const bar = document.createElement('div');
   bar.className = 'panel kml-picker';
