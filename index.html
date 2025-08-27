@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP без inline и frame-ancestors -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https: data:;
     script-src  'self' https://unpkg.com https://cdn.jsdelivr.net;
@@ -15,12 +14,9 @@
     object-src  'none';
   ">
 
-  <!-- Vendor CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
-
-  <!-- App CSS -->
-  <link rel="stylesheet" href="app.css?v=iosmove1" />
+  <link rel="stylesheet" href="app.css?v=ioslight2" />
 </head>
 <body>
   <div id="map"></div>
@@ -57,20 +53,12 @@
     <div class="sidebar-body" id="list"></div>
   </aside>
 
-  <!-- Легенда -->
-  <div class="panel panel-legend">
-    <div class="legend-group" id="legend"></div>
-  </div>
-
   <!-- FAB Меню для мобилы -->
   <button id="fabToggleUI" class="fab" aria-label="Меню">Меню</button>
 
-  <!-- Vendor JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
-
-  <!-- App JS -->
-  <script src="app.js?v=iosmove1"></script>
+  <script src="app.js?v=ioslight2"></script>
 </body>
 </html>
