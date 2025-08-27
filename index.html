@@ -2,7 +2,10 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1"
+  />
   <title>Мой маршрут Тбилиси</title>
 
   <!-- CSP без frame-ancestors и без inline -->
@@ -18,11 +21,9 @@
   <!-- Vendor CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <!-- App CSS -->
-  <link rel="stylesheet" href="app.css?v=iosfix2" />
+  <link rel="stylesheet" href="app.css?v=iosfinal" />
 </head>
 <body>
   <div id="map"></div>
@@ -69,11 +70,10 @@
 
   <!-- Vendor JS: порядок важен -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 
   <!-- App JS -->
-  <script src="app.js?v=iosfix2"></script>
+  <script src="app.js?v=iosfinal"></script>
 </body>
 </html>
