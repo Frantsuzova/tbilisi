@@ -1,12 +1,11 @@
-// Без кластеров. Цвета из KML, персональные иконки, фильтры, фиксы iOS.
-// Легенда удалена.
-
+/* Фолбэк-булавки для легенды/иконок по умолчанию (легенды уже нет, но оставим ссылки) */
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconYellow = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-yellow.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 
+/* Персональные PNG */
 const ICONS = { prefix: 'icon-', ext: 'png', count: 28, size: [32,32], anchor: [16,32], popupAnchor: [0,-28] };
 const iconCache = new Map();
 function personalIcon(id){
@@ -27,7 +26,7 @@ function imageExists(url){
   imgExistsCache.set(url, p); return p;
 }
 
-/* Текст/HTML */
+/* Текст/HTML нормализация */
 function toText(v){
   if (v == null) return '';
   if (typeof v === 'string') return v;
@@ -72,12 +71,26 @@ function makePopupHtml(name, description) {
 function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
+
+  // 1) Храмы/церкви
+  if (/(храм|церкв|собор|монастыр|кост(?:е|ё)л)/.test(name) || /(храм|церкв|собор|монастыр|кост(?:е|ё)л)/.test(desc))
+    return 'temples';
+
+  // 2) Лестницы
   if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';
+
+  // 3) Парадные
   if (name.includes('парадн')  || desc.includes('парадн'))  return 'porches';
-  if (name.includes('обсерватор') || name.includes('apollo') || name.includes('аполло')) return 'special';
+
+  // 4) Остальное
   return 'other';
 }
-const CAT_LABEL = { stairs:"Лестницы", porches:"Парадные", special:"Особые", other:"Прочее" };
+const CAT_LABEL = {
+  stairs:"Лестницы",
+  porches:"Парадные",
+  temples:"Храмы",
+  other:"Остальное"
+};
 
 /* styleUrl → href */
 function idFromHref(href){
@@ -305,10 +318,10 @@ function renderGeoJSON(geojson, styleHrefMap){
 /* Подсчёт/список */
 function updateCounters(){
   const total = pointFeatures.length;
-  const cats = { stairs:0, porches:0, special:0, other:0 };
+  const cats = { stairs:0, porches:0, temples:0, other:0 };
   pointFeatures.forEach(f => { cats[detectCategory(f.properties)]++; });
   document.getElementById('countTotal').textContent = total;
-  lastSummaryBase = `лестницы ${cats.stairs}, парадные ${cats.porches}, особые ${cats.special}, прочее ${cats.other}`;
+  lastSummaryBase = `лестницы ${cats.stairs}, парадные ${cats.porches}, храмы ${cats.temples}, остальное ${cats.other}`;
   document.getElementById('countCat').textContent = lastSummaryBase;
 }
 function buildList(){
