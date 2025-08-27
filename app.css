@@ -17,233 +17,172 @@
     --muted: #94a3b8;
     --chip-bg: rgba(255,255,255,.06);
     --chip-active: #60a5fa;
-    --shadow: 0 8px 24px rgba(0,0,0,.4);
+    --shadow: 0 8px 24px rgba(0,0,0,.40);
     --accent: #22d3ee;
   }
 }
 
-/* База */
-html, body, #map { height: 100%; margin: 0; padding: 0; }
-body { color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+/* ===== БАЗА / КАРТА ===== */
+html, body { height:100%; margin:0; padding:0; overflow:hidden; }
+#map { position:absolute; inset:0; z-index:0; }
+body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
 
-/* Карта — фикс фуллскрин, чтобы не «дрожал» боди */
-#map { position: fixed; inset: 0; z-index: 0; }
-.leaflet-top, .leaflet-bottom { z-index: 1100; }
+/* Leaflet слои ниже нашего UI */
+.leaflet-pane,
+.leaflet-control-container,
+.leaflet-top,
+.leaflet-bottom { z-index:1000 !important; }
+.leaflet-marker-pane { z-index:1050 !important; }
 
-/* Панели */
+/* ===== ПАНЕЛИ / UI ===== */
 .panel{
-  position: fixed;
-  z-index: 4000; /* выше leaflet */
+  position:fixed;
+  z-index:5000;                 /* всегда выше карты и её контролов */
   backdrop-filter: blur(8px) saturate(1.2);
   -webkit-backdrop-filter: blur(8px) saturate(1.2);
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  background:var(--panel-bg);
+  border:1px solid var(--panel-border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
 
-  /* критично для мобилы: фон панели «прозрачен» для карты, кликабельны только элементы внутри */
-  pointer-events: none;
+  /* важное: чтобы жесты карты проходили сквозь свободные места панели */
+  pointer-events:none;
 }
-.panel *{ pointer-events: auto; } /* кнопки/инпуты работают */
+.panel *{ pointer-events:auto; } /* кликаемы только элементы внутри */
 
-/* Верхняя панель */
 .panel-header{
-  top: calc(12px + env(safe-area-inset-top));
-  left: 12px;
-  right: 360px;
-  padding: 12px 14px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px 12px;
-  align-items: center;
+  top:calc(12px + env(safe-area-inset-top));
+  left:12px; right:360px;
+  padding:12px 14px;
+  display:grid; grid-template-columns:1fr auto;
+  gap:10px 12px; align-items:center;
 }
-.title{ font-weight: 700; letter-spacing:.2px; }
-.subtitle{ color: var(--muted); font-size: 12px; }
+.title{ font-weight:700; letter-spacing:.2px; }
+.subtitle{ color:var(--muted); font-size:12px; }
 .actions{ display:flex; gap:8px; align-items:center; }
+
 .btn{
   border:1px solid var(--panel-border);
-  background: var(--chip-bg);
-  border-radius: 999px;
-  padding: 6px 10px;
-  cursor: pointer;
-  color: var(--text);
-  transition: .15s ease;
-  user-select: none;
+  background:var(--chip-bg);
+  border-radius:999px;
+  padding:6px 10px;
+  cursor:pointer; user-select:none;
+  color:var(--text); transition:.15s ease;
 }
-.btn:hover{ transform: translateY(-1px); }
-.btn-primary{ background: var(--accent); color:#04121a; border-color: transparent; }
-.btn-primary:hover{ filter: brightness(1.05); }
+.btn:hover{ transform:translateY(-1px); }
+.btn-primary{ background:var(--accent); color:#04121a; border-color:transparent; }
+.btn-primary:hover{ filter:brightness(1.05); }
 
-/* Фильтры / поиск */
-.filters{ grid-column: 1 / -1; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.filters{ grid-column:1 / -1; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .search{
-  min-width: 220px; flex:1 1 260px;
+  min-width:220px; flex:1 1 260px;
   border:1px solid var(--panel-border);
-  background: var(--chip-bg);
-  border-radius: 10px;
-  padding: 8px 10px;
-  color:var(--text);
-  outline:none;
+  background:var(--chip-bg);
+  border-radius:10px; padding:8px 10px; color:var(--text); outline:none;
 }
 .chip{
   border:1px solid var(--panel-border);
-  background: var(--chip-bg);
-  border-radius: 999px;
-  padding: 6px 10px;
-  cursor:pointer;
-  font-size: 12px;
+  background:var(--chip-bg);
+  border-radius:999px; padding:6px 10px; cursor:pointer; font-size:12px;
 }
-.chip[data-active="true"]{ background: var(--chip-active); color:#031018; border-color: transparent; }
+.chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
 
-/* Сайдбар */
 .panel-sidebar{
-  top: calc(12px + env(safe-area-inset-top));
-  right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom));
-  width: 320px;
-  display:flex; flex-direction:column;
-  overflow:hidden;
+  top:calc(12px + env(safe-area-inset-top));
+  right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
+  width:320px; display:flex; flex-direction:column; overflow:hidden;
 }
-.sidebar-head{ padding: 12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
+.sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
 .sidebar-title{ font-weight:600; }
-.sidebar-body{ padding: 8px 8px 12px; overflow:auto; }
+.sidebar-body{ padding:8px 8px 12px; overflow:auto; }
 .item{
-  display:grid; grid-template-columns: 1fr auto; gap:4px 8px;
-  padding:10px 10px; border-radius:12px; border:1px solid var(--panel-border); background: rgba(0,0,0,.03);
-  margin-bottom:8px; cursor:pointer;
+  display:grid; grid-template-columns:1fr auto; gap:4px 8px;
+  padding:10px 10px; border-radius:12px; border:1px solid var(--panel-border);
+  background:rgba(0,0,0,.03); margin-bottom:8px; cursor:pointer;
 }
-@media (prefers-color-scheme: dark){ .item{ background: rgba(255,255,255,.04); } }
-.item h4{ margin:0; font-size: 13px; font-weight:600; }
+@media (prefers-color-scheme: dark){ .item{ background:rgba(255,255,255,.06); } }
+.item h4{ margin:0; font-size:13px; font-weight:600; }
 .item .meta{ grid-column:1/-1; color:var(--muted); font-size:12px; }
 
-/* Легенда */
 .panel-legend{
-  left: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
-  max-width: 420px; padding:10px 12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+  left:12px; bottom:calc(12px + env(safe-area-inset-bottom));
+  max-width:420px; padding:10px 12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
 }
 .legend-group{ display:flex; gap:10px; flex-wrap:wrap; }
 .legend{
-  display:flex; gap:6px; align-items:center; background: var(--chip-bg); border:1px solid var(--panel-border);
+  display:flex; gap:6px; align-items:center;
+  background:var(--chip-bg); border:1px solid var(--panel-border);
   padding:6px 10px; border-radius:999px; font-size:12px;
 }
 .legend img{ width:18px; height:18px; display:block; }
 
-/* FAB */
+/* FAB (моб.) */
 .fab{
-  position: fixed;
-  right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom));
-  z-index: 5000; /* всегда над панелями */
-  border: none;
-  background: var(--accent);
-  color: #04121a;
-  border-radius: 999px;
-  padding: 12px 14px;
-  font-weight: 700;
-  box-shadow: var(--shadow);
-  pointer-events: auto;
+  position:fixed; right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
+  z-index:6000; border:none; background:var(--accent); color:#04121a;
+  border-radius:999px; padding:12px 14px; font-weight:700; box-shadow:var(--shadow);
+  pointer-events:auto;
 }
-@media (min-width: 781px){ .fab{ display:none; } }
+@media (min-width:781px){ .fab{ display:none; } }
 
-/* Состояние скрытого UI */
+/* Скрытие UI */
 body.ui-hidden .panel-header,
 body.ui-hidden .panel-legend,
 body.ui-hidden .panel-sidebar{
-  opacity: 0; pointer-events: none; transform: translateY(6px);
-  transition: opacity .15s ease, transform .15s ease;
+  opacity:0; pointer-events:none; transform:translateY(6px);
+  transition:opacity .15s ease, transform .15s ease;
 }
 body:not(.ui-hidden) .panel-header,
 body:not(.ui-hidden) .panel-legend,
 body:not(.ui-hidden) .panel-sidebar{
-  opacity: 1; transform: none; transition: opacity .15s ease, transform .15s ease;
+  opacity:1; transform:none; transition:opacity .15s ease, transform .15s ease;
 }
 
 /* Адаптив */
-@media (max-width: 980px){
-  .panel-header{ right: 12px; }
-  .panel-sidebar{ width: 300px; }
+@media (max-width:980px){
+  .panel-header{ right:12px; }
+  .panel-sidebar{ width:300px; }
 }
-@media (max-width: 780px){
-  .panel-header{ left: 12px; right: 12px; }
+@media (max-width:780px){
+  .panel-header{ left:12px; right:12px; }
   .panel-sidebar{
-    left: 12px; right: 12px; width: auto;
-    top: auto; height: 45vh;
+    left:12px; right:12px; width:auto;
+    top:auto; height:45vh;       /* «нижний лист» */
   }
+  /* чтобы ничего не перекрывало панели на телефоне — можно скрыть служебные контролы */
+  .leaflet-control-attribution,
+  .leaflet-control-scale{ display:none !important; }
 }
 
 /* Разное */
 .hidden{ display:none !important; }
 .count{ font-variant-numeric: tabular-nums; }
-.leaflet-popup-content img { display:none !important; max-width:0 !important; max-height:0 !important; }
+.leaflet-popup-content img{ display:none !important; max-width:0 !important; max-height:0 !important; }
 
 /* Пикер KML */
 .kml-picker{
-  top: calc(12px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
-  padding: 8px 10px; display:flex; gap:8px; align-items:center;
+  top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+  padding:8px 10px; display:flex; gap:8px; align-items:center;
 }
 .kml-url{
-  width: 240px; border:1px solid var(--panel-border);
-  background: var(--chip-bg); border-radius: 8px; padding: 6px 8px; color: var(--text);
+  width:240px; border:1px solid var(--panel-border);
+  background:var(--chip-bg); border-radius:8px; padding:6px 8px; color:var(--text);
 }
 
-/* Leaflet ниже UI (на всякий) */
-.leaflet-pane,
-.leaflet-control-container,
-.leaflet-top,
-.leaflet-bottom{ z-index: 1200 !important; }
-
-/* iOS: убираем blur/transform у панелей, поднимаем их максимально; карта жесты обрабатывает сама */
+/* ===== iOS OVERRIDES =====
+   Убираем backdrop-filter/transform у панелей (частая причина «ухода под карту»),
+   и гарантируем, что жесты обрабатывает Leaflet, а не страница. */
 @supports (-webkit-touch-callout: none) {
-  .panel,
-  .fab,
-  .kml-picker{
-    z-index: 2147483647 !important;
-    transform: none !important;
-    -webkit-transform: none !important;
-  }
-  .panel{
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    background: rgba(28,35,45,.92) !important;
+  .panel, .fab, .kml-picker{
+    z-index:2147483647 !important;        /* максимум */
+    transform:none !important;
+    -webkit-transform:none !important;
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+    background:rgba(28,35,45,.92) !important; /* без blur, чтобы не ломался композитинг */
   }
   .leaflet-container{
-    touch-action: none !important; /* отдать события Leaflet */
-    -ms-touch-action: none !important;
+    touch-action:none !important;         /* события — в Leaflet */
+    -ms-touch-action:none !important;
   }
 }
-
-/* ===== DEBUG (временные рамки) — добавить в самый конец app.css ===== */
-* { outline: 0 !important; }
-
-/* Карта — лаймовая рамка */
-#map,
-.leaflet-container { outline: 2px solid lime !important; }
-
-/* Слои Leaflet — оранжевые пунктирные */
-.leaflet-pane,
-.leaflet-control-container,
-.leaflet-top,
-.leaflet-bottom { outline: 2px dashed orange !important; }
-
-/* Наш UI (панели/кнопка/пикер) — красные рамки */
-.panel,
-.fab,
-.kml-picker { outline: 2px solid red !important; }
-
-/* Для iOS можно добавить фоновую «вуаль» панелям, чтобы было видно их площадь */
-@supports (-webkit-touch-callout: none) {
-  .panel,
-  .fab,
-  .kml-picker {
-    background-image: repeating-linear-gradient(
-      45deg, rgba(255,0,0,.10) 0 8px, rgba(255,0,0,.18) 8px 16px
-    ) !important;
-  }
-}
-
-/* ====== ВРЕМЕННЫЙ ТЕСТ: если включить — ВСЕ панели перестанут ловить тачи.
-   Нужен только чтобы проверить, оживет ли карта под ними. Потом убрать! ====== */
-/*
-.panel, .panel * , .fab, .kml-picker { pointer-events: none !important; }
-*/
-
