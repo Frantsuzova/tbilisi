@@ -2,18 +2,15 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP без frame-ancestors и без inline -->
+  <!-- CSP без inline и frame-ancestors -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https: data:;
     script-src  'self' https://unpkg.com https://cdn.jsdelivr.net;
     style-src   'self' https://unpkg.com https://cdn.jsdelivr.net;
-    img-src     'self' data: https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
+    img-src     'self' data: https://unpkg.com https://cdn.jsdelivr.net https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
     connect-src 'self' https:;
     object-src  'none';
   ">
@@ -23,7 +20,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 
   <!-- App CSS -->
-  <link rel="stylesheet" href="app.css?v=iosfinal" />
+  <link rel="stylesheet" href="app.css?v=iosmove1" />
 </head>
 <body>
   <div id="map"></div>
@@ -68,12 +65,12 @@
   <!-- FAB Меню для мобилы -->
   <button id="fabToggleUI" class="fab" aria-label="Меню">Меню</button>
 
-  <!-- Vendor JS: порядок важен -->
+  <!-- Vendor JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 
   <!-- App JS -->
-  <script src="app.js?v=iosfinal"></script>
+  <script src="app.js?v=iosmove1"></script>
 </body>
 </html>
