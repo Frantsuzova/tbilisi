@@ -190,6 +190,19 @@ const map = L.map('map', {
   wheelDebounceTime: 10,
   inertia: true
 });
+// ЧЁРНАЯ КАРТА (CARTO Dark без подписей + слой только с подписями)
+const cartoDarkNoLabels = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+  { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap &copy; CARTO' }
+);
+const cartoDarkOnlyLabels = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+  { subdomains: 'abcd', maxZoom: 20, opacity: 0.9, attribution: '&copy; OpenStreetMap &copy; CARTO' }
+);
+
+// Самый «чёрный» вариант: фон + подписи
+const cartoBlack = L.layerGroup([cartoDarkNoLabels, cartoDarkOnlyLabels]).addTo(map);
+
 const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 let currentTiles = null;
