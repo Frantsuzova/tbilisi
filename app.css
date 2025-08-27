@@ -25,20 +25,26 @@
 /* База */
 html, body, #map { height: 100%; margin: 0; padding: 0; }
 body { color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+
+/* Карта — фикс фуллскрин, чтобы не «дрожал» боди */
 #map { position: fixed; inset: 0; z-index: 0; }
 .leaflet-top, .leaflet-bottom { z-index: 1100; }
 
 /* Панели */
 .panel{
   position: fixed;
-  z-index: 1400;
+  z-index: 4000; /* выше leaflet */
   backdrop-filter: blur(8px) saturate(1.2);
   -webkit-backdrop-filter: blur(8px) saturate(1.2);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+
+  /* критично для мобилы: фон панели «прозрачен» для карты, кликабельны только элементы внутри */
+  pointer-events: none;
 }
+.panel *{ pointer-events: auto; } /* кнопки/инпуты работают */
 
 /* Верхняя панель */
 .panel-header{
@@ -127,7 +133,7 @@ body { color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Ro
   position: fixed;
   right: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom));
-  z-index: 1500;
+  z-index: 5000; /* всегда над панелями */
   border: none;
   background: var(--accent);
   color: #04121a;
@@ -135,6 +141,7 @@ body { color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Ro
   padding: 12px 14px;
   font-weight: 700;
   box-shadow: var(--shadow);
+  pointer-events: auto;
 }
 @media (min-width: 781px){ .fab{ display:none; } }
 
@@ -179,34 +186,28 @@ body:not(.ui-hidden) .panel-sidebar{
   background: var(--chip-bg); border-radius: 8px; padding: 6px 8px; color: var(--text);
 }
 
-/* Слои Leaflet относительно UI */
+/* Leaflet ниже UI (на всякий) */
 .leaflet-pane,
 .leaflet-control-container,
 .leaflet-top,
 .leaflet-bottom{ z-index: 1200 !important; }
-.marker-cluster, .leaflet-marker-pane{ z-index: 1250 !important; }
-.panel, .fab, .kml-picker{
-  z-index: 4000 !important;
-  pointer-events: auto;
-}
 
-/* iOS: убираем blur/transform у панелей, поднимаем их максимально, отключаем вмешательство браузера в жесты */
+/* iOS: убираем blur/transform у панелей, поднимаем их максимально; карта жесты обрабатывает сама */
 @supports (-webkit-touch-callout: none) {
-  #map,
-  .leaflet-container{
-    transform: none !important;
-    -webkit-transform: none !important;
-    touch-action: none !important;
-    -ms-touch-action: none !important;
-  }
   .panel,
   .fab,
   .kml-picker{
     z-index: 2147483647 !important;
     transform: none !important;
     -webkit-transform: none !important;
+  }
+  .panel{
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     background: rgba(28,35,45,.92) !important;
+  }
+  .leaflet-container{
+    touch-action: none !important; /* отдать события Leaflet */
+    -ms-touch-action: none !important;
   }
 }
