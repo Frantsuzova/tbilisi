@@ -1,15 +1,11 @@
-// app.js — Leaflet + toGeoJSON + LocateControl
-// Без кластеров. Цвет из KML, персональные иконки, фильтры, фиксы iOS.
-// Легенды нет. Храмы ищутся по «церк».
-
-/* ------- Фолбэк-булавки (на случай отсутствия персональных PNG) ------- */
+/* ------- Фолбэк-булавки ------- */
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconYellow = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-yellow.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 
-/* ---------------- Персональные PNG и кеш ---------------- */
+/* ------- Персональные PNG ------- */
 const ICONS = { prefix: 'icon-', ext: 'png', count: 28, size: [32,32], anchor: [16,32], popupAnchor: [0,-28] };
 const iconCache = new Map();
 function personalIcon(id){
@@ -30,7 +26,7 @@ function imageExists(url){
   imgExistsCache.set(url, p); return p;
 }
 
-/* ---------------- Текст/HTML нормализация ---------------- */
+/* ------- Текст/HTML ------- */
 function toText(v){
   if (v == null) return '';
   if (typeof v === 'string') return v;
@@ -71,20 +67,19 @@ function makePopupHtml(name, description) {
                   : `<strong>${nameText}</strong>`;
 }
 
-/* ---------------- Категории ---------------- */
+/* ------- Категории ------- */
 function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
 
-  // Храмы/церкви — «церк*» + общие ключи
+  // Храмы/церкви — по ключам, включая «церк*»
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(name) ||
       /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(desc)) {
     return 'temples';
   }
-
-  if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';   // Лестницы
-  if (name.includes('парадн')  || desc.includes('парадн'))  return 'porches';  // Парадные
-  return 'other';                                                               // Остальное
+  if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';
+  if (name.includes('парадн')  || desc.includes('парадн'))  return 'porches';
+  return 'other';
 }
 const CAT_LABEL = {
   stairs:"Лестницы",
@@ -93,7 +88,7 @@ const CAT_LABEL = {
   other:"Остальное"
 };
 
-/* ---------------- styleUrl → href (для цвета/иконки) ---------------- */
+/* ------- styleUrl → href ------- */
 function idFromHref(href){
   if (!href) return null;
   const fn = href.split('?')[0].split('#')[0].split('/').pop() || "";
@@ -130,7 +125,7 @@ function buildStyleHrefMap(kmlXml){
   return byId;
 }
 
-/* ---------------- Цвет из href + SVG-пин ---------------- */
+/* ------- Цвет из href + SVG-пин ------- */
 function extractHexFromHref(href){
   if (!href) return null;
   const m = href.match(/(?:[?&#]color=)(?:0x)?([0-9a-fA-F]{6,8})/);
@@ -180,7 +175,7 @@ function svgPinIcon(hex){
   return L.divIcon({ className: 'pin-svg', html, iconSize: [w, h], iconAnchor: [ax, ay], popupAnchor: [0, -34] });
 }
 
-/* ---------------- Очистка KML ---------------- */
+/* ------- Очистка KML ------- */
 function sanitizeKmlString(txt){
   return String(txt)
     .replace(/<img\b[^>]*>/gi, '')
@@ -188,7 +183,7 @@ function sanitizeKmlString(txt){
     .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
 }
 
-/* ---------------- Карта ---------------- */
+/* ------- Карта ------- */
 const map = L.map('map', {
   zoomControl: false,
   tap: false,
@@ -216,7 +211,7 @@ L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
 L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
-/* ---------------- iOS: UI внутрь карты + жесты ---------------- */
+/* ------- iOS: UI внутрь карты + жесты ------- */
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 document.documentElement.classList.toggle('is-ios', !!isIOS);
@@ -241,7 +236,7 @@ if (isIOS) {
   );
 }
 
-/* ---------------- Служебное: паддинги под UI при fitBounds ---------------- */
+/* ------- fitBounds паддинги под UI ------- */
 function getFitPadding() {
   const header  = document.getElementById('headerPanel');
   const sidebar = document.getElementById('sidebar');
@@ -253,7 +248,7 @@ function getFitPadding() {
   return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, 16] };
 }
 
-/* ---------------- Состояние данных ---------------- */
+/* ------- Состояние ------- */
 let shapesLayer = null;
 let markerGroup = L.layerGroup().addTo(map);
 const markersById = new Map();
@@ -261,7 +256,7 @@ let boundsAll = null;
 let pointFeatures = [];
 let lastSummaryBase = '';
 
-/* ---------------- Иконка из стиля/порядка ---------------- */
+/* ------- Иконка из стиля/порядка ------- */
 function computeIconId(feature, styleHrefMap){
   const p = feature.properties || {};
   const href = typeof p.styleUrl === 'string' ? (styleHrefMap[p.styleUrl] || null) : null;
@@ -271,7 +266,7 @@ function computeIconId(feature, styleHrefMap){
   return ((seq % ICONS.count) + 1);
 }
 
-/* ---------------- Рендер GeoJSON ---------------- */
+/* ------- Рендер GeoJSON ------- */
 function renderGeoJSON(geojson, styleHrefMap){
   const feats = Array.isArray(geojson.features) ? geojson.features : [];
   feats.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
@@ -328,7 +323,7 @@ function renderGeoJSON(geojson, styleHrefMap){
   applyVisibility();
 }
 
-/* ---------------- Подсчёт/список ---------------- */
+/* ------- Подсчёт/список ------- */
 function updateCounters(){
   const total = pointFeatures.length;
   const cats = { stairs:0, porches:0, temples:0, other:0 };
@@ -367,7 +362,7 @@ function buildList(){
   });
 }
 
-/* ---------------- Фильтрация/видимость ---------------- */
+/* ------- Фильтрация/видимость ------- */
 function isMatchProps(p, activeCat, qLower){
   const cat = detectCategory(p);
   const name = cleanText(p.name).toLowerCase();
@@ -410,7 +405,7 @@ function applyVisibility(){
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
 }
 
-/* ---------------- UI ---------------- */
+/* ------- UI ------- */
 const searchInput = document.getElementById('search');
 
 searchInput.addEventListener('input', ()=> { applyVisibility(); });
@@ -437,12 +432,14 @@ document.getElementById('btnLocate').addEventListener('click', ()=> {
 document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
   const sb = document.getElementById('sidebar');
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
-  // при изменении ширины сайдбара — пересчитать паддинги
   setTimeout(()=>{ map.invalidateSize(); fitToVisible(); }, 0);
 });
 const fab = document.getElementById('fabToggleUI');
 if (fab){
-  fab.addEventListener('click', ()=> { document.body.classList.toggle('ui-hidden'); setTimeout(()=>{ map.invalidateSize(); fitToVisible(); }, 0); });
+  fab.addEventListener('click', ()=> {
+    document.body.classList.toggle('ui-hidden');
+    setTimeout(()=>{ map.invalidateSize(); fitToVisible(); }, 0);
+  });
 }
 function ensureMobileUI(){
   if (window.innerWidth <= 780) document.body.classList.remove('ui-hidden');
@@ -451,7 +448,44 @@ ensureMobileUI();
 window.addEventListener('resize', () => { map.invalidateSize(); fitToVisible(); });
 setTimeout(() => map.invalidateSize(), 0);
 
-/* ---------------- Загрузка KML ---------------- */
+/* ------- ФИКС: скролл списка на iPhone (и вообще тач) ------- */
+(function fixSidebarScrollOnMobile(){
+  const sbBody = document.querySelector('.panel-sidebar .sidebar-body');
+  if (!sbBody) return;
+
+  // Leaflet: не перехватывать скролл/клики внутри списка
+  if (L && L.DomEvent) {
+    L.DomEvent.disableScrollPropagation(sbBody);
+    L.DomEvent.disableClickPropagation(sbBody);
+  }
+
+  const lockMap = (lock) => {
+    if (lock) {
+      map.dragging.disable();
+      map.touchZoom.disable();
+      map.scrollWheelZoom.disable();
+      map.boxZoom.disable();
+      map.keyboard.disable();
+    } else {
+      map.dragging.enable();
+      map.touchZoom.enable();
+      map.scrollWheelZoom.enable();
+      map.boxZoom.enable();
+      map.keyboard.enable();
+    }
+  };
+
+  // Жесты тач
+  sbBody.addEventListener('touchstart', () => lockMap(true),  { passive:true });
+  sbBody.addEventListener('touchend',   () => lockMap(false), { passive:true });
+  sbBody.addEventListener('touchcancel',() => lockMap(false), { passive:true });
+
+  // Для мыши/указателя
+  sbBody.addEventListener('pointerenter', () => lockMap(true));
+  sbBody.addEventListener('pointerleave', () => lockMap(false));
+})();
+
+/* ------- Загрузка KML ------- */
 const kmlParam = new URLSearchParams(location.search).get('kml');
 const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
 
@@ -473,7 +507,7 @@ async function loadKmlAuto(){
   throw lastErr || new Error('KML not found');
 }
 
-/* ---------------- Пикер KML (если нет файла) ---------------- */
+/* ------- Пикер KML (если файла нет) ------- */
 function enableKmlPicker(){
   const bar = document.createElement('div');
   bar.className = 'panel kml-picker';
@@ -516,7 +550,7 @@ function enableKmlPicker(){
   bar.querySelector('#kmlCloseBtn').addEventListener('click', ()=> bar.remove());
 }
 
-/* ---------------- Bootstrap ---------------- */
+/* ------- Bootstrap ------- */
 (async ()=>{
   try {
     const { txt } = await loadKmlAuto();
