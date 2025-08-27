@@ -211,3 +211,39 @@ body:not(.ui-hidden) .panel-sidebar{
     -ms-touch-action: none !important;
   }
 }
+
+/* ===== DEBUG (временные рамки) — добавить в самый конец app.css ===== */
+* { outline: 0 !important; }
+
+/* Карта — лаймовая рамка */
+#map,
+.leaflet-container { outline: 2px solid lime !important; }
+
+/* Слои Leaflet — оранжевые пунктирные */
+.leaflet-pane,
+.leaflet-control-container,
+.leaflet-top,
+.leaflet-bottom { outline: 2px dashed orange !important; }
+
+/* Наш UI (панели/кнопка/пикер) — красные рамки */
+.panel,
+.fab,
+.kml-picker { outline: 2px solid red !important; }
+
+/* Для iOS можно добавить фоновую «вуаль» панелям, чтобы было видно их площадь */
+@supports (-webkit-touch-callout: none) {
+  .panel,
+  .fab,
+  .kml-picker {
+    background-image: repeating-linear-gradient(
+      45deg, rgba(255,0,0,.10) 0 8px, rgba(255,0,0,.18) 8px 16px
+    ) !important;
+  }
+}
+
+/* ====== ВРЕМЕННЫЙ ТЕСТ: если включить — ВСЕ панели перестанут ловить тачи.
+   Нужен только чтобы проверить, оживет ли карта под ними. Потом убрать! ====== */
+/*
+.panel, .panel * , .fab, .kml-picker { pointer-events: none !important; }
+*/
+
