@@ -25,6 +25,7 @@ html, body { height:100%; margin:0; padding:0; overflow:hidden; }
 body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
 #map { position:absolute; inset:0; z-index:0; }
 
+/* Leaflet ниже нашего UI */
 .leaflet-pane,
 .leaflet-control-container,
 .leaflet-top,
@@ -41,11 +42,11 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   border:1px solid var(--panel-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  pointer-events:none;               /* по умолчанию — «прозрачна» */
+  pointer-events:none;            /* контейнер сам по себе прозрачен */
 }
-.panel *{ pointer-events:auto; }
-.panel-header{ pointer-events:auto; } /* хэдер кликабелен полностью */
-.panel-sidebar{ pointer-events:auto; } /* сайдбар кликабелен/скроллится */
+.panel *{ pointer-events:auto; }  /* а содержимое кликабельно */
+.panel-header{ pointer-events:auto; }
+.panel-sidebar{ pointer-events:auto; }
 
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
@@ -91,12 +92,15 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 }
 .sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
 .sidebar-title{ font-weight:600; }
+
+/* ВАЖНО для iPhone: собственный скролл и без проброса жестов на карту */
 .sidebar-body{
   padding:8px 8px 12px;
   overflow:auto;
-  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   touch-action: pan-y;
-  flex: 1 1 auto;                    /* занимает остаток */
+  flex: 1 1 auto;
 }
 .item{
   display:grid; grid-template-columns:1fr auto; gap:4px 8px;
@@ -118,11 +122,14 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 
 /* Скрытие UI */
 body.ui-hidden .panel-header,
-body.ui-hidden .panel-sidebar{ opacity:0; pointer-events:none; transform:translateY(6px);
-  transition:opacity .15s ease, transform .15s ease; }
+body.ui-hidden .panel-sidebar{
+  opacity:0; pointer-events:none; transform:translateY(6px);
+  transition:opacity .15s ease, transform .15s ease;
+}
 body:not(.ui-hidden) .panel-header,
-body:not(.ui-hidden) .panel-sidebar{ opacity:1; transform:none;
-  transition:opacity .15s ease, transform .15s ease; }
+body:not(.ui-hidden) .panel-sidebar{
+  opacity:1; transform:none; transition:opacity .15s ease, transform .15s ease;
+}
 
 /* Адаптив */
 @media (max-width:980px){
@@ -140,7 +147,7 @@ body:not(.ui-hidden) .panel-sidebar{ opacity:1; transform:none;
 .count{ font-variant-numeric: tabular-nums; }
 .leaflet-popup-content img{ display:none !important; max-width:0 !important; max-height:0 !important; }
 
-/* iOS: светлая тема, UI внутри карты и выше всего, без blur */
+/* iOS: светлый UI внутри карты и поверх всего */
 .is-ios { 
   --panel-bg: rgba(255,255,255,.96);
   --panel-border: rgba(0,0,0,.1);
