@@ -1,4 +1,4 @@
-// Основание: твой проект. Изменения: убраны кластеры; iOS-жесты и слой UI зафиксированы.
+// Без кластеров. Цвета из KML, персональные иконки, фильтры, фиксы iOS.
 
 // ---------- Фолбэк-булавки (для легенды) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
@@ -59,11 +59,8 @@ function stripHtmlToText(input) {
 }
 function escapeHtml(s) {
   return String(s || '')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#39;");
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'","&#39;");
 }
 function makePopupHtml(name, description) {
   const nameText = escapeHtml(cleanText(name)) || 'Без названия';
@@ -178,7 +175,7 @@ function sanitizeKmlString(txt){
     .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
 }
 
-// ---------- Карта (tap:false — фикс iOS жестов) ----------
+// ---------- Карта ----------
 const map = L.map('map', {
   zoomControl: false,
   tap: false,
@@ -206,18 +203,30 @@ L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
 L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
-// iOS: запрет зума страницы жестами + включить жесты карты явно
+// ----- iOS: класс, перенос UI внутрь карты, включение жестов и запрет page pinch
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+document.documentElement.classList.toggle('is-ios', !!isIOS);
+
 if (isIOS) {
+  const mapEl = document.getElementById('map');
+  [
+    document.getElementById('headerPanel'),
+    document.getElementById('sidebar'),
+    document.querySelector('.panel-legend'),
+    document.getElementById('fabToggleUI'),
+    document.querySelector('.kml-picker')
+  ].forEach(el => { if (el) mapEl.appendChild(el); });
+
   map.touchZoom.enable();
   map.dragging.enable();
   map.doubleClickZoom.enable();
   map.boxZoom.disable();
   map.keyboard.disable();
-  ['gesturestart','gesturechange','gestureend'].forEach(type => {
-    document.addEventListener(type, e => e.preventDefault(), { passive: false });
-  });
+
+  ['gesturestart','gesturechange','gestureend'].forEach(t =>
+    document.addEventListener(t, e => e.preventDefault(), { passive:false })
+  );
 }
 
 // ---------- Глобальные данные ----------
@@ -238,7 +247,7 @@ function computeIconId(feature, styleHrefMap){
   return ((seq % ICONS.count) + 1);
 }
 
-// ---------- Рендер GeoJSON (без кластеров) ----------
+// ---------- Рендер GeoJSON ----------
 function renderGeoJSON(geojson, styleHrefMap){
   const feats = Array.isArray(geojson.features) ? geojson.features : [];
   feats.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
@@ -253,13 +262,11 @@ function renderGeoJSON(geojson, styleHrefMap){
     p.description = stripHtmlToText(p.description);
   });
 
-  // линии/полигоны
   if (shapesLayer) { try { map.removeLayer(shapesLayer); } catch(e){} }
   shapesLayer = shapeFeatures.length
     ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
     : null;
 
-  // маркеры
   markerGroup.clearLayers();
   markersById.clear();
 
@@ -283,10 +290,8 @@ function renderGeoJSON(geojson, styleHrefMap){
       layer.bindPopup(makePopupHtml(p.name, p.description));
     }
   });
-
   tmp.eachLayer(l => markerGroup.addLayer(l));
 
-  // общий зум
   try {
     const group = L.featureGroup([markerGroup, shapesLayer].filter(Boolean));
     const b = group.getBounds();
@@ -376,7 +381,6 @@ function applyVisibility(){
   const activeCatBtn = document.querySelector('.chip[data-active="true"]');
   const activeCat = activeCatBtn ? activeCatBtn.dataset.cat : 'all';
 
-  // список
   const items = Array.from(document.querySelectorAll('#list .item'));
   items.forEach((el, idx)=>{
     const f = pointFeatures[idx];
@@ -385,7 +389,6 @@ function applyVisibility(){
     el.classList.toggle('hidden', !show);
   });
 
-  // маркеры
   markerGroup.clearLayers();
   let visible = 0;
   pointFeatures.forEach((f)=>{
@@ -456,7 +459,7 @@ async function loadKmlAuto(){
   throw lastErr || new Error('KML not found');
 }
 
-// Пикер KML
+// Пикер KML (если не нашли файл). На iOS — тоже внутрь карты.
 function enableKmlPicker(){
   const bar = document.createElement('div');
   bar.className = 'panel kml-picker';
@@ -467,7 +470,8 @@ function enableKmlPicker(){
     <button class="btn kml-load-btn" id="kmlLoadBtn">Загрузить</button>
     <button class="btn kml-close-btn" id="kmlCloseBtn">Отмена</button>
   `;
-  document.body.appendChild(bar);
+  const host = document.documentElement.classList.contains('is-ios') ? document.getElementById('map') : document.body;
+  host.appendChild(bar);
 
   bar.querySelector('#kmlFile').addEventListener('change', e=>{
     const f = e.target.files?.[0]; if (!f) return;
