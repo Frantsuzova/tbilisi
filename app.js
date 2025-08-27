@@ -1,6 +1,6 @@
-// app.js — кластеры, цвета из KML, персональные PNG, фильтры, фиксы iOS
+// Основание: твой проект. Изменения: убраны кластеры; iOS-жесты и слой UI зафиксированы.
 
-// ---------- Фолбэк-булавки (легенда) ----------
+// ---------- Фолбэк-булавки (для легенды) ----------
 const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
@@ -181,28 +181,10 @@ function sanitizeKmlString(txt){
 // ---------- Карта (tap:false — фикс iOS жестов) ----------
 const map = L.map('map', {
   zoomControl: false,
-  tap: false,               // iOS: отключаем tap-хендлер Leaflet
+  tap: false,
   wheelDebounceTime: 10,
   inertia: true
 });
-// iOS детект
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-// На iOS принудительно включаем тач-жесты карты и гасим жесты системного зума страницы
-if (isIOS) {
-  map.touchZoom.enable();
-  map.dragging.enable();
-  map.doubleClickZoom.enable();
-  map.boxZoom.disable();
-  map.keyboard.disable();
-
-  // Запрещаем зум страницы "щипком", чтобы он не перехватывал пинч карты
-  ['gesturestart','gesturechange','gestureend'].forEach(type => {
-    document.addEventListener(type, e => e.preventDefault(), { passive: false });
-  });
-}
-
 const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 let currentTiles = null;
@@ -224,9 +206,23 @@ L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
 L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
+// iOS: запрет зума страницы жестами + включить жесты карты явно
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (isIOS) {
+  map.touchZoom.enable();
+  map.dragging.enable();
+  map.doubleClickZoom.enable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+  ['gesturestart','gesturechange','gestureend'].forEach(type => {
+    document.addEventListener(type, e => e.preventDefault(), { passive: false });
+  });
+}
+
 // ---------- Глобальные данные ----------
 let shapesLayer = null;
-let clusterGroup = null;
+let markerGroup = L.layerGroup().addTo(map);
 const markersById = new Map();
 let boundsAll = null;
 let pointFeatures = [];
@@ -242,7 +238,7 @@ function computeIconId(feature, styleHrefMap){
   return ((seq % ICONS.count) + 1);
 }
 
-// ---------- Рендер GeoJSON ----------
+// ---------- Рендер GeoJSON (без кластеров) ----------
 function renderGeoJSON(geojson, styleHrefMap){
   const feats = Array.isArray(geojson.features) ? geojson.features : [];
   feats.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
@@ -257,16 +253,14 @@ function renderGeoJSON(geojson, styleHrefMap){
     p.description = stripHtmlToText(p.description);
   });
 
+  // линии/полигоны
   if (shapesLayer) { try { map.removeLayer(shapesLayer); } catch(e){} }
   shapesLayer = shapeFeatures.length
     ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
     : null;
 
-  if (clusterGroup) { try { map.removeLayer(clusterGroup); } catch(e){} }
-  const canCluster = (typeof L.markerClusterGroup === 'function');
-  clusterGroup = canCluster
-    ? L.markerClusterGroup({ showCoverageOnHover:false, spiderfyOnMaxZoom:true, disableClusteringAtZoom:18, maxClusterRadius:48 })
-    : L.layerGroup();
+  // маркеры
+  markerGroup.clearLayers();
   markersById.clear();
 
   const tmp = L.geoJSON(pointFeatures, {
@@ -289,11 +283,12 @@ function renderGeoJSON(geojson, styleHrefMap){
       layer.bindPopup(makePopupHtml(p.name, p.description));
     }
   });
-  tmp.eachLayer(l => clusterGroup.addLayer(l));
-  clusterGroup.addTo(map);
 
+  tmp.eachLayer(l => markerGroup.addLayer(l));
+
+  // общий зум
   try {
-    const group = L.featureGroup([clusterGroup, shapesLayer].filter(Boolean));
+    const group = L.featureGroup([markerGroup, shapesLayer].filter(Boolean));
     const b = group.getBounds();
     if (b.isValid()) { boundsAll = b; map.fitBounds(b, { padding:[20,20] }); }
     else { map.setView([41.6938,44.8015], 14); }
@@ -370,11 +365,9 @@ function isMatchProps(p, activeCat, qLower){
   return matchCat && matchText;
 }
 function fitToVisible(){
-  const group = L.featureGroup();
-  clusterGroup.eachLayer(l=>{
-    if (l.getBounds) group.addLayer(l);
-    else if (l.getLatLng) group.addLayer(L.marker(l.getLatLng()));
-  });
+  const layers = markerGroup.getLayers();
+  if (!layers.length) return;
+  const group = L.featureGroup(layers);
   const b = group.getBounds();
   if (b.isValid()) map.fitBounds(b, { padding:[20,20] });
 }
@@ -383,6 +376,7 @@ function applyVisibility(){
   const activeCatBtn = document.querySelector('.chip[data-active="true"]');
   const activeCat = activeCatBtn ? activeCatBtn.dataset.cat : 'all';
 
+  // список
   const items = Array.from(document.querySelectorAll('#list .item'));
   items.forEach((el, idx)=>{
     const f = pointFeatures[idx];
@@ -391,19 +385,19 @@ function applyVisibility(){
     el.classList.toggle('hidden', !show);
   });
 
-  clusterGroup.clearLayers();
+  // маркеры
+  markerGroup.clearLayers();
   let visible = 0;
   pointFeatures.forEach((f)=>{
     const p = f.properties || {};
     const show = isMatchProps(p, activeCat, q);
     if (!show) return;
     const m = markersById.get(p._ptSeq);
-    if (m){ clusterGroup.addLayer(m); visible++; }
+    if (m){ markerGroup.addLayer(m); visible++; }
   });
 
   const sub = document.getElementById('countCat');
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
-  console.info(`[filter] shown ${visible} of ${pointFeatures.length} (cat=${activeCat}, q="${q}")`);
 }
 
 // ---------- UI ----------
@@ -427,7 +421,7 @@ document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
 });
 
-// FAB «Меню» (мобила)
+// FAB «Меню»
 const fab = document.getElementById('fabToggleUI');
 if (fab){
   fab.addEventListener('click', ()=> {
@@ -462,7 +456,7 @@ async function loadKmlAuto(){
   throw lastErr || new Error('KML not found');
 }
 
-// Пикер KML (без inline)
+// Пикер KML
 function enableKmlPicker(){
   const bar = document.createElement('div');
   bar.className = 'panel kml-picker';
