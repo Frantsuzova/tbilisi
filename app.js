@@ -1,9 +1,32 @@
-// app.js — Leaflet + toGeoJSON + LocateControl
-// Базовый слой: «чёрный» CARTO (dark_nolabels + only_labels).
-// Категории: Лестницы / Парадные / Храмы (по «церк») / Остальное.
-// Поиск, счётчик, корректный fitBounds с паддингами, фиксы iOS для скролла списка.
+/* ------- Фолбэк-булавки ------- */
+const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
+const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",    shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconYellow = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-yellow.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 
-/* ---------------- Текст/HTML нормализация ---------------- */
+/* ------- Персональные PNG ------- */
+const ICONS = { prefix: 'icon-', ext: 'png', count: 28, size: [32,32], anchor: [16,32], popupAnchor: [0,-28] };
+const iconCache = new Map();
+function personalIcon(id){
+  if (!id || id < 1 || id > ICONS.count) return null;
+  if (iconCache.has(id)) return iconCache.get(id);
+  const ic = L.icon({ iconUrl: `${ICONS.prefix}${id}.${ICONS.ext}`, iconSize: ICONS.size, iconAnchor: ICONS.anchor, popupAnchor: ICONS.popupAnchor });
+  iconCache.set(id, ic); return ic;
+}
+const imgExistsCache = new Map();
+function imageExists(url){
+  if (imgExistsCache.has(url)) return imgExistsCache.get(url);
+  const p = new Promise(res=>{
+    const im = new Image();
+    im.onload = ()=>res(true);
+    im.onerror = ()=>res(false);
+    im.src = url + (url.includes('?')?'&':'?') + 'v=' + Date.now();
+  }).then(ok=>{ imgExistsCache.set(url, ok); return ok; });
+  imgExistsCache.set(url, p); return p;
+}
+
+/* ------- Текст/HTML ------- */
 function toText(v){
   if (v == null) return '';
   if (typeof v === 'string') return v;
@@ -44,12 +67,12 @@ function makePopupHtml(name, description) {
                   : `<strong>${nameText}</strong>`;
 }
 
-/* ---------------- Категории ---------------- */
+/* ------- Категории ------- */
 function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
 
-  // Храмы/церкви — ловим «церк*» и базовые ключи
+  // Храмы/церкви — по ключам, включая «церк*»
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(name) ||
       /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(desc)) {
     return 'temples';
@@ -65,15 +88,15 @@ const CAT_LABEL = {
   other:"Остальное"
 };
 
-/* ---------------- Очистка KML ---------------- */
-function sanitizeKmlString(txt){
-  return String(txt)
-    .replace(/<img\b[^>]*>/gi, '') // выпиливаем <img>
-    .replace(/url\((['"]?)https?:\/\/mymaps\.usercontent\.google\.com\/[^)]+?\1\)/gi, 'none') // hostedimage блоки
-    .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
+/* ------- styleUrl → href ------- */
+function idFromHref(href){
+  if (!href) return null;
+  const fn = href.split('?')[0].split('#')[0].split('/').pop() || "";
+  const m = fn.match(/(?:^|[^\d])([1-9]\d{0,2})(?=\D|$)/);
+  if (!m) return null;
+  const n = parseInt(m[1], 10);
+  return (n>=1 && n<=ICONS.count) ? n : null;
 }
-
-/* ---------------- Цвет из styleUrl (если есть) + SVG-пин ---------------- */
 function buildStyleHrefMap(kmlXml){
   const byId = Object.create(null);
   kmlXml.querySelectorAll('Style[id]').forEach(st=>{
@@ -83,10 +106,14 @@ function buildStyleHrefMap(kmlXml){
   });
   kmlXml.querySelectorAll('StyleMap[id]').forEach(sm=>{
     const id = sm.getAttribute('id');
-    let href = null, pair = Array.from(sm.querySelectorAll('Pair'))
-      .find(p=> (p.querySelector('key')?.textContent?.trim() || '') === 'normal') || sm.querySelector('Pair');
-    if (pair){
-      const styleUrl = pair.querySelector('styleUrl')?.textContent?.trim();
+    let href = null, target = null;
+    sm.querySelectorAll('Pair').forEach(p=>{
+      const key = p.querySelector('key')?.textContent?.trim();
+      if (!target && key === 'normal') target = p;
+    });
+    if (!target) target = sm.querySelector('Pair');
+    if (target){
+      const styleUrl = target.querySelector('styleUrl')?.textContent?.trim();
       if (styleUrl && byId[styleUrl]) href = byId[styleUrl];
     }
     if (!href){
@@ -97,6 +124,8 @@ function buildStyleHrefMap(kmlXml){
   });
   return byId;
 }
+
+/* ------- Цвет из href + SVG-пин ------- */
 function extractHexFromHref(href){
   if (!href) return null;
   const m = href.match(/(?:[?&#]color=)(?:0x)?([0-9a-fA-F]{6,8})/);
@@ -132,9 +161,8 @@ function getStyleColor(feature, styleHrefMap){
   return null;
 }
 function svgPinIcon(hex){
-  // На чёрной карте яркий маркер
   const fill = (hex || '#2b7bff').toLowerCase();
-  const stroke = '#0b1220';
+  const stroke = '#08213a';
   const w = 26, h = 40, ax = Math.round(w/2), ay = h;
   const html =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 26 40" aria-hidden="true">
@@ -147,15 +175,22 @@ function svgPinIcon(hex){
   return L.divIcon({ className: 'pin-svg', html, iconSize: [w, h], iconAnchor: [ax, ay], popupAnchor: [0, -34] });
 }
 
-/* ---------------- Карта ---------------- */
+/* ------- Очистка KML ------- */
+function sanitizeKmlString(txt){
+  return String(txt)
+    .replace(/<img\b[^>]*>/gi, '')
+    .replace(/url\((['"]?)https?:\/\/mymaps\.usercontent\.google\.com\/[^)]+?\1\)/gi, 'none')
+    .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi, '');
+}
+
+/* ------- Карта ------- */
 const map = L.map('map', {
   zoomControl: false,
   tap: false,
   wheelDebounceTime: 10,
   inertia: true
 });
-
-// ЧЁРНАЯ КАРТА (фон без подписей + слой только с подписями)
+// ЧЁРНАЯ КАРТА (CARTO Dark без подписей + слой только с подписями)
 const cartoDarkNoLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
   { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; OpenStreetMap &copy; CARTO' }
@@ -164,29 +199,69 @@ const cartoDarkOnlyLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
   { subdomains: 'abcd', maxZoom: 20, opacity: 0.9, attribution: '&copy; OpenStreetMap &copy; CARTO' }
 );
-L.layerGroup([cartoDarkNoLabels, cartoDarkOnlyLabels]).addTo(map);
 
-// Контролы
+// Самый «чёрный» вариант: фон + подписи
+const cartoBlack = L.layerGroup([cartoDarkNoLabels, cartoDarkOnlyLabels]).addTo(map);
+
+const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
+const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
+let currentTiles = null;
+function setTilesByColorScheme(){
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const next = prefersDark ? tilesDark : tilesLight;
+  if (currentTiles !== next){
+    if (currentTiles) map.removeLayer(currentTiles);
+    next.addTo(map); currentTiles = next;
+  }
+}
+setTilesByColorScheme();
+if (window.matchMedia) {
+  const mm = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mm.addEventListener) mm.addEventListener('change', setTilesByColorScheme);
+  else if (mm.addListener) mm.addListener(setTilesByColorScheme);
+}
 L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
-L.control.locate({
-  position:'topright',
-  setView:'untilPan',
-  keepCurrentZoomLevel:true,
-  strings:{ title:'Показать моё местоположение' }
-}).addTo(map);
+L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
 
-/* ---------------- fitBounds паддинги под UI ---------------- */
+/* ------- iOS: UI внутрь карты + жесты ------- */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+document.documentElement.classList.toggle('is-ios', !!isIOS);
+
+if (isIOS) {
+  const mapEl = document.getElementById('map');
+  [
+    document.getElementById('headerPanel'),
+    document.getElementById('sidebar'),
+    document.getElementById('fabToggleUI'),
+    document.querySelector('.kml-picker')
+  ].forEach(el => { if (el) mapEl.appendChild(el); });
+
+  map.touchZoom.enable();
+  map.dragging.enable();
+  map.doubleClickZoom.enable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+
+  ['gesturestart','gesturechange','gestureend'].forEach(t =>
+    document.addEventListener(t, e => e.preventDefault(), { passive:false })
+  );
+}
+
+/* ------- fitBounds паддинги под UI ------- */
 function getFitPadding() {
   const header  = document.getElementById('headerPanel');
   const sidebar = document.getElementById('sidebar');
+
   const topPad   = (header  && header.offsetHeight) ? header.offsetHeight + 16 : 16;
   const rightPad = (sidebar && getComputedStyle(sidebar).display !== 'none')
     ? sidebar.offsetWidth + 16 : 16;
+
   return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, 16] };
 }
 
-/* ---------------- Состояние ---------------- */
+/* ------- Состояние ------- */
 let shapesLayer = null;
 let markerGroup = L.layerGroup().addTo(map);
 const markersById = new Map();
@@ -194,7 +269,17 @@ let boundsAll = null;
 let pointFeatures = [];
 let lastSummaryBase = '';
 
-/* ---------------- Рендер GeoJSON ---------------- */
+/* ------- Иконка из стиля/порядка ------- */
+function computeIconId(feature, styleHrefMap){
+  const p = feature.properties || {};
+  const href = typeof p.styleUrl === 'string' ? (styleHrefMap[p.styleUrl] || null) : null;
+  const idFromKml = idFromHref(href);
+  if (idFromKml) return idFromKml;
+  const seq = Number.isFinite(p._seq) ? p._seq : 0;
+  return ((seq % ICONS.count) + 1);
+}
+
+/* ------- Рендер GeoJSON ------- */
 function renderGeoJSON(geojson, styleHrefMap){
   const feats = Array.isArray(geojson.features) ? geojson.features : [];
   feats.forEach((f,i)=>{ f.properties = { ...(f.properties||{}), _seq:i }; });
@@ -211,7 +296,7 @@ function renderGeoJSON(geojson, styleHrefMap){
 
   if (shapesLayer) { try { map.removeLayer(shapesLayer); } catch(e){} }
   shapesLayer = shapeFeatures.length
-    ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#60a5fa', weight:3, opacity:0.85 }) }).addTo(map)
+    ? L.geoJSON(shapeFeatures, { style: () => ({ color:'#2563eb', weight:3, opacity:0.8 }) }).addTo(map)
     : null;
 
   markerGroup.clearLayers();
@@ -221,6 +306,11 @@ function renderGeoJSON(geojson, styleHrefMap){
     pointToLayer: (feature, latlng) => {
       const hex = getStyleColor(feature, styleHrefMap);
       const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
+
+      const id = computeIconId(feature, styleHrefMap);
+      const url = `${ICONS.prefix}${id}.${ICONS.ext}`;
+      imageExists(url).then(ok => { if (ok) marker.setIcon(personalIcon(id)); });
+
       const p = feature.properties || {};
       markersById.set(p._ptSeq, marker);
       marker.featureCat = detectCategory(p);
@@ -246,7 +336,7 @@ function renderGeoJSON(geojson, styleHrefMap){
   applyVisibility();
 }
 
-/* ---------------- Подсчёт/список ---------------- */
+/* ------- Подсчёт/список ------- */
 function updateCounters(){
   const total = pointFeatures.length;
   const cats = { stairs:0, porches:0, temples:0, other:0 };
@@ -285,7 +375,7 @@ function buildList(){
   });
 }
 
-/* ---------------- Фильтрация/видимость ---------------- */
+/* ------- Фильтрация/видимость ------- */
 function isMatchProps(p, activeCat, qLower){
   const cat = detectCategory(p);
   const name = cleanText(p.name).toLowerCase();
@@ -328,7 +418,7 @@ function applyVisibility(){
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
 }
 
-/* ---------------- UI ---------------- */
+/* ------- UI ------- */
 const searchInput = document.getElementById('search');
 
 searchInput.addEventListener('input', ()=> { applyVisibility(); });
@@ -338,7 +428,7 @@ document.querySelectorAll('.chip').forEach(btn=>{
     document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
     btn.dataset.active = 'true';
 
-    // Сбрасываем поиск при смене категории, чтобы количество совпадало
+    // Сбрасываем поиск при смене категории
     if (searchInput.value.trim() !== '') searchInput.value = '';
 
     applyVisibility();
@@ -371,15 +461,17 @@ ensureMobileUI();
 window.addEventListener('resize', () => { map.invalidateSize(); fitToVisible(); });
 setTimeout(() => map.invalidateSize(), 0);
 
-/* ---------------- ФИКС: скролл списка на iPhone ---------------- */
+/* ------- ФИКС: скролл списка на iPhone (и вообще тач) ------- */
 (function fixSidebarScrollOnMobile(){
   const sbBody = document.querySelector('.panel-sidebar .sidebar-body');
   if (!sbBody) return;
 
+  // Leaflet: не перехватывать скролл/клики внутри списка
   if (L && L.DomEvent) {
     L.DomEvent.disableScrollPropagation(sbBody);
     L.DomEvent.disableClickPropagation(sbBody);
   }
+
   const lockMap = (lock) => {
     if (lock) {
       map.dragging.disable();
@@ -395,14 +487,18 @@ setTimeout(() => map.invalidateSize(), 0);
       map.keyboard.enable();
     }
   };
+
+  // Жесты тач
   sbBody.addEventListener('touchstart', () => lockMap(true),  { passive:true });
   sbBody.addEventListener('touchend',   () => lockMap(false), { passive:true });
   sbBody.addEventListener('touchcancel',() => lockMap(false), { passive:true });
+
+  // Для мыши/указателя
   sbBody.addEventListener('pointerenter', () => lockMap(true));
   sbBody.addEventListener('pointerleave', () => lockMap(false));
 })();
 
-/* ---------------- Загрузка KML ---------------- */
+/* ------- Загрузка KML ------- */
 const kmlParam = new URLSearchParams(location.search).get('kml');
 const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
 
@@ -424,7 +520,7 @@ async function loadKmlAuto(){
   throw lastErr || new Error('KML not found');
 }
 
-/* ---------------- Пикер KML (если файла нет) ---------------- */
+/* ------- Пикер KML (если файла нет) ------- */
 function enableKmlPicker(){
   const bar = document.createElement('div');
   bar.className = 'panel kml-picker';
@@ -467,7 +563,7 @@ function enableKmlPicker(){
   bar.querySelector('#kmlCloseBtn').addEventListener('click', ()=> bar.remove());
 }
 
-/* ---------------- Bootstrap ---------------- */
+/* ------- Bootstrap ------- */
 (async ()=>{
   try {
     const { txt } = await loadKmlAuto();
