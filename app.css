@@ -4,9 +4,10 @@
   --text: #0f172a;
   --muted: #475569;
   --chip-bg: rgba(15,23,42,.06);
+  --chip-active: #2563eb;
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
-  --accent: #0ea5e9; /* цвет кнопки и активного chip */
+  --accent: #0ea5e9;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -15,37 +16,39 @@
     --text: #e5e7eb;
     --muted: #94a3b8;
     --chip-bg: rgba(255,255,255,.06);
+    --chip-active: #60a5fa;
     --shadow: 0 8px 24px rgba(0,0,0,.40);
     --accent: #22d3ee;
   }
 }
 
-/* База / карта */
+/* ===== БАЗА / КАРТА ===== */
 html, body { height:100%; margin:0; padding:0; overflow:hidden; }
-body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
 #map { position:absolute; inset:0; z-index:0; }
+body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
 
+/* Leaflet слои ниже нашего UI */
 .leaflet-pane,
 .leaflet-control-container,
 .leaflet-top,
 .leaflet-bottom { z-index:1000 !important; }
 .leaflet-marker-pane { z-index:1050 !important; }
 
-/* Панели */
+/* ===== ПАНЕЛИ / UI ===== */
 .panel{
   position:fixed;
-  z-index:5000;
+  z-index:5000;                 /* всегда выше карты и её контролов */
   backdrop-filter: blur(8px) saturate(1.2);
   -webkit-backdrop-filter: blur(8px) saturate(1.2);
   background:var(--panel-bg);
   border:1px solid var(--panel-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  pointer-events:none;               /* по умолчанию — «прозрачна» */
+
+  /* важное: чтобы жесты карты проходили сквозь свободные места панели */
+  pointer-events:none;
 }
-.panel *{ pointer-events:auto; }
-.panel-header{ pointer-events:auto; } /* хэдер кликабелен полностью */
-.panel-sidebar{ pointer-events:auto; } /* сайдбар кликабелен/скроллится */
+.panel *{ pointer-events:auto; } /* кликаемы только элементы внутри */
 
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
@@ -62,7 +65,8 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   border:1px solid var(--panel-border);
   background:var(--chip-bg);
   border-radius:999px;
-  padding:6px 10px; cursor:pointer; user-select:none;
+  padding:6px 10px;
+  cursor:pointer; user-select:none;
   color:var(--text); transition:.15s ease;
 }
 .btn:hover{ transform:translateY(-1px); }
@@ -81,9 +85,8 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   background:var(--chip-bg);
   border-radius:999px; padding:6px 10px; cursor:pointer; font-size:12px;
 }
-.chip[data-active="true"]{ background:var(--accent); color:#04121a; border-color:transparent; }
+.chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
 
-/* Сайдбар */
 .panel-sidebar{
   top:calc(12px + env(safe-area-inset-top));
   right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
@@ -91,13 +94,7 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 }
 .sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
 .sidebar-title{ font-weight:600; }
-.sidebar-body{
-  padding:8px 8px 12px;
-  overflow:auto;
-  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
-  touch-action: pan-y;
-  flex: 1 1 auto;                    /* занимает остаток */
-}
+.sidebar-body{ padding:8px 8px 12px; overflow:auto; }
 .item{
   display:grid; grid-template-columns:1fr auto; gap:4px 8px;
   padding:10px 10px; border-radius:12px; border:1px solid var(--panel-border);
@@ -106,6 +103,18 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 @media (prefers-color-scheme: dark){ .item{ background:rgba(255,255,255,.06); } }
 .item h4{ margin:0; font-size:13px; font-weight:600; }
 .item .meta{ grid-column:1/-1; color:var(--muted); font-size:12px; }
+
+.panel-legend{
+  left:12px; bottom:calc(12px + env(safe-area-inset-bottom));
+  max-width:420px; padding:10px 12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+}
+.legend-group{ display:flex; gap:10px; flex-wrap:wrap; }
+.legend{
+  display:flex; gap:6px; align-items:center;
+  background:var(--chip-bg); border:1px solid var(--panel-border);
+  padding:6px 10px; border-radius:999px; font-size:12px;
+}
+.legend img{ width:18px; height:18px; display:block; }
 
 /* FAB (моб.) */
 .fab{
@@ -118,11 +127,16 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 
 /* Скрытие UI */
 body.ui-hidden .panel-header,
-body.ui-hidden .panel-sidebar{ opacity:0; pointer-events:none; transform:translateY(6px);
-  transition:opacity .15s ease, transform .15s ease; }
+body.ui-hidden .panel-legend,
+body.ui-hidden .panel-sidebar{
+  opacity:0; pointer-events:none; transform:translateY(6px);
+  transition:opacity .15s ease, transform .15s ease;
+}
 body:not(.ui-hidden) .panel-header,
-body:not(.ui-hidden) .panel-sidebar{ opacity:1; transform:none;
-  transition:opacity .15s ease, transform .15s ease; }
+body:not(.ui-hidden) .panel-legend,
+body:not(.ui-hidden) .panel-sidebar{
+  opacity:1; transform:none; transition:opacity .15s ease, transform .15s ease;
+}
 
 /* Адаптив */
 @media (max-width:980px){
@@ -131,8 +145,13 @@ body:not(.ui-hidden) .panel-sidebar{ opacity:1; transform:none;
 }
 @media (max-width:780px){
   .panel-header{ left:12px; right:12px; }
-  .panel-sidebar{ left:12px; right:12px; width:auto; top:auto; height:45vh; }
-  .leaflet-control-attribution, .leaflet-control-scale{ display:none !important; }
+  .panel-sidebar{
+    left:12px; right:12px; width:auto;
+    top:auto; height:45vh;       /* «нижний лист» */
+  }
+  /* чтобы ничего не перекрывало панели на телефоне — можно скрыть служебные контролы */
+  .leaflet-control-attribution,
+  .leaflet-control-scale{ display:none !important; }
 }
 
 /* Разное */
@@ -140,27 +159,30 @@ body:not(.ui-hidden) .panel-sidebar{ opacity:1; transform:none;
 .count{ font-variant-numeric: tabular-nums; }
 .leaflet-popup-content img{ display:none !important; max-width:0 !important; max-height:0 !important; }
 
-/* iOS: светлая тема, UI внутри карты и выше всего, без blur */
-.is-ios { 
-  --panel-bg: rgba(255,255,255,.96);
-  --panel-border: rgba(0,0,0,.1);
-  --text: #0f172a;
-  --muted: #475569;
+/* Пикер KML */
+.kml-picker{
+  top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+  padding:8px 10px; display:flex; gap:8px; align-items:center;
 }
-.is-ios #map .panel,
-.is-ios #map .fab,
-.is-ios #map .kml-picker{
-  position:absolute;
-  z-index:10000 !important;
-  transform:none !important;
-  -webkit-transform:none !important;
-  -webkit-backdrop-filter:none !important;
-  backdrop-filter:none !important;
-  background:var(--panel-bg);
+.kml-url{
+  width:240px; border:1px solid var(--panel-border);
+  background:var(--chip-bg); border-radius:8px; padding:6px 8px; color:var(--text);
 }
-.is-ios #map .leaflet-control-container,
-.is-ios #map .leaflet-top,
-.is-ios #map .leaflet-bottom,
-.is-ios #map .leaflet-pane,
-.is-ios #map .leaflet-marker-pane{ z-index:1000 !important; }
-.is-ios .leaflet-container{ touch-action:none !important; -ms-touch-action:none !important; }
+
+/* ===== iOS OVERRIDES =====
+   Убираем backdrop-filter/transform у панелей (частая причина «ухода под карту»),
+   и гарантируем, что жесты обрабатывает Leaflet, а не страница. */
+@supports (-webkit-touch-callout: none) {
+  .panel, .fab, .kml-picker{
+    z-index:2147483647 !important;        /* максимум */
+    transform:none !important;
+    -webkit-transform:none !important;
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+    background:rgba(28,35,45,.92) !important; /* без blur, чтобы не ломался композитинг */
+  }
+  .leaflet-container{
+    touch-action:none !important;         /* события — в Leaflet */
+    -ms-touch-action:none !important;
+  }
+}
