@@ -1,21 +1,22 @@
 :root{
-  --panel-bg: rgba(255,255,255,.78);
+  --panel-bg: rgba(255,255,255,.9);
   --panel-border: rgba(0,0,0,.1);
   --text: #0f172a;
   --muted: #475569;
   --chip-bg: rgba(15,23,42,.06);
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
-  --accent: #0ea5e9; /* цвет кнопки и активного chip */
+  --accent: #0ea5e9;
+  --header-h: 0px; /* выставляется из JS по реальной высоте шапки */
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --panel-bg: rgba(17,24,39,.72);
+    --panel-bg: rgba(17,24,39,.82);
     --panel-border: rgba(255,255,255,.08);
     --text: #e5e7eb;
     --muted: #94a3b8;
-    --chip-bg: rgba(255,255,255,.06);
-    --shadow: 0 8px 24px rgba(0,0,0,.40);
+    --chip-bg: rgba(255,255,255,.08);
+    --shadow: 0 8px 24px rgba(0,0,0,.45);
     --accent: #22d3ee;
   }
 }
@@ -25,23 +26,16 @@ html, body { height:100%; margin:0; padding:0; overflow:hidden; }
 body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
 #map { position:absolute; inset:0; z-index:0; }
 
-/* Leaflet ниже UI */
-.leaflet-pane,
+/* Leaflet приоритеты: попапы поверх маркеров; контролы поверх тайлов */
 .leaflet-control-container,
 .leaflet-top,
-
-.leaflet-marker-pane { z-index:1050 !important; }
-
-/* Leaflet слои: контролы/пэны и приоритет попапов */
-.leaflet-control-container,
-.leaflet-top,
-.leaflet-bottom { z-index: 1000 !important; }
-
-/* маркеры ниже попапов */
+.leaflet-bottom { z-index: 4000 !important; }
 .leaflet-marker-pane  { z-index: 1050 !important; }
 .leaflet-tooltip-pane { z-index: 1100 !important; }
 .leaflet-popup-pane   { z-index: 1110 !important; }
 
+/* Сместим правые верхние контролы ниже шапки */
+.leaflet-top.leaflet-right { margin-top: calc(var(--header-h) + 8px); }
 
 /* Панели */
 .panel{
@@ -53,11 +47,9 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   border:1px solid var(--panel-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  pointer-events:none;            /* контейнер сам по себе прозрачен */
+  pointer-events:none;
 }
-.panel *{ pointer-events:auto; }  /* а содержимое кликабельно */
-.panel-header{ pointer-events:auto; }
-.panel-sidebar{ pointer-events:auto; }
+.panel *{ pointer-events:auto; }
 
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
@@ -66,7 +58,7 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   display:grid; grid-template-columns:1fr auto;
   gap:10px 12px; align-items:center;
 }
-.title{ font-weight:700; letter-spacing:.2px; }
+.title{ font-weight:700; }
 .subtitle{ color:var(--muted); font-size:12px; }
 .actions{ display:flex; gap:8px; align-items:center; }
 
@@ -104,7 +96,7 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 .sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
 .sidebar-title{ font-weight:600; }
 
-/* ВАЖНО для iPhone: собственный скролл и без проброса жестов на карту */
+/* iPhone: скролл внутри, без проброса жестов на карту */
 .sidebar-body{
   padding:8px 8px 12px;
   overflow:auto;
@@ -156,29 +148,5 @@ body:not(.ui-hidden) .panel-sidebar{
 /* Разное */
 .hidden{ display:none !important; }
 .count{ font-variant-numeric: tabular-nums; }
+/* Попапы без чужих картинок */
 .leaflet-popup-content img{ display:none !important; max-width:0 !important; max-height:0 !important; }
-
-/* iOS: светлый UI внутри карты и поверх всего */
-.is-ios { 
-  --panel-bg: rgba(255,255,255,.96);
-  --panel-border: rgba(0,0,0,.1);
-  --text: #0f172a;
-  --muted: #475569;
-}
-.is-ios #map .panel,
-.is-ios #map .fab,
-.is-ios #map .kml-picker{
-  position:absolute;
-  z-index:10000 !important;
-  transform:none !important;
-  -webkit-transform:none !important;
-  -webkit-backdrop-filter:none !important;
-  backdrop-filter:none !important;
-  background:var(--panel-bg);
-}
-.is-ios #map .leaflet-control-container,
-.is-ios #map .leaflet-top,
-.is-ios #map .leaflet-bottom,
-.is-ios #map .leaflet-pane,
-.is-ios #map .leaflet-marker-pane{ z-index:1000 !important; }
-.is-ios .leaflet-container{ touch-action:none !important; -ms-touch-action:none !important; }
