@@ -1,11 +1,12 @@
 // ===== app.js =====
 
-// --- Включение локальных иконок переключателем в URL (?local=1) ---
-const USE_LOCAL_ICONS = new URLSearchParams(location.search).has('local');
-const ICON_LOCAL_LIMIT = 28;
+// ----- настройки -----
 const ICON_SIZE = [32, 32];
 
-// ---------- текстовые утилиты ----------
+// локальные иконки (icon-N.png в корне репозитория /tbilisi/)
+const USE_LOCAL_ICONS = true;
+
+// ---------- утилиты текста ----------
 function toText(v){ if(v==null)return''; if(typeof v==='string')return v;
   if(typeof v==='number'||typeof v==='boolean')return String(v);
   if(Array.isArray(v))return v.map(toText).filter(Boolean).join(' ');
@@ -28,7 +29,7 @@ function makePopupHtml(name, description){
   return d?`<strong>${n}</strong><br>${escapeHtml(d)}`:`<strong>${n}</strong>`;
 }
 
-// ---------- категории (для фильтра/счётчика интерфейса) ----------
+// ---------- категории (для фильтра/счётчика) ----------
 function detectCategory(p){
   const n=cleanText(p?.name).toLowerCase(), d=cleanText(p?.description).toLowerCase();
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n)||/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
@@ -109,7 +110,7 @@ function buildStyleMaps(kmlXml){
       if(su && !su.startsWith('#')) su = '#'+su;
       if(su && styles[su]) styles[key] = { ...styles[su], ...styles[key] };
     }
-    // На случай инлайн-стилей прямо в StyleMap
+    // на случай инлайн-стилей в StyleMap
     const href   = sm.querySelector('IconStyle Icon href')?.textContent?.trim()||null;
     const iconC  = kmlColorToRgba(sm.querySelector('IconStyle color')?.textContent?.trim()||'');
     const lineC  = kmlColorToRgba(sm.querySelector('LineStyle color')?.textContent?.trim()||'');
@@ -145,7 +146,7 @@ function svgPinIcon(hex){
   return L.divIcon({ className:'pin-svg', html, iconSize:[w,h], iconAnchor:[ax,ay], popupAnchor:[0,-34] });
 }
 
-// пробник изображений (чтобы не плодить 404 в консоли)
+// --- кеш-пробник изображений ---
 const _probeCache = new Map();
 function probe(url){
   if (_probeCache.has(url)) return _probeCache.get(url);
@@ -153,36 +154,20 @@ function probe(url){
     const im=new Image();
     im.onload=()=>res(true);
     im.onerror=()=>res(false);
-    im.src=url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+    im.src=url; // без ?v=…, чтобы 404 не плодить
   }).then(ok=>{ _probeCache.set(url,ok); return ok; });
   _probeCache.set(url,p); return p;
 }
 
-// локальные icon-N кандидаты (корень домена, /tbilisi/, текущая папка, /images/)
+// --- локальные icon-N кандидаты (корень проекта /tbilisi/, доменный корень, текущая папка) ---
 function localIconCandidates(idx){
   const name = `icon-${idx}.png`;
-  const base = location.pathname.replace(/\/[^/]*$/, ''); // /tbilisi
+  const base = location.pathname.replace(/\/[^/]*$/, ''); // напр., /tbilisi
   return [
-    `${base}/${name}`,
-    `${base}/images/${name}`,
-    `/${name}`,
-    `/images/${name}`,
-    `${name}`,
-    `./${name}`,
-    `images/${name}`,
-    `./images/${name}`,
+    `${base}/${name}`, // /tbilisi/icon-N.png  ← главный путь
+    `/${name}`,        // /icon-N.png         (на случай другого деплоя)
+    `${name}`, `./${name}` // относительные
   ];
-}
-async function pickLocalIconUrl(idx){
-  if(!USE_LOCAL_ICONS) return null;
-  for (const url of localIconCandidates(idx)){
-    // eslint-disable-next-line no-await-in-loop
-    if (await probe(url)) return url;
-  }
-  return null;
-}
-function makeIcon(url){
-  return L.icon({ iconUrl:url, iconSize:ICON_SIZE, iconAnchor:[16,16], popupAnchor:[0,-16] });
 }
 
 // ---------- карта ----------
@@ -216,16 +201,21 @@ headerH();
 let shapesLayer=null, markerGroup=L.layerGroup().addTo(map), markersById=new Map(), boundsAll=null;
 let pointFeatures=[], lastSummaryBase='';
 let styleMaps=null;
-let styleUrlToLocalIndex=Object.create(null);
 
-// нормализатор styleUrl (#id / id)
-function resolveStyleByUrl(su){
+// соответствие styleUrl → локальный индекс N и локальный URL
+let styleUrlToIndex=Object.create(null);
+let styleUrlToLocalUrl=Object.create(null);
+
+// нормализуем styleUrl (#id / id)
+function normalizeStyleUrl(su){
   if(!su) return null;
-  let key = su.trim();
-  if(styleMaps.styles[key]) return styleMaps.styles[key];
-  if(!key.startsWith('#') && styleMaps.styles['#'+key]) return styleMaps.styles['#'+key];
-  if(key.startsWith('#') && styleMaps.styles[key.slice(1)]) return styleMaps.styles[key.slice(1)];
-  return null;
+  let k=String(su).trim();
+  if(!k.startsWith('#')) k='#'+k;
+  return k;
+}
+function resolveStyleByUrl(su){
+  const key=normalizeStyleUrl(su);
+  return key ? styleMaps.styles[key] || null : null;
 }
 
 // стили для линий/полигонов
@@ -238,57 +228,72 @@ function styleForNonPoint(props){
   return { color, weight, opacity, fillColor: st.polyHex || color, fillOpacity: st.polyOpacity ?? 0.2 };
 }
 
+// подготовка соответствий для локальных иконок
+async function prepareLocalIconsMap(points){
+  styleUrlToIndex=Object.create(null);
+  styleUrlToLocalUrl=Object.create(null);
+  if(!USE_LOCAL_ICONS) return;
+
+  // уникальные styleUrl в порядке появления в KML (по индексу объявлений)
+  const used = [...new Set(points.map(f=>normalizeStyleUrl(f.properties?.styleUrl)).filter(Boolean))];
+  used.sort((a,b)=>(styleMaps.orderIdx[a]||99999)-(styleMaps.orderIdx[b]||99999));
+
+  // пронумеруем и найдём первый существующий локальный путь
+  let n=1;
+  for(const su of used){
+    styleUrlToIndex[su]=n;
+    let localUrl=null;
+    for(const url of localIconCandidates(n)){
+      // eslint-disable-next-line no-await-in-loop
+      if(await probe(url)){ localUrl=url; break; }
+    }
+    if(localUrl) styleUrlToLocalUrl[su]=localUrl;
+    n++;
+  }
+}
+
 // ---------- рендер ----------
-function renderGeoJSON(geojson){
+async function renderGeoJSON(geojson){
   const feats=Array.isArray(geojson.features)?geojson.features:[];
   feats.forEach((f,i)=>{ f.properties={...(f.properties||{}), _seq:i}; });
 
   pointFeatures = feats.filter(f=>f.geometry && f.geometry.type==='Point');
   const shapeFeatures = feats.filter(f=>!f.geometry || f.geometry.type!=='Point');
 
-  // таблица соответствия styleUrl -> локальный индекс (только если включены локальные)
-  if (USE_LOCAL_ICONS){
-    const used=[...new Set(pointFeatures.map(f=>String(f.properties?.styleUrl||'')).filter(Boolean))];
-    used.sort((a,b)=>(styleMaps.orderIdx[a]||99999)-(styleMaps.orderIdx[b]||99999));
-    styleUrlToLocalIndex=Object.create(null);
-    used.slice(0,ICON_LOCAL_LIMIT).forEach((su,i)=>styleUrlToLocalIndex[su]=i+1);
-  } else {
-    styleUrlToLocalIndex=Object.create(null);
-  }
-
   if(shapesLayer){ try{ map.removeLayer(shapesLayer); }catch{} }
   shapesLayer = shapeFeatures.length
     ? L.geoJSON(shapeFeatures,{ style:(feat)=>styleForNonPoint(feat.properties||{}) }).addTo(map)
     : null;
+
+  // подготовим локальные URL один раз на стиль
+  await prepareLocalIconsMap(pointFeatures);
 
   markerGroup.clearLayers(); markersById.clear();
 
   const tmp=L.geoJSON(pointFeatures,{
     pointToLayer:(feature,latlng)=>{
       const p=feature.properties||{}; p.description = cleanText(p.description||'');
-      const st = resolveStyleByUrl(p.styleUrl);
+      const su = normalizeStyleUrl(p.styleUrl);
+      const st = resolveStyleByUrl(su);
       const href = st?.iconHref || null;
       const hex  = st?.iconHex  || (href && (hexFromHref(href)||namedHexFromHref(href))) || null;
 
-      // 1) Ставим SVG-пин цвета стиля (всегда есть)
+      // 1) сразу цветной пин (гарантия)
       const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
 
-      // 2) Пробуем точную иконку из KML (если отдается)
-      const tryRemote = href ? probe(href).then(ok => { if(ok) marker.setIcon(remoteIcon(href)); }) : Promise.resolve();
-
-      // 3) Опционально: локальные icon-N.png (только если включено и найден файл)
-      const tryLocal = async ()=>{
-        if(!USE_LOCAL_ICONS) return;
-        const idx = p.styleUrl && styleUrlToLocalIndex[p.styleUrl];
-        if(!idx) return;
-        for (const url of localIconCandidates(idx)){
-          // eslint-disable-next-line no-await-in-loop
-          if (await probe(url)) { marker.setIcon(makeIcon(url)); return; }
-        }
-      };
-
-      // Важно: сначала пробуем remote; если не вышло — локальные
-      tryRemote.then(tryLocal);
+      // 2) если есть локальный PNG для этого стиля — он приоритетнее
+      const localUrl = su && styleUrlToLocalUrl[su];
+      if(localUrl){
+        marker.setIcon(L.icon({
+          iconUrl: localUrl,
+          iconSize: ICON_SIZE,
+          iconAnchor: [ICON_SIZE[0]/2, ICON_SIZE[1]/2],
+          popupAnchor: [0, -16]
+        }));
+      } else if (href){
+        // 3) иначе пробуем оригинальный href из KML
+        probe(href).then(ok => { if(ok) marker.setIcon(remoteIcon(href)); });
+      }
 
       markersById.set(p._seq, marker);
       marker.featureCat=detectCategory(p);
@@ -381,15 +386,17 @@ document.getElementById('btnShowAll')?.addEventListener('click',()=>{
 document.getElementById('btnLocate')?.addEventListener('click',()=>{
   document.querySelector('.leaflet-control-locate a')?.click();
 });
-document.getElementById('btnToggleSidebar')?.addEventListener('click',()=>{
-  const sb=document.getElementById('sidebar');
-  sb.style.display=(sb.style.display==='none')?'':'';
-  setTimeout(()=>{ headerH(); map.invalidateSize(); fitToVisible(); },0);
-});
-document.getElementById('fabToggleUI')?.addEventListener('click',()=>{
-  document.body.classList.toggle('ui-hidden');
-  setTimeout(()=>{ headerH(); map.invalidateSize(); fitToVisible(); },0);
-});
+
+// СВЕРНУТЬ/РАЗВЕРНУТЬ боковую панель
+(function(){
+  const btn = document.getElementById('btnCollapse') ||
+              [...document.querySelectorAll('button,.btn')].find(b=>b.textContent.trim().toLowerCase().startsWith('свернуть'));
+  if(!btn) return;
+  btn.addEventListener('click',()=>{
+    document.body.classList.toggle('sidebar-hidden');
+    requestAnimationFrame(()=>{ headerH(); map.invalidateSize(); fitToVisible(); });
+  });
+})();
 
 function ensureMobileUI(){ if(window.innerWidth<=780) document.body.classList.remove('ui-hidden'); }
 ensureMobileUI();
@@ -460,7 +467,7 @@ function enableKmlPicker(){
     const kmlXml=new DOMParser().parseFromString(txt,'application/xml');
     styleMaps=buildStyleMaps(kmlXml);
     const geojson=toGeoJSON.kml(kmlXml);
-    renderGeoJSON(geojson);
+    await renderGeoJSON(geojson);
   }catch(e){
     console.error('KML load error:',e);
     enableKmlPicker();
