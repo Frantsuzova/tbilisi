@@ -1,10 +1,8 @@
 // ===== app.js =====
-// Иконки/цвета строго из KML. Фолбэки: локальные icon-N.png -> цветной SVG.
 
-// --- Конфиг локальных иконок ---
-const USE_LOCAL_ICONS = true;                 // включено: искать icon-N.png локально
-const LOCAL_ICON_DIRS = ['.', 'images'];      // относительные каталоги: ./icon-N.png и ./images/icon-N.png
-const ICON_LOCAL_LIMIT = 28;                  // максимум локальных icon-N.png (по порядку стилей)
+// --- Включение локальных иконок переключателем в URL (?local=1) ---
+const USE_LOCAL_ICONS = new URLSearchParams(location.search).has('local');
+const ICON_LOCAL_LIMIT = 28;
 const ICON_SIZE = [32, 32];
 
 // ---------- текстовые утилиты ----------
@@ -76,12 +74,15 @@ function namedHexFromHref(href){
   if(/(white|wht)/.test(s)) return '#ffffff';
   return null;
 }
+
+// собрать справочник стилей и порядок их определения
 function buildStyleMaps(kmlXml){
   const styles=Object.create(null), orderIdx=Object.create(null);
   let idx=0;
   kmlXml.querySelectorAll('Style[id], StyleMap[id]').forEach(el=>{
     const id=el.getAttribute('id'); if(id&&!orderIdx['#'+id]) orderIdx['#'+id]=++idx;
   });
+
   // Style
   kmlXml.querySelectorAll('Style[id]').forEach(st=>{
     const key='#'+st.getAttribute('id'); if(!styles[key]) styles[key]={};
@@ -97,15 +98,18 @@ function buildStyleMaps(kmlXml){
     if(width){ styles[key].width=width; }
     if(polyC){ styles[key].polyHex=polyC.hex; styles[key].polyOpacity=polyC.opacity; }
   });
-  // StyleMap (normal)
+
+  // StyleMap → берём пару key=normal
   kmlXml.querySelectorAll('StyleMap[id]').forEach(sm=>{
     const key='#'+sm.getAttribute('id'); if(!styles[key]) styles[key]={};
-    const pr = Array.from(sm.querySelectorAll('Pair'))
-      .find(p=>(p.querySelector('key')?.textContent?.trim()||'')==='normal') || sm.querySelector('Pair');
-    if(pr){
-      const su = pr.querySelector('styleUrl')?.textContent?.trim()||null;
+    const pairs=Array.from(sm.querySelectorAll('Pair'));
+    const normal = pairs.find(p=> (p.querySelector('key')?.textContent?.trim()||'')==='normal') || pairs[0];
+    if(normal){
+      let su = normal.querySelector('styleUrl')?.textContent?.trim()||null;
+      if(su && !su.startsWith('#')) su = '#'+su;
       if(su && styles[su]) styles[key] = { ...styles[su], ...styles[key] };
     }
+    // На случай инлайн-стилей прямо в StyleMap
     const href   = sm.querySelector('IconStyle Icon href')?.textContent?.trim()||null;
     const iconC  = kmlColorToRgba(sm.querySelector('IconStyle color')?.textContent?.trim()||'');
     const lineC  = kmlColorToRgba(sm.querySelector('LineStyle color')?.textContent?.trim()||'');
@@ -118,6 +122,7 @@ function buildStyleMaps(kmlXml){
     if(width){ styles[key].width=width; }
     if(polyC){ styles[key].polyHex=polyC.hex; styles[key].polyOpacity=polyC.opacity; }
   });
+
   return { styles, orderIdx };
 }
 
@@ -140,7 +145,7 @@ function svgPinIcon(hex){
   return L.divIcon({ className:'pin-svg', html, iconSize:[w,h], iconAnchor:[ax,ay], popupAnchor:[0,-34] });
 }
 
-// --- пробник изображений (с кешем) ---
+// пробник изображений (чтобы не плодить 404 в консоли)
 const _probeCache = new Map();
 function probe(url){
   if (_probeCache.has(url)) return _probeCache.get(url);
@@ -153,17 +158,15 @@ function probe(url){
   _probeCache.set(url,p); return p;
 }
 
-// --- локальные icon-N кандидаты (учитываем /tbilisi/, корень домена и текущую папку) ---
+// локальные icon-N кандидаты (корень домена, /tbilisi/, текущая папка, /images/)
 function localIconCandidates(idx){
   const name = `icon-${idx}.png`;
-  const baseDir = location.pathname.replace(/\/[^/]*$/, ''); // /tbilisi  или /tbilisi/sub
+  const base = location.pathname.replace(/\/[^/]*$/, ''); // /tbilisi
   return [
-    // абсолютные
-    `${baseDir}/${name}`,           // /tbilisi/icon-1.png
-    `/${name}`,                     // /icon-1.png (доменный корень)
-    `${baseDir}/images/${name}`,
+    `${base}/${name}`,
+    `${base}/images/${name}`,
+    `/${name}`,
     `/images/${name}`,
-    // относительные к странице
     `${name}`,
     `./${name}`,
     `images/${name}`,
@@ -215,9 +218,19 @@ let pointFeatures=[], lastSummaryBase='';
 let styleMaps=null;
 let styleUrlToLocalIndex=Object.create(null);
 
-// ---------- стили для линий/полигонов ----------
+// нормализатор styleUrl (#id / id)
+function resolveStyleByUrl(su){
+  if(!su) return null;
+  let key = su.trim();
+  if(styleMaps.styles[key]) return styleMaps.styles[key];
+  if(!key.startsWith('#') && styleMaps.styles['#'+key]) return styleMaps.styles['#'+key];
+  if(key.startsWith('#') && styleMaps.styles[key.slice(1)]) return styleMaps.styles[key.slice(1)];
+  return null;
+}
+
+// стили для линий/полигонов
 function styleForNonPoint(props){
-  const su = props?.styleUrl; const st = su ? styleMaps.styles[su] : null;
+  const st = resolveStyleByUrl(props?.styleUrl);
   if(!st) return { color:'#2563eb', weight:3, opacity:0.85 };
   const color = st.lineHex || st.polyHex || '#2563eb';
   const opacity = (st.lineOpacity ?? st.polyOpacity ?? 0.9);
@@ -233,11 +246,15 @@ function renderGeoJSON(geojson){
   pointFeatures = feats.filter(f=>f.geometry && f.geometry.type==='Point');
   const shapeFeatures = feats.filter(f=>!f.geometry || f.geometry.type!=='Point');
 
-  // локальные icon-N по порядку стилей (только реально используемые)
-  const used=[...new Set(pointFeatures.map(f=>String(f.properties?.styleUrl||'')).filter(Boolean))];
-  used.sort((a,b)=>(styleMaps.orderIdx[a]||99999)-(styleMaps.orderIdx[b]||99999));
-  styleUrlToLocalIndex=Object.create(null);
-  used.slice(0,ICON_LOCAL_LIMIT).forEach((su,i)=>styleUrlToLocalIndex[su]=i+1);
+  // таблица соответствия styleUrl -> локальный индекс (только если включены локальные)
+  if (USE_LOCAL_ICONS){
+    const used=[...new Set(pointFeatures.map(f=>String(f.properties?.styleUrl||'')).filter(Boolean))];
+    used.sort((a,b)=>(styleMaps.orderIdx[a]||99999)-(styleMaps.orderIdx[b]||99999));
+    styleUrlToLocalIndex=Object.create(null);
+    used.slice(0,ICON_LOCAL_LIMIT).forEach((su,i)=>styleUrlToLocalIndex[su]=i+1);
+  } else {
+    styleUrlToLocalIndex=Object.create(null);
+  }
 
   if(shapesLayer){ try{ map.removeLayer(shapesLayer); }catch{} }
   shapesLayer = shapeFeatures.length
@@ -249,30 +266,29 @@ function renderGeoJSON(geojson){
   const tmp=L.geoJSON(pointFeatures,{
     pointToLayer:(feature,latlng)=>{
       const p=feature.properties||{}; p.description = cleanText(p.description||'');
-      const su = typeof p.styleUrl==='string'?p.styleUrl:null;
-      const st = su ? styleMaps.styles[su] : null;
+      const st = resolveStyleByUrl(p.styleUrl);
       const href = st?.iconHref || null;
-      const hex  = st?.iconHex || null;
+      const hex  = st?.iconHex  || (href && (hexFromHref(href)||namedHexFromHref(href))) || null;
 
-      // 1) ставим SVG сразу (всегда есть)
+      // 1) Ставим SVG-пин цвета стиля (всегда есть)
       const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
 
-      // 2) пробуем точную иконку из KML
+      // 2) Пробуем точную иконку из KML (если отдается)
       const tryRemote = href ? probe(href).then(ok => { if(ok) marker.setIcon(remoteIcon(href)); }) : Promise.resolve();
 
-      // 3) если разрешены локальные — пытаемся icon-N.png (если файл существует)
+      // 3) Опционально: локальные icon-N.png (только если включено и найден файл)
       const tryLocal = async ()=>{
         if(!USE_LOCAL_ICONS) return;
-        const idx = su ? styleUrlToLocalIndex[su] : undefined;
+        const idx = p.styleUrl && styleUrlToLocalIndex[p.styleUrl];
         if(!idx) return;
-        // сначала абсолютный путь каталога страницы (/tbilisi/icon-N.png), затем доменный корень и относительные
         for (const url of localIconCandidates(idx)){
           // eslint-disable-next-line no-await-in-loop
           if (await probe(url)) { marker.setIcon(makeIcon(url)); return; }
         }
       };
 
-      tryRemote.finally(tryLocal);
+      // Важно: сначала пробуем remote; если не вышло — локальные
+      tryRemote.then(tryLocal);
 
       markersById.set(p._seq, marker);
       marker.featureCat=detectCategory(p);
@@ -405,7 +421,7 @@ async function loadKmlAuto(){ let last;
   throw last||new Error('KML not found');
 }
 
-// fallback-пикер (если KML не нашёлся)
+// fallback-пикер
 function enableKmlPicker(){
   const bar=document.createElement('div'); bar.className='panel kml-picker';
   bar.innerHTML=`<span>Загрузить KML:</span>
