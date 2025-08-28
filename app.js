@@ -1,6 +1,4 @@
-// app.js — фикс соответствия цветов/иконок стилям из KML
-
-/* ---------- текстовые утилиты ---------- */
+//// ---------- Текстовые утилиты ----------
 function toText(v){ if(v==null)return''; if(typeof v==='string')return v;
   if(typeof v==='number'||typeof v==='boolean')return String(v);
   if(Array.isArray(v))return v.map(toText).filter(Boolean).join(' ');
@@ -8,7 +6,7 @@ function toText(v){ if(v==null)return''; if(typeof v==='string')return v;
     for(const k of pref) if(k in v) return toText(v[k]);
     return Object.values(v).map(toText).filter(Boolean).join(' ');
   } return ''; }
-function cleanText(v){ let s=toText(v); return s.replace(/\[object Object\]/gi,' ').replace(/\s{2,}/g,' ').trim(); }
+function cleanText(v){ return toText(v).replace(/\[object Object\]/gi,' ').replace(/\s{2,}/g,' ').trim(); }
 function stripHtmlToText(input){ const html=cleanText(input); if(!html)return '';
   const tmp=document.createElement('div'); tmp.innerHTML=html;
   tmp.querySelectorAll('img,picture,source,iframe,video,audio,svg,script,style').forEach(el=>el.remove());
@@ -16,10 +14,13 @@ function stripHtmlToText(input){ const html=cleanText(input); if(!html)return ''
   return t.replace(/\[object Object\]/gi,'').replace(/\s{2,}/g,' ').trim(); }
 function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
   .replaceAll('"','&quot;').replaceAll("'","&#39;"); }
-function makePopupHtml(name, description){ const n=escapeHtml(cleanText(name))||'Без названия';
-  const d=stripHtmlToText(description); return d?`<strong>${n}</strong><br>${escapeHtml(d)}`:`<strong>${n}</strong>`; }
+function makePopupHtml(name, description){
+  const n=escapeHtml(cleanText(name))||'Без названия';
+  const d=stripHtmlToText(description);
+  return d?`<strong>${n}</strong><br>${escapeHtml(d)}`:`<strong>${n}</strong>`;
+}
 
-/* ---------- категории ---------- */
+//// ---------- Категории ----------
 function detectCategory(p){
   const n=cleanText(p?.name).toLowerCase(), d=cleanText(p?.description).toLowerCase();
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n)||/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
@@ -29,7 +30,7 @@ function detectCategory(p){
 }
 const CAT_LABEL={stairs:'Лестницы',porches:'Парадные',temples:'Храмы',other:'Остальное'};
 
-/* ---------- чистка KML ---------- */
+//// ---------- Очистка KML ----------
 function sanitizeKmlString(txt){
   return String(txt)
     .replace(/<img\b[^>]*>/gi,'')
@@ -37,22 +38,23 @@ function sanitizeKmlString(txt){
     .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi,'');
 }
 
-/* ---------- парсинг стилей из KML ---------- */
-/* KML <color> хранится как aabbggrr, конвертируем в #rrggbb */
-function kmlColorToHex(s){
-  if(!s) return null;
+//// ---------- Цвета/стили из KML ----------
+function kmlColorToRgba(s){
+  if(!s) return null; // формат aabbggrr
   s=String(s).trim().replace(/^0x/i,'').toLowerCase();
-  if(s.length===8){ const aa=s.slice(0,2), bb=s.slice(2,4), gg=s.slice(4,6), rr=s.slice(6,8); return '#'+rr+gg+bb; }
-  if(s.length===6){ return '#'+s; }
-  return null;
+  if(s.length!==8 && s.length!==6) return null;
+  let aa='ff', bb, gg, rr;
+  if(s.length===8){ aa=s.slice(0,2); bb=s.slice(2,4); gg=s.slice(4,6); rr=s.slice(6,8); }
+  else { rr=s.slice(0,2); gg=s.slice(2,4); bb=s.slice(4,6); }
+  const hex='#'+rr+gg+bb;
+  const opacity=parseInt(aa,16)/255;
+  return { hex, opacity:isFinite(opacity)?opacity:1 };
 }
-function extractHexFromHref(href){
-  if(!href) return null;
-  const m = href.match(/(?:[?&#]color=)(?:0x)?([0-9a-fA-F]{6,8})/);
-  if(m){ return kmlColorToHex(m[1]); }
-  return null;
+function hexFromHref(href){
+  const m = href && href.match(/(?:[?&#]color=)(?:0x)?([0-9a-fA-F]{6,8})/);
+  return m ? (kmlColorToRgba(m[1])?.hex||null) : null;
 }
-function guessNamedColorFromHref(href){
+function namedHexFromHref(href){
   if(!href) return null; const s=href.toLowerCase();
   if(/(yellow|ylw)/.test(s)) return '#f5c400';
   if(/(green|grn)/.test(s))  return '#2cad5b';
@@ -66,81 +68,72 @@ function guessNamedColorFromHref(href){
   if(/(white|wht)/.test(s)) return '#ffffff';
   return null;
 }
-/* Возвращаем три карты:
-   - hrefById['#id']  -> URL иконки
-   - colorById['#id'] -> #rrggbb (из <color> или из href)
-   - orderIdx['#id']  -> порядковый номер стиля по докум. порядку (устойчивый)
-*/
+function isHostedImage(url){ return /mymaps\.usercontent\.google\.com/i.test(url||''); }
+
+/* Собираем полную карту стилей из <Style> и <StyleMap> */
 function buildStyleMaps(kmlXml){
-  const hrefById=Object.create(null), colorById=Object.create(null), orderIdx=Object.create(null);
-  let idx = 0;
+  const styles = Object.create(null);      // key '#id' -> {iconHref, iconHex, lineHex, lineOpacity, width, polyHex, polyOpacity}
+  const orderIdx = Object.create(null);    // документный порядок для стабильности
+  let idx=0;
 
-  // фиксируем документный порядок
-  const nodes = kmlXml.querySelectorAll('Style[id], StyleMap[id]');
-  nodes.forEach(el=>{
-    const id = el.getAttribute('id'); if(!id) return;
-    const key = '#'+id;
-    if(!(key in orderIdx)) orderIdx[key] = ++idx;
-  });
+  const all = kmlXml.querySelectorAll('Style[id], StyleMap[id]');
+  all.forEach(el=>{ const id=el.getAttribute('id'); if(id && !orderIdx['#'+id]) orderIdx['#'+id]=++idx; });
 
-  // Style -> href/color
+  // Style
   kmlXml.querySelectorAll('Style[id]').forEach(st=>{
-    const key = '#'+st.getAttribute('id');
+    const key='#'+st.getAttribute('id'); if(!styles[key]) styles[key]={};
     const href = st.querySelector('IconStyle Icon href')?.textContent?.trim() || null;
-    const kmlCol = st.querySelector('IconStyle color')?.textContent?.trim() || null;
-    if(href) hrefById[key]=href;
-    if(kmlCol){ colorById[key]=kmlColorToHex(kmlCol); }
-    if(!colorById[key] && href) colorById[key]=extractHexFromHref(href)||guessNamedColorFromHref(href);
+    const iconCol = kmlColorToRgba(st.querySelector('IconStyle color')?.textContent?.trim()||'');
+    const lineCol = kmlColorToRgba(st.querySelector('LineStyle color')?.textContent?.trim()||'');
+    const width   = parseFloat(st.querySelector('LineStyle width')?.textContent||'') || undefined;
+    const polyCol = kmlColorToRgba(st.querySelector('PolyStyle color')?.textContent?.trim()||'');
+
+    if(href) styles[key].iconHref = href;
+    if(iconCol){ styles[key].iconHex = iconCol.hex; }
+    if(!styles[key].iconHex && href){ styles[key].iconHex = hexFromHref(href) || namedHexFromHref(href); }
+    if(lineCol){ styles[key].lineHex = lineCol.hex; styles[key].lineOpacity = lineCol.opacity; }
+    if(width){ styles[key].width = width; }
+    if(polyCol){ styles[key].polyHex = polyCol.hex; styles[key].polyOpacity = polyCol.opacity; }
   });
 
-  // StyleMap -> normal Style
+  // StyleMap (берём normal)
   kmlXml.querySelectorAll('StyleMap[id]').forEach(sm=>{
-    const key = '#'+sm.getAttribute('id');
-    let target = null;
+    const key='#'+sm.getAttribute('id'); if(!styles[key]) styles[key]={};
     const pair = Array.from(sm.querySelectorAll('Pair'))
-      .find(p => (p.querySelector('key')?.textContent?.trim()||'')==='normal') || sm.querySelector('Pair');
+      .find(p=>(p.querySelector('key')?.textContent?.trim()||'')==='normal') || sm.querySelector('Pair');
+    let target=null;
     if(pair){
-      const su = pair.querySelector('styleUrl')?.textContent?.trim() || null;
-      if(su){
-        hrefById[key]  = hrefById[su]  || hrefById[key]  || null;
-        colorById[key] = colorById[su] || colorById[key] || null;
-        target = su;
-      }
+      const su = pair.querySelector('styleUrl')?.textContent?.trim()||null;
+      if(su && styles[su]){ styles[key] = { ...styles[su], ...styles[key] }; target=su; }
     }
-    // fallback: прямой href/color внутри StyleMap
-    if(!hrefById[key]){
-      const href = sm.querySelector('IconStyle Icon href')?.textContent?.trim() || null;
-      if(href) hrefById[key] = href;
-    }
-    if(!colorById[key]){
-      const kmlCol = sm.querySelector('IconStyle color')?.textContent?.trim() || null;
-      if(kmlCol) colorById[key]=kmlColorToHex(kmlCol);
-    }
-    if(!colorById[key] && hrefById[key]) colorById[key]=extractHexFromHref(hrefById[key])||guessNamedColorFromHref(hrefById[key]);
+    // fallback: прямые IconStyle/LineStyle/PolyStyle внутри StyleMap
+    const href = sm.querySelector('IconStyle Icon href')?.textContent?.trim() || null;
+    const iconCol = kmlColorToRgba(sm.querySelector('IconStyle color')?.textContent?.trim()||'');
+    const lineCol = kmlColorToRgba(sm.querySelector('LineStyle color')?.textContent?.trim()||'');
+    const width   = parseFloat(sm.querySelector('LineStyle width')?.textContent||'') || undefined;
+    const polyCol = kmlColorToRgba(sm.querySelector('PolyStyle color')?.textContent?.trim()||'');
+
+    if(href) styles[key].iconHref = href;
+    if(iconCol){ styles[key].iconHex = iconCol.hex; }
+    if(!styles[key].iconHex && href){ styles[key].iconHex = hexFromHref(href) || namedHexFromHref(href); }
+    if(lineCol){ styles[key].lineHex = lineCol.hex; styles[key].lineOpacity = lineCol.opacity; }
+    if(width){ styles[key].width = width; }
+    if(polyCol){ styles[key].polyHex = polyCol.hex; styles[key].polyOpacity = polyCol.opacity; }
   });
 
-  return { hrefById, colorById, orderIdx };
-}
-function getStyleColorByUrl(styleUrl, maps){
-  if(!styleUrl) return null;
-  return maps.colorById[styleUrl] || null;
+  return { styles, orderIdx };
 }
 
-/* ---------- иконки ---------- */
-const ICONS={ prefix:'icon-', ext:'png', count:28, size:[32,32], anchor:[16,32], popup:[0,-28] };
-const iconCache=new Map();
-function personalIcon(id){
-  if(!id||id<1||id>ICONS.count) return null;
-  if(iconCache.has(id)) return iconCache.get(id);
-  const ic=L.icon({iconUrl:`${ICONS.prefix}${id}.${ICONS.ext}`,iconSize:ICONS.size,iconAnchor:ICONS.anchor,popupAnchor:ICONS.popup});
-  iconCache.set(id,ic); return ic;
+//// ---------- Иконки ----------
+const ICON_SIZE = [32,32];
+function inferAnchor(href){
+  const s=(href||'').toLowerCase();
+  // Пины и «paddle» — якорь снизу; круглые/плоские — по центру
+  if(/paddle|pin|pushpin|marker|kml\/paddle/.test(s)) return [ICON_SIZE[0]/2, ICON_SIZE[1]];
+  return [ICON_SIZE[0]/2, ICON_SIZE[1]/2];
 }
-const imgExistsCache=new Map();
-function imageExists(url){
-  if(imgExistsCache.has(url)) return imgExistsCache.get(url);
-  const p=new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false);
-    im.src=url+(url.includes('?')?'&':'?')+'v='+Date.now(); }).then(ok=>{ imgExistsCache.set(url,ok); return ok; });
-  imgExistsCache.set(url,p); return p;
+function remoteIcon(href){
+  return L.icon({ iconUrl: href, iconSize: ICON_SIZE, iconAnchor: inferAnchor(href), popupAnchor: [0,-20] });
 }
 function svgPinIcon(hex){
   const fill=(hex||'#2b7bff').toLowerCase(), stroke='#08213a';
@@ -153,79 +146,113 @@ function svgPinIcon(hex){
   return L.divIcon({className:'pin-svg',html,iconSize:[w,h],iconAnchor:[ax,ay],popupAnchor:[0,-34]});
 }
 
-/* ---------- карта ---------- */
+// Локальный фолбэк: icon-1.png … icon-28.png по ДЕЙСТВИТЕЛЬНОМУ порядку стилей в документе
+const ICON_LOCAL = { prefix:'icon-', ext:'png', limit:28 };
+const iconCacheLocal=new Map(), imgProbe=new Map();
+function localIcon(idx){
+  if(!idx || idx<1 || idx>ICON_LOCAL.limit) return null;
+  if(iconCacheLocal.has(idx)) return iconCacheLocal.get(idx);
+  const ic=L.icon({iconUrl:`${ICON_LOCAL.prefix}${idx}.${ICON_LOCAL.ext}`,iconSize:ICON_SIZE,iconAnchor:[16,16],popupAnchor:[0,-16]});
+  iconCacheLocal.set(idx,ic); return ic;
+}
+function probe(url){
+  if(imgProbe.has(url)) return imgProbe.get(url);
+  const p = new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false); im.src=url; })
+    .then(ok=>{ imgProbe.set(url,ok); return ok; });
+  imgProbe.set(url,p); return p;
+}
+
+//// ---------- Карта ----------
 const map=L.map('map',{zoomControl:false,tap:false,wheelDebounceTime:10,inertia:true});
 const cartoLight=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
   {subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'});
 const cartoDark=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
   {subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'});
 let currentTiles=null;
-function setTilesByColorScheme(){ const pref=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const next=pref?cartoDark:cartoLight; if(currentTiles!==next){ if(currentTiles) map.removeLayer(currentTiles); next.addTo(map); currentTiles=next; } }
-setTilesByColorScheme();
+function setTiles(){ const prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const next=prefersDark?cartoDark:cartoLight; if(currentTiles!==next){ if(currentTiles) map.removeLayer(currentTiles); next.addTo(map); currentTiles=next; } }
+setTiles();
 if(window.matchMedia){ const mm=window.matchMedia('(prefers-color-scheme: dark)');
-  if(mm.addEventListener) mm.addEventListener('change',setTilesByColorScheme); else if(mm.addListener) mm.addListener(setTilesByColorScheme); }
-
+  if(mm.addEventListener) mm.addEventListener('change',setTiles); else if(mm.addListener) mm.addListener(setTiles); }
 L.control.zoom({position:'topright'}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
 L.control.locate({position:'topright',setView:'untilPan',keepCurrentZoomLevel:true,strings:{title:'Показать моё местоположение'}}).addTo(map);
 
-/* ---------- fitBounds и высота шапки ---------- */
-function updateHeaderHeightVar(){ const h=document.getElementById('headerPanel')?.offsetHeight||0;
+function headerH(){ const h=document.getElementById('headerPanel')?.offsetHeight||0;
   document.documentElement.style.setProperty('--header-h',`${h+12}px`); }
-function getFitPadding(){ const header=document.getElementById('headerPanel');
+function fitPadding(){
+  const header=document.getElementById('headerPanel');
   const sidebar=document.getElementById('sidebar');
-  const topPad=(header&&header.offsetHeight)?header.offsetHeight+16:16;
-  const rightPad=(sidebar&&getComputedStyle(sidebar).display!=='none')?sidebar.offsetWidth+16:16;
-  return {paddingTopLeft:[16,topPad],paddingBottomRight:[rightPad,16]}; }
-updateHeaderHeightVar();
+  const top=(header&&header.offsetHeight)?header.offsetHeight+16:16;
+  const right=(sidebar&&getComputedStyle(sidebar).display!=='none')?sidebar.offsetWidth+16:16;
+  return { paddingTopLeft:[16,top], paddingBottomRight:[right,16] };
+}
+headerH();
 
-/* ---------- состояние ---------- */
+//// ---------- Состояние ----------
 let shapesLayer=null, markerGroup=L.layerGroup().addTo(map), markersById=new Map(), boundsAll=null;
 let pointFeatures=[], lastSummaryBase='';
-let styleMaps=null; // {hrefById,colorById,orderIdx}
-let styleUrlToIconIndex=Object.create(null); // итоговое сопоставление styleUrl -> 1..28
+let styleMaps=null;                   // {styles, orderIdx}
+let styleUrlToLocalIndex=Object.create(null); // для фолбэка icon-N по порядку стилей
 
-/* ---------- рендер ---------- */
-function renderGeoJSON(geojson, maps){
-  styleMaps=maps;
-  const feats=Array.isArray(geojson.features)?geojson.features:[];
+//// ---------- Рендер ----------
+function styleForNonPoint(props){
+  const su = props?.styleUrl;
+  const st = su ? styleMaps.styles[su] : null;
+  if(!st) return { color:'#2563eb', weight:3, opacity:0.85 };
+  const color = st.lineHex || st.polyHex || '#2563eb';
+  const opacity = (st.lineOpacity ?? st.polyOpacity ?? 0.9);
+  const weight = st.width || 3;
+  return { color, weight, opacity, fillColor: st.polyHex || color, fillOpacity: st.polyOpacity ?? 0.2 };
+}
+
+function renderGeoJSON(geojson){
+  const feats = Array.isArray(geojson.features)?geojson.features:[];
   feats.forEach((f,i)=>{ f.properties={...(f.properties||{}), _seq:i}; });
 
-  pointFeatures=feats.filter(f=>f.geometry&&f.geometry.type==='Point');
-  const shapeFeatures=feats.filter(f=>!f.geometry || f.geometry.type!=='Point');
+  pointFeatures = feats.filter(f=>f.geometry && f.geometry.type==='Point');
+  const shapeFeatures = feats.filter(f=>!f.geometry || f.geometry.type!=='Point');
 
-  // Подготовим порядок стилей: берём ТОЛЬКО реально используемые styleUrl у точек,
-  // сортируем по документному порядку (maps.orderIdx) и назначаем icon-1..28
+  // Индексация локальных icon-N по порядку СТИЛЕЙ в документе (только реально используемые styleUrl)
   const used = [...new Set(pointFeatures.map(f=>String(f.properties?.styleUrl||'')).filter(Boolean))];
-  used.sort((a,b)=>(maps.orderIdx[a]||99999)-(maps.orderIdx[b]||99999));
-  styleUrlToIconIndex=Object.create(null);
-  used.slice(0,ICONS.count).forEach((su,i)=>{ styleUrlToIconIndex[su]=i+1; });
+  used.sort((a,b)=>(styleMaps.orderIdx[a]||99999)-(styleMaps.orderIdx[b]||99999));
+  styleUrlToLocalIndex=Object.create(null);
+  used.slice(0,ICON_LOCAL.limit).forEach((su,i)=>styleUrlToLocalIndex[su]=i+1);
 
-  pointFeatures.forEach((f,pi)=>{
-    const p=f.properties||{}; p._ptSeq=pi; p.name=cleanText(p.name); p.description=stripHtmlToText(p.description);
-  });
+  // Линии/полигоны по стилям
+  if(shapesLayer){ try{ map.removeLayer(shapesLayer); }catch{} }
+  shapesLayer = shapeFeatures.length
+    ? L.geoJSON(shapeFeatures, { style:(feat)=>styleForNonPoint(feat.properties||{}) }).addTo(map)
+    : null;
 
-  if(shapesLayer){ try{ map.removeLayer(shapesLayer);}catch(e){} }
-  shapesLayer=shapeFeatures.length?L.geoJSON(shapeFeatures,{style:()=>({color:'#2563eb',weight:3,opacity:0.85})}).addTo(map):null;
-
+  // Точки
   markerGroup.clearLayers(); markersById.clear();
 
   const tmp=L.geoJSON(pointFeatures,{
     pointToLayer:(feature,latlng)=>{
       const p=feature.properties||{};
-      const su=typeof p.styleUrl==='string'?p.styleUrl:null;
-      const color = su ? getStyleColorByUrl(su, styleMaps) : null;
+      const su = typeof p.styleUrl==='string'?p.styleUrl:null;
+      const st = su ? styleMaps.styles[su] : null;
+      const href = st?.iconHref || null;
+      const hex = st?.iconHex || null;
 
       let marker;
-      const idx = su ? styleUrlToIconIndex[su] : undefined;
-      if(idx && idx>=1 && idx<=ICONS.count){
-        const url=`${ICONS.prefix}${idx}.${ICONS.ext}`;
-        marker=L.marker(latlng,{icon: svgPinIcon(color)}); // временно, потом подменим
-        imageExists(url).then(ok=>{ if(ok) marker.setIcon(personalIcon(idx)); else if(color) marker.setIcon(svgPinIcon(color)); });
-      }else{
-        marker=L.marker(latlng,{icon: svgPinIcon(color)});
+      if (href && !isHostedImage(href)) {
+        // точная иконка из KML (gstatic/Google)
+        marker = L.marker(latlng, { icon: remoteIcon(href) });
+      } else {
+        // фолбэк: локальная icon-N по стилю; если нет — цветной SVG
+        const idx = su ? styleUrlToLocalIndex[su] : undefined;
+        if (idx) {
+          marker = L.marker(latlng, { icon: localIcon(idx) || svgPinIcon(hex) });
+          const url = `icon-${idx}.png`;
+          // Если файла нет — подменим на SVG
+          probe(url).then(ok=>{ if(!ok) try{ marker.setIcon(svgPinIcon(hex)); }catch{} });
+        } else {
+          marker = L.marker(latlng, { icon: svgPinIcon(hex) });
+        }
       }
+
       markersById.set(p._ptSeq, marker);
       marker.featureCat=detectCategory(p);
       marker.featureProps=p;
@@ -237,16 +264,17 @@ function renderGeoJSON(geojson, maps){
   });
   tmp.eachLayer(l=>markerGroup.addLayer(l));
 
+  // fit
   try{
     const group=L.featureGroup([markerGroup,shapesLayer].filter(Boolean));
     const b=group.getBounds();
-    if(b.isValid()){ boundsAll=b; map.fitBounds(b,getFitPadding()); } else { map.setView([41.6938,44.8015],14); }
+    if(b.isValid()){ boundsAll=b; map.fitBounds(b,fitPadding()); } else { map.setView([41.6938,44.8015],14); }
   }catch{ map.setView([41.6938,44.8015],14); }
 
   updateCounters(); buildList(); applyVisibility();
 }
 
-/* ---------- счётчики/список/фильтр и UI (без изменений) ---------- */
+//// ---------- Подсчёт/список/фильтр и UI (без изменений) ----------
 function updateCounters(){ const total=pointFeatures.length; const cats={stairs:0,porches:0,temples:0,other:0};
   pointFeatures.forEach(f=>{ cats[detectCategory(f.properties)]++; });
   document.getElementById('countTotal').textContent=total;
@@ -265,7 +293,7 @@ function isMatchProps(p,activeCat,qLower){ const cat=detectCategory(p);
   const name=cleanText(p.name).toLowerCase(), desc=cleanText(p.description).toLowerCase();
   return ((activeCat==='all')||(cat===activeCat)) && (!qLower||name.includes(qLower)||desc.includes(qLower)); }
 function fitToVisible(){ const layers=markerGroup.getLayers(); if(!layers.length)return;
-  const b=L.featureGroup(layers).getBounds(); if(b.isValid()) map.fitBounds(b,getFitPadding()); }
+  const b=L.featureGroup(layers).getBounds(); if(b.isValid()) map.fitBounds(b,fitPadding()); }
 function applyVisibility(){ const q=document.getElementById('search').value.trim().toLowerCase();
   const btn=document.querySelector('.chip[data-active="true"]'); const active=btn?btn.dataset.cat:'all';
   Array.from(document.querySelectorAll('#list .item')).forEach((el,idx)=>{ const p=pointFeatures[idx]?.properties||{};
@@ -280,19 +308,19 @@ searchInput.addEventListener('input',()=>applyVisibility());
 document.querySelectorAll('.chip').forEach(btn=>{
   btn.addEventListener('click',()=>{ document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
     btn.dataset.active='true'; if(searchInput.value.trim()!=='') searchInput.value=''; applyVisibility(); fitToVisible(); }); });
-document.getElementById('btnShowAll').addEventListener('click',()=>{ if(boundsAll&&boundsAll.isValid()) map.fitBounds(boundsAll,getFitPadding()); });
+document.getElementById('btnShowAll').addEventListener('click',()=>{ if(boundsAll&&boundsAll.isValid()) map.fitBounds(boundsAll,fitPadding()); });
 document.getElementById('btnLocate').addEventListener('click',()=>{ document.querySelector('.leaflet-control-locate a')?.click(); });
 document.getElementById('btnToggleSidebar').addEventListener('click',()=>{ const sb=document.getElementById('sidebar');
-  sb.style.display=(sb.style.display==='none')?'':''; setTimeout(()=>{ updateHeaderHeightVar(); map.invalidateSize(); fitToVisible(); },0); });
+  sb.style.display=(sb.style.display==='none')?'':''; setTimeout(()=>{ headerH(); map.invalidateSize(); fitToVisible(); },0); });
 const fab=document.getElementById('fabToggleUI');
 if(fab){ fab.addEventListener('click',()=>{ document.body.classList.toggle('ui-hidden');
-  setTimeout(()=>{ updateHeaderHeightVar(); map.invalidateSize(); fitToVisible(); },0); }); }
+  setTimeout(()=>{ headerH(); map.invalidateSize(); fitToVisible(); },0); }); }
 function ensureMobileUI(){ if(window.innerWidth<=780) document.body.classList.remove('ui-hidden'); }
 ensureMobileUI();
-window.addEventListener('resize',()=>{ updateHeaderHeightVar(); map.invalidateSize(); fitToVisible(); });
-setTimeout(()=>{ updateHeaderHeightVar(); map.invalidateSize(); },0);
+window.addEventListener('resize',()=>{ headerH(); map.invalidateSize(); fitToVisible(); });
+setTimeout(()=>{ headerH(); map.invalidateSize(); },0);
 
-/* ---------- iOS скролл ---------- */
+/* iOS скролл */
 (function(){
   const sbBody=document.querySelector('.panel-sidebar .sidebar-body'); if(!sbBody) return;
   if(L&&L.DomEvent){ L.DomEvent.disableScrollPropagation(sbBody); L.DomEvent.disableClickPropagation(sbBody); }
@@ -305,14 +333,15 @@ setTimeout(()=>{ updateHeaderHeightVar(); map.invalidateSize(); },0);
   sbBody.addEventListener('pointerleave',()=>lock(false));
 })();
 
-/* ---------- загрузка KML ---------- */
+//// ---------- Загрузка KML ----------
 const kmlParam=new URLSearchParams(location.search).get('kml');
 const KML_CANDIDATES=[kmlParam,'./doc.kml','doc.kml','../doc.kml'].filter(Boolean);
 async function tryFetch(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(`HTTP ${r.status} ${url}`); return r.text(); }
-async function loadKmlAuto(){ let last; for(const url of KML_CANDIDATES){ try{ const raw=await tryFetch(url);
-    const txt=sanitizeKmlString(raw); console.log('[KML] loaded from',url); return {txt,url}; }catch(e){ last=e; } } throw last||new Error('KML not found'); }
+async function loadKmlAuto(){ let last; for(const url of KML_CANDIDATES){ try{
+    const raw=await tryFetch(url); const txt=sanitizeKmlString(raw); console.log('[KML] loaded from',url); return {txt,url};
+  }catch(e){ last=e; } } throw last||new Error('KML not found'); }
 
-/* ---------- fallback-пикер KML ---------- */
+/* Пикер KML (если файла нет) */
 function enableKmlPicker(){
   const bar=document.createElement('div'); bar.className='panel kml-picker';
   bar.innerHTML=`<span>Загрузить KML:</span>
@@ -325,25 +354,29 @@ function enableKmlPicker(){
     const f=e.target.files?.[0]; if(!f) return; const fr=new FileReader();
     fr.onload=()=>{ const txt=sanitizeKmlString(String(fr.result));
       const kmlXml=new DOMParser().parseFromString(txt,'application/xml');
-      const maps=buildStyleMaps(kmlXml); const geojson=toGeoJSON.kml(kmlXml);
-      renderGeoJSON(geojson,maps); bar.remove(); }; fr.readAsText(f); });
+      styleMaps=buildStyleMaps(kmlXml);
+      const geojson=toGeoJSON.kml(kmlXml);
+      renderGeoJSON(geojson); bar.remove(); };
+    fr.readAsText(f); });
   bar.querySelector('#kmlLoadBtn').addEventListener('click',async()=>{
     const url=bar.querySelector('#kmlUrl').value.trim(); if(!url) return;
     try{ const raw=await tryFetch(url); const txt=sanitizeKmlString(raw);
       const kmlXml=new DOMParser().parseFromString(txt,'application/xml');
-      const maps=buildStyleMaps(kmlXml); const geojson=toGeoJSON.kml(kmlXml);
-      renderGeoJSON(geojson,maps); bar.remove(); }catch(e){ alert('Не удалось загрузить по URL'); console.error(e); } });
+      styleMaps=buildStyleMaps(kmlXml);
+      const geojson=toGeoJSON.kml(kmlXml);
+      renderGeoJSON(geojson); bar.remove();
+    }catch(e){ alert('Не удалось загрузить по URL'); console.error(e); } });
   bar.querySelector('#kmlCloseBtn').addEventListener('click',()=>bar.remove());
 }
 
-/* ---------- bootstrap ---------- */
+/* Bootstrap */
 (async()=>{
   try{
     const {txt}=await loadKmlAuto();
     const kmlXml=new DOMParser().parseFromString(txt,'application/xml');
-    const maps=buildStyleMaps(kmlXml);
+    styleMaps=buildStyleMaps(kmlXml);
     const geojson=toGeoJSON.kml(kmlXml);
-    renderGeoJSON(geojson,maps);
+    renderGeoJSON(geojson);
   }catch(e){
     console.error('KML load error:',e);
     enableKmlPicker();
