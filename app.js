@@ -1,4 +1,4 @@
-// ===== app.js (stable) =====
+// ===== app.js =====
 
 // ---------- текстовые утилиты ----------
 function toText(v){ if(v==null)return''; if(typeof v==='string')return v;
@@ -137,18 +137,33 @@ function svgPinIcon(hex){
   return L.divIcon({ className:'pin-svg', html, iconSize:[w,h], iconAnchor:[ax,ay], popupAnchor:[0,-34] });
 }
 
-// локальные иконки (строго ./icon-N.png)
-const ICON_LOCAL_LIMIT=28;
-function localIconUrl(idx){ return `./icon-${idx}.png`; }
-const probeCache=new Map();
+// универсальный пробник картинок (с кешем)
+const _probeCache = new Map();
 function probe(url){
-  if(probeCache.has(url)) return probeCache.get(url);
-  const p=new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false); im.src=url; })
-    .then(ok=>{ probeCache.set(url,ok); return ok; });
-  probeCache.set(url,p); return p;
+  if (_probeCache.has(url)) return _probeCache.get(url);
+  const p=new Promise(res=>{
+    const im=new Image();
+    im.onload=()=>res(true);
+    im.onerror=()=>res(false);
+    im.src=url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+  }).then(ok=>{ _probeCache.set(url,ok); return ok; });
+  _probeCache.set(url,p); return p;
 }
-function localIcon(idx){
-  const url=localIconUrl(idx);
+
+// локальные icon-N: ищем и в корне, и в /images
+const ICON_LOCAL_LIMIT=28;
+function localIconCandidates(idx){
+  const name = `icon-${idx}.png`;
+  return [name, `./${name}`, `images/${name}`, `./images/${name}`];
+}
+async function pickLocalIconUrl(idx){
+  for (const url of localIconCandidates(idx)){
+    // eslint-disable-next-line no-await-in-loop
+    if (await probe(url)) return url;
+  }
+  return null;
+}
+function makeIcon(url){
   return L.icon({ iconUrl:url, iconSize:ICON_SIZE, iconAnchor:[16,16], popupAnchor:[0,-16] });
 }
 
@@ -185,7 +200,7 @@ let pointFeatures=[], lastSummaryBase='';
 let styleMaps=null;
 let styleUrlToLocalIndex=Object.create(null);
 
-// ---------- рендер ----------
+// ---------- стили для линий/полигонов ----------
 function styleForNonPoint(props){
   const su = props?.styleUrl; const st = su ? styleMaps.styles[su] : null;
   if(!st) return { color:'#2563eb', weight:3, opacity:0.85 };
@@ -195,6 +210,7 @@ function styleForNonPoint(props){
   return { color, weight, opacity, fillColor: st.polyHex || color, fillOpacity: st.polyOpacity ?? 0.2 };
 }
 
+// ---------- рендер ----------
 function renderGeoJSON(geojson){
   const feats=Array.isArray(geojson.features)?geojson.features:[];
   feats.forEach((f,i)=>{ f.properties={...(f.properties||{}), _seq:i}; });
@@ -202,7 +218,7 @@ function renderGeoJSON(geojson){
   pointFeatures = feats.filter(f=>f.geometry && f.geometry.type==='Point');
   const shapeFeatures = feats.filter(f=>!f.geometry || f.geometry.type!=='Point');
 
-  // локальные icon-N по порядку стилей в документе (только реально используемые)
+  // локальные icon-N по порядку стилей (только реально используемые)
   const used=[...new Set(pointFeatures.map(f=>String(f.properties?.styleUrl||'')).filter(Boolean))];
   used.sort((a,b)=>(styleMaps.orderIdx[a]||99999)-(styleMaps.orderIdx[b]||99999));
   styleUrlToLocalIndex=Object.create(null);
@@ -217,7 +233,7 @@ function renderGeoJSON(geojson){
 
   const tmp=L.geoJSON(pointFeatures,{
     pointToLayer:(feature,latlng)=>{
-      const p=feature.properties||{}; p.description = cleanText(p.description); // на всякий
+      const p=feature.properties||{}; p.description = cleanText(p.description||'');
       const su = typeof p.styleUrl==='string'?p.styleUrl:null;
       const st = su ? styleMaps.styles[su] : null;
       const href = st?.iconHref || null;
@@ -229,8 +245,7 @@ function renderGeoJSON(geojson){
       const tryLocal = ()=>{
         const idx = su ? styleUrlToLocalIndex[su] : undefined;
         if(!idx) return;
-        const url = localIconUrl(idx);
-        probe(url).then(ok=>{ if(ok) marker.setIcon(localIcon(idx)); });
+        pickLocalIconUrl(idx).then(url=>{ if(url) marker.setIcon(makeIcon(url)); });
       };
 
       if (href) {
@@ -272,7 +287,7 @@ function updateCounters(){ const total=pointFeatures.length; const cats={stairs:
 function buildList(){
   const list=document.getElementById('list'); list.innerHTML='';
   pointFeatures.forEach(f=>{
-    const p=f.properties||{}; const ptIdx=p._ptSeq; const cat=detectCategory(p);
+    const p=f.properties||{}; const ptIdx=p._seq; const cat=detectCategory(p);
     const title = escapeHtml(cleanText(p.name)||'Без названия');
     const desc  = stripHtmlToText(p.description||'');
     const short = desc.length>180 ? desc.slice(0,180)+'…' : desc;
@@ -281,7 +296,7 @@ function buildList(){
     item.innerHTML=`<h4>${title}</h4><div class="meta"></div>`;
     item.querySelector('.meta').textContent=`${CAT_LABEL[cat]} · ${short}`;
     item.addEventListener('click',()=>{
-      const m=markersById.get(ptIdx); if(!m) return;
+      const m=markersById.get(p._seq); if(!m) return;
       map.flyTo(m.getLatLng(),Math.max(map.getZoom(),17),{duration:.8}); setTimeout(()=>m.openPopup(),850);
     });
     list.appendChild(item);
@@ -307,7 +322,7 @@ function applyVisibility(){
   markerGroup.clearLayers(); let visible=0;
   pointFeatures.forEach(f=>{
     const p=f.properties||{}; const show=isMatchProps(p,active,q); if(!show) return;
-    const m=markersById.get(p._ptSeq); if(m){ markerGroup.addLayer(m); visible++; }
+    const m=markersById.get(p._seq); if(m){ markerGroup.addLayer(m); visible++; }
   });
 
   const sub=document.getElementById('countCat');
@@ -327,22 +342,22 @@ document.querySelectorAll('.chip').forEach(btn=>{
   });
 });
 
-document.getElementById('btnShowAll').addEventListener('click',()=>{
+document.getElementById('btnShowAll')?.addEventListener('click',()=>{
   if(boundsAll&&boundsAll.isValid()) map.fitBounds(boundsAll,fitPadding());
 });
-document.getElementById('btnLocate').addEventListener('click',()=>{
+document.getElementById('btnLocate')?.addEventListener('click',()=>{
   document.querySelector('.leaflet-control-locate a')?.click();
 });
-document.getElementById('btnToggleSidebar').addEventListener('click',()=>{
+document.getElementById('btnToggleSidebar')?.addEventListener('click',()=>{
   const sb=document.getElementById('sidebar');
   sb.style.display=(sb.style.display==='none')?'':'';
   setTimeout(()=>{ headerH(); map.invalidateSize(); fitToVisible(); },0);
 });
-const fab=document.getElementById('fabToggleUI');
-if(fab){ fab.addEventListener('click',()=>{
+document.getElementById('fabToggleUI')?.addEventListener('click',()=>{
   document.body.classList.toggle('ui-hidden');
   setTimeout(()=>{ headerH(); map.invalidateSize(); fitToVisible(); },0);
-});}
+});
+
 function ensureMobileUI(){ if(window.innerWidth<=780) document.body.classList.remove('ui-hidden'); }
 ensureMobileUI();
 window.addEventListener('resize',()=>{ headerH(); map.invalidateSize(); fitToVisible(); });
@@ -373,7 +388,7 @@ async function loadKmlAuto(){ let last;
   throw last||new Error('KML not found');
 }
 
-// fallback-пикер
+// fallback-пикер (если KML не нашёлся)
 function enableKmlPicker(){
   const bar=document.createElement('div'); bar.className='panel kml-picker';
   bar.innerHTML=`<span>Загрузить KML:</span>
