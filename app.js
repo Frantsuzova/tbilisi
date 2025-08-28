@@ -1,4 +1,11 @@
 // ===== app.js =====
+// Иконки/цвета строго из KML. Фолбэки: локальные icon-N.png -> цветной SVG.
+
+// --- Конфиг локальных иконок ---
+const USE_LOCAL_ICONS = true;                 // включено: искать icon-N.png локально
+const LOCAL_ICON_DIRS = ['.', 'images'];      // относительные каталоги: ./icon-N.png и ./images/icon-N.png
+const ICON_LOCAL_LIMIT = 28;                  // максимум локальных icon-N.png (по порядку стилей)
+const ICON_SIZE = [32, 32];
 
 // ---------- текстовые утилиты ----------
 function toText(v){ if(v==null)return''; if(typeof v==='string')return v;
@@ -23,7 +30,7 @@ function makePopupHtml(name, description){
   return d?`<strong>${n}</strong><br>${escapeHtml(d)}`:`<strong>${n}</strong>`;
 }
 
-// ---------- категории ----------
+// ---------- категории (для фильтра/счётчика интерфейса) ----------
 function detectCategory(p){
   const n=cleanText(p?.name).toLowerCase(), d=cleanText(p?.description).toLowerCase();
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n)||/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
@@ -75,7 +82,6 @@ function buildStyleMaps(kmlXml){
   kmlXml.querySelectorAll('Style[id], StyleMap[id]').forEach(el=>{
     const id=el.getAttribute('id'); if(id&&!orderIdx['#'+id]) orderIdx['#'+id]=++idx;
   });
-
   // Style
   kmlXml.querySelectorAll('Style[id]').forEach(st=>{
     const key='#'+st.getAttribute('id'); if(!styles[key]) styles[key]={};
@@ -91,7 +97,6 @@ function buildStyleMaps(kmlXml){
     if(width){ styles[key].width=width; }
     if(polyC){ styles[key].polyHex=polyC.hex; styles[key].polyOpacity=polyC.opacity; }
   });
-
   // StyleMap (normal)
   kmlXml.querySelectorAll('StyleMap[id]').forEach(sm=>{
     const key='#'+sm.getAttribute('id'); if(!styles[key]) styles[key]={};
@@ -113,12 +118,10 @@ function buildStyleMaps(kmlXml){
     if(width){ styles[key].width=width; }
     if(polyC){ styles[key].polyHex=polyC.hex; styles[key].polyOpacity=polyC.opacity; }
   });
-
   return { styles, orderIdx };
 }
 
 // ---------- иконки ----------
-const ICON_SIZE=[32,32];
 function inferAnchor(href){
   const s=(href||'').toLowerCase();
   if(/paddle|pin|pushpin|marker|kml\/paddle/.test(s)) return [ICON_SIZE[0]/2, ICON_SIZE[1]];
@@ -137,7 +140,7 @@ function svgPinIcon(hex){
   return L.divIcon({ className:'pin-svg', html, iconSize:[w,h], iconAnchor:[ax,ay], popupAnchor:[0,-34] });
 }
 
-// универсальный пробник картинок (с кешем)
+// --- пробник изображений (с кешем) ---
 const _probeCache = new Map();
 function probe(url){
   if (_probeCache.has(url)) return _probeCache.get(url);
@@ -150,13 +153,25 @@ function probe(url){
   _probeCache.set(url,p); return p;
 }
 
-// локальные icon-N: ищем и в корне, и в /images
-const ICON_LOCAL_LIMIT=28;
+// --- локальные icon-N кандидаты (учитываем /tbilisi/, корень домена и текущую папку) ---
 function localIconCandidates(idx){
   const name = `icon-${idx}.png`;
-  return [name, `./${name}`, `images/${name}`, `./images/${name}`];
+  const baseDir = location.pathname.replace(/\/[^/]*$/, ''); // /tbilisi  или /tbilisi/sub
+  return [
+    // абсолютные
+    `${baseDir}/${name}`,           // /tbilisi/icon-1.png
+    `/${name}`,                     // /icon-1.png (доменный корень)
+    `${baseDir}/images/${name}`,
+    `/images/${name}`,
+    // относительные к странице
+    `${name}`,
+    `./${name}`,
+    `images/${name}`,
+    `./images/${name}`,
+  ];
 }
 async function pickLocalIconUrl(idx){
+  if(!USE_LOCAL_ICONS) return null;
   for (const url of localIconCandidates(idx)){
     // eslint-disable-next-line no-await-in-loop
     if (await probe(url)) return url;
@@ -239,25 +254,27 @@ function renderGeoJSON(geojson){
       const href = st?.iconHref || null;
       const hex  = st?.iconHex || null;
 
-      // Ставим сразу SVG, потом пытаемся подменить
+      // 1) ставим SVG сразу (всегда есть)
       const marker = L.marker(latlng, { icon: svgPinIcon(hex) });
 
-      const tryLocal = ()=>{
+      // 2) пробуем точную иконку из KML
+      const tryRemote = href ? probe(href).then(ok => { if(ok) marker.setIcon(remoteIcon(href)); }) : Promise.resolve();
+
+      // 3) если разрешены локальные — пытаемся icon-N.png (если файл существует)
+      const tryLocal = async ()=>{
+        if(!USE_LOCAL_ICONS) return;
         const idx = su ? styleUrlToLocalIndex[su] : undefined;
         if(!idx) return;
-        pickLocalIconUrl(idx).then(url=>{ if(url) marker.setIcon(makeIcon(url)); });
+        // сначала абсолютный путь каталога страницы (/tbilisi/icon-N.png), затем доменный корень и относительные
+        for (const url of localIconCandidates(idx)){
+          // eslint-disable-next-line no-await-in-loop
+          if (await probe(url)) { marker.setIcon(makeIcon(url)); return; }
+        }
       };
 
-      if (href) {
-        probe(href).then(ok=>{
-          if(ok) marker.setIcon(remoteIcon(href));
-          else tryLocal();
-        });
-      } else {
-        tryLocal();
-      }
+      tryRemote.finally(tryLocal);
 
-      markersById.set(p._ptSeq, marker);
+      markersById.set(p._seq, marker);
       marker.featureCat=detectCategory(p);
       marker.featureProps=p;
       return marker;
@@ -296,7 +313,7 @@ function buildList(){
     item.innerHTML=`<h4>${title}</h4><div class="meta"></div>`;
     item.querySelector('.meta').textContent=`${CAT_LABEL[cat]} · ${short}`;
     item.addEventListener('click',()=>{
-      const m=markersById.get(p._seq); if(!m) return;
+      const m=markersById.get(ptIdx); if(!m) return;
       map.flyTo(m.getLatLng(),Math.max(map.getZoom(),17),{duration:.8}); setTimeout(()=>m.openPopup(),850);
     });
     list.appendChild(item);
