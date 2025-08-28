@@ -7,7 +7,7 @@
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
   --accent: #0ea5e9;
-  --header-h: 0px; /* выставляется из JS по реальной высоте шапки */
+  --header-h: 0px; /* ставим из JS */
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -21,20 +21,18 @@
   }
 }
 
-/* База / карта */
+/* Карта */
 html, body { height:100%; margin:0; padding:0; overflow:hidden; }
 body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
 #map { position:absolute; inset:0; z-index:0; }
 
-/* Leaflet приоритеты: попапы поверх маркеров; контролы поверх тайлов */
+/* Leaflet: попапы поверх маркеров; контролы поверх тайлов и ниже шапки */
 .leaflet-control-container,
 .leaflet-top,
 .leaflet-bottom { z-index: 4000 !important; }
 .leaflet-marker-pane  { z-index: 1050 !important; }
 .leaflet-tooltip-pane { z-index: 1100 !important; }
 .leaflet-popup-pane   { z-index: 1110 !important; }
-
-/* Сместим правые верхние контролы ниже шапки */
 .leaflet-top.leaflet-right { margin-top: calc(var(--header-h) + 8px); }
 
 /* Панели */
@@ -96,7 +94,6 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
 .sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
 .sidebar-title{ font-weight:600; }
 
-/* iPhone: скролл внутри, без проброса жестов на карту */
 .sidebar-body{
   padding:8px 8px 12px;
   overflow:auto;
@@ -148,5 +145,5 @@ body:not(.ui-hidden) .panel-sidebar{
 /* Разное */
 .hidden{ display:none !important; }
 .count{ font-variant-numeric: tabular-nums; }
-/* Попапы без чужих картинок */
+/* В описаниях не показываем чужие картинки */
 .leaflet-popup-content img{ display:none !important; max-width:0 !important; max-height:0 !important; }
