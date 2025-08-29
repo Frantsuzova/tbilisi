@@ -1,226 +1,279 @@
-// app.js — стабильная версия без optional chaining и без шаблонных строк
+// app.js — Leaflet + toGeoJSON + LocateControl
+// Без кластеров. Цвет из KML, персональные иконки, фильтры, фиксы iOS.
+// Легенды нет. Храмы ищутся по «церк».
 
-/* ===== Фолбэк-иконки ===== */
-var SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
-function mkIcon(url){
-  return L.icon({ iconUrl:url, shadowUrl:SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
-}
-var IconBlue   = mkIcon("https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png");
-var IconRed    = mkIcon("https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png");
-var IconGreen  = mkIcon("https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png");
-var IconOrange = mkIcon("https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-orange.png");
+/* ------- Фолбэк-булавки (на случай отсутствия персональных PNG) ------- */
+const SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
+const IconBlue   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconRed    = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png",   shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconGreen  = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-green.png", shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconOrange = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-orange.png",shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+const IconGold   = L.icon({ iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-gold.png",  shadowUrl: SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
 
-/* ===== Тайлы ===== */
-var tilesLight = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19, attribution:'© OpenStreetMap' });
-var tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{ maxZoom:19, attribution:'© OpenStreetMap © CARTO' });
-var currentTiles = null;
+/* ------- ТАЙЛЫ ------- */
+const tilesLight = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+});
+const tilesDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO'
+});
+let currentTiles = null;
 
-/* ===== Карта ===== */
-var map = L.map('map', { zoomControl:false, preferCanvas:true });
+/* ------- КАРТА ------- */
+const map = L.map('map', {
+  zoomControl: false,
+  preferCanvas: true
+});
 L.control.zoom({ position:'bottomright' }).addTo(map);
 
-/* Locate */
-if (L.control && L.control.locate){
-  L.control.locate({
-    position:'bottomright',
-    strings:{ title:'Где я?' },
-    locateOptions:{ enableHighAccuracy:true }
-  }).addTo(map);
+/* ------- Locate control ------- */
+const lc = L.control.locate({
+  position: 'bottomright',
+  strings: { title: "Где я?" },
+  locateOptions: { enableHighAccuracy:true }
+}).addTo(map);
+
+/* ------- UI ссылочки ------- */
+const byId = (id)=>document.getElementById(id);
+
+/* ------- Пэддинги под fitBounds (учёт шапки и сайдбара/нижнего листа) ------- */
+function getFitPadding() {
+  const header  = document.getElementById('headerPanel');
+  const sidebar = document.getElementById('sidebar');
+
+  const topPad   = (header  && header.offsetHeight) ? header.offsetHeight + 16 : 16;
+  const rightPad = (sidebar && getComputedStyle(sidebar).display !== 'none'
+    ? (window.innerWidth <= 780 ? 16 : Math.round(sidebar.getBoundingClientRect().width) + 16)
+    : 16);
+  const bottomPad = (sidebar && getComputedStyle(sidebar).display !== 'none' && window.innerWidth <= 780)
+    ? Math.round(sidebar.getBoundingClientRect().height) + 16
+    : 16;
+
+  return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, bottomPad] };
 }
 
-/* ===== Утилиты ===== */
-function byId(id){ return document.getElementById(id); }
-function escapeHtml(s){
-  s = String(s == null ? '' : s);
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function getFitPadding(){
-  var header  = byId('headerPanel');
-  var sidebar = byId('sidebar');
-  var topPad = (header && header.offsetHeight) ? header.offsetHeight + 16 : 16;
-  var rightPad = 16, bottomPad = 16;
-  if (sidebar && window.getComputedStyle(sidebar).display !== 'none'){
-    var rect = sidebar.getBoundingClientRect();
-    var isMobile = window.innerWidth <= 780;
-    if (isMobile){ bottomPad = Math.round(rect.height) + 16; }
-    else { rightPad = Math.round(rect.width) + 16; }
-  }
-  return { paddingTopLeft:[16, topPad], paddingBottomRight:[rightPad, bottomPad] };
-}
+/* ------- Тема тайлов: на мобиле всегда светлая ------- */
 function setTilesByColorScheme(){
-  var isMobile = window.innerWidth <= 780;
-  var prefersDark = false;
-  try{
-    if (window.matchMedia){ prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; }
-  }catch(_){}
-  var next = isMobile ? tilesLight : (prefersDark ? tilesDark : tilesLight);
-  if (currentTiles !== next){ if (currentTiles) map.removeLayer(currentTiles); next.addTo(map); currentTiles = next; }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const next = prefersDark ? tilesDark : tilesLight;
+  if (currentTiles !== next){
+    if (currentTiles) map.removeLayer(currentTiles);
+    next.addTo(map); currentTiles = next;
+  }
 }
+
+/* ------- Геометрия/иконки из KML ------- */
+function iconByStyleHref(href){
+  const h = (href || '').toLowerCase();
+  if (h.includes('green')) return IconGreen;
+  if (h.includes('orange') || h.includes('yellow')) return IconOrange;
+  if (h.includes('gold')) return IconGold;
+  if (h.includes('red')) return IconRed;
+  return IconBlue;
+}
+
+/* ------- Простейшие утилиты ------- */
+const toText = (v)=>{
+  if (v == null) return '';
+  if (Array.isArray(v)) return v.map(toText).join(' ');
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'object'){
+    const prefer = ['text', 'value', 'content', 'description'];
+    for (const k of prefer) if (k in v) return toText(v[k]);
+    return Object.values(v).map(toText).filter(Boolean).join(' ');
+  }
+  return '';
+}
+function cleanText(v){
+  let s = toText(v);
+  s = s.replace(/\[object Object\]/gi, ' ');
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  return s;
+}
+function stripHtmlToText(input) {
+  const html = cleanText(input);
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('img, picture, source, iframe, video, audio, svg, script, style').forEach(el => el.remove());
+  let t = (tmp.textContent || '').replace(/\s+\n/g, '\n').replace(/\s{2,}/g, ' ').trim();
+  t = t.replace(/\[object Object\]/gi, '').replace(/\s{2,}/g, ' ').trim();
+  return t;
+}
+function escapeHtml(s) {
+  return String(s || '')
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'","&#39;");
+}
+function makePopupHtml(name, description) {
+  const nameText = escapeHtml(cleanText(name)) || 'Без названия';
+  const descText = escapeHtml(stripHtmlToText(description));
+  return `<div class="popup"><div class="title">${nameText}</div>${descText? `<div class="desc">${descText}</div>`:''}</div>`;
+}
+
+/* ------- Рендер GeoJSON ------- */
+let layerGroup = L.featureGroup().addTo(map);
+let boundsAll = null;
+
+function renderGeoJSON(geojson, styleHrefMap){
+  if (!geojson) return;
+  layerGroup.clearLayers();
+  boundsAll = L.latLngBounds();
+
+  const getStyleHref = (feat)=>{
+    const id = feat?.properties?.styleUrl || feat?.properties?.styleUrlHref || '';
+    return id || '';
+  };
+
+  L.geoJSON(geojson, {
+    pointToLayer: (feature, latlng) => {
+      const href = getStyleHref(feature);
+      const icon = iconByStyleHref(href);
+      const m = L.marker(latlng, { icon });
+      const p = feature?.properties || {};
+      m.bindPopup(makePopupHtml(p.name, p.description), { autoPan:true, closeButton:true });
+      boundsAll.extend(latlng);
+      return m;
+    }
+  }).addTo(layerGroup);
+
+  if (boundsAll.isValid()){
+    map.fitBounds(boundsAll, getFitPadding());
+  } else {
+    map.setView([41.6938, 44.8015], 13);
+  }
+}
+
+/* ------- Кнопки шапки ------- */
+document.getElementById('btnShowAll').addEventListener('click', ()=>{
+  if (boundsAll && boundsAll.isValid()) map.fitBounds(boundsAll, getFitPadding());
+});
+document.getElementById('btnLocate').addEventListener('click', ()=> {
+  document.querySelector('.leaflet-control-locate a')?.click();
+});
+document.getElementById('btnToggleSidebar')?.addEventListener('click', ()=>{
+  const sb = document.getElementById('sidebar');
+  if (!sb) return;
+  const disp = getComputedStyle(sb).display;
+  sb.style.display = (disp === 'none') ? '' : 'none';
+  // пересчёт паддингов для карты
+  const bounds = (boundsAll && boundsAll.isValid()) ? boundsAll : computeAllBounds();
+  if (bounds && bounds.isValid()) map.fitBounds(bounds, getFitPadding());
+});
+
+/* ------- Resize ------- */
+addEventListener('resize', () => { map.invalidateSize(); fitToVisible(); });
+setTimeout(() => map.invalidateSize(), 0);
+
+/* ---------------- Загрузка KML ---------------- */
+const kmlParam = new URLSearchParams(location.search).get('kml');
+const KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', './data.kml', 'data.kml'].filter(Boolean);
+
+async function loadKmlAuto(){
+  let lastErr = null;
+  for (const url of KML_CANDIDATES){
+    try{
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      return { txt: await res.text(), url };
+    }catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('KML not found');
+}
+
+function buildStyleHrefMap(xml){
+  const mapHref = new Map();
+  xml.querySelectorAll('Style,StyleMap').forEach(s => {
+    const id = s.getAttribute('id');
+    if (id) mapHref.set('#'+id, s);
+  });
+  return mapHref;
+}
+
+/* ------- Панель выбора KML (fallback) ------- */
+function enableKmlPicker(){
+  if (document.querySelector('.kml-picker')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'kml-picker panel';
+  wrap.style.right = '12px';
+  wrap.style.top = '12px';
+  wrap.style.padding = '10px';
+  wrap.innerHTML = `
+    <div style="font-weight:600;margin-bottom:8px">Загрузить KML</div>
+    <input type="file" accept=".kml,.xml" />
+  `;
+  document.body.appendChild(wrap);
+  wrap.querySelector('input').addEventListener('change', async (e)=>{
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const txt = await f.text();
+    const kmlXml = new DOMParser().parseFromString(txt, 'application/xml');
+    const styleHrefMap = buildStyleHrefMap(kmlXml);
+    const geojson = toGeoJSON.kml(kmlXml);
+    renderGeoJSON(geojson, styleHrefMap);
+  });
+}
+
+/* ------- Вычислить границы всех видимых слоёв (если нужно) ------- */
 function computeAllBounds(){
-  var b = L.latLngBounds();
-  map.eachLayer(function(l){
+  const b = L.latLngBounds();
+  map.eachLayer(l => {
     if (l instanceof L.TileLayer) return;
-    if (typeof l.getLatLng === 'function'){ b.extend(l.getLatLng()); return; }
-    if (typeof l.getBounds === 'function'){ try{ var gb=l.getBounds(); if (gb && gb.isValid()) b.extend(gb); }catch(e){} }
-    if (typeof l.eachLayer === 'function'){
-      l.eachLayer(function(sl){
-        if (typeof sl.getLatLng === 'function') b.extend(sl.getLatLng());
-        else if (typeof sl.getBounds === 'function'){ try{ var gb2=sl.getBounds(); if (gb2 && gb2.isValid()) b.extend(gb2); }catch(e){} }
+    if (l && typeof l.getLatLng === 'function') {
+      b.extend(l.getLatLng());
+    } else if (l && typeof l.getBounds === 'function') {
+      try { const gb = l.getBounds(); if (gb && gb.isValid()) b.extend(gb); } catch(_) {}
+    } else if (l && typeof l.eachLayer === 'function') {
+      l.eachLayer(sl => {
+        if (sl && typeof sl.getLatLng === 'function') { b.extend(sl.getLatLng()); }
+        else if (sl && typeof sl.getBounds === 'function') {
+          try { const gb = sl.getBounds(); if (gb && gb.isValid()) b.extend(gb); } catch(_) {}
+        }
       });
     }
   });
   return b;
 }
 
-/* ===== Данные ===== */
-var allItems = [];     // {name, desc, latlng, cat, marker}
-var visibleItems = [];
-var boundsAll = null;
-
-function detectCat(name, desc){
-  name = (name||'').toLowerCase(); desc = (desc||'').toLowerCase();
-  var s = name + ' ' + desc;
-  if (/(церк|собор|монастыр|church|cathedr|temple)/.test(s)) return 'temples';
-  if (/(лестниц|ступен|stair)/.test(s)) return 'stairs';
-  if (/(парадн|подъезд)/.test(s)) return 'porches';
-  return 'other';
+function fitToVisible(){
+  const b = computeAllBounds();
+  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
 }
 
-/* ===== Рендер ===== */
-var layerGroup = L.featureGroup().addTo(map);
-function renderList(items){
-  var list = byId('list'); if (!list) return;
-  var html = '';
-  for (var i=0;i<items.length;i++){
-    var it = items[i];
-    html += '<div class="list-item" data-i="'+i+'">'
-          + '<div class="title">'+escapeHtml(it.name||'Без названия')+'</div>'
-          + (it.desc ? '<div>'+escapeHtml(it.desc)+'</div>' : '')
-          + '</div>';
-  }
-  list.innerHTML = html;
-  list.querySelectorAll('.list-item').forEach(function(el){
-    el.addEventListener('click', function(){
-      var idx = parseInt(el.getAttribute('data-i'),10);
-      var it = items[idx]; if (!it) return;
-      map.setView(it.latlng, 17); it.marker.openPopup();
-    });
+/* ------- Патч для загрузки PNG-иконок из <IconStyle> ------- */
+async function preloadImage(url){
+  return new Promise(res=>{
+    const im = new Image();
+    im.onload = ()=> res(true);
+    im.onerror = ()=> res(false);
+    im.src = url;
   });
 }
-function updateCounts(items, total){
-  var ct = byId('countTotal'); var cc = byId('countCat');
-  if (ct) ct.textContent = total;
-  if (cc) cc.textContent = items.length;
+
+function styleIconFromKmlNode(styleNode){
+  try{
+    const href = styleNode?.querySelector('IconStyle href')?.textContent?.trim();
+    if (!href) return null;
+    const size = styleNode?.querySelector('IconStyle scale')?.textContent?.trim();
+    const scl = size ? Math.max(0.5, Math.min(2, +size)) : 1;
+    return L.icon({ iconUrl: href, iconSize:[24*scl, 24*scl], iconAnchor:[12*scl, 24*scl], popupAnchor:[0,-20*scl], shadowUrl: SHADOW, shadowSize:[41,41] });
+  }catch{ return null; }
 }
 
-/* ===== Фильтры ===== */
-function currentCat(){
-  var chips = document.querySelectorAll('.chip');
-  for (var i=0;i<chips.length;i++){ if (chips[i].dataset && chips[i].dataset.active === 'true') return chips[i].dataset.cat || 'all'; }
-  return 'all';
-}
-function applyFilters(){
-  var cat = currentCat();
-  var qel = byId('search'); var q = qel ? String(qel.value||'').trim().toLowerCase() : '';
-  visibleItems = allItems.filter(function(it){
-    var okCat = (cat === 'all') ? true : (it.cat === cat);
-    var okText = !q || (String(it.name||'').toLowerCase().indexOf(q)>=0 || String(it.desc||'').toLowerCase().indexOf(q)>=0);
-    return okCat && okText;
-  });
-  layerGroup.clearLayers();
-  visibleItems.forEach(function(it){ it.marker.addTo(layerGroup); });
-  renderList(visibleItems);
-  updateCounts(visibleItems, allItems.length);
-}
-
-/* ===== Загрузка KML ===== */
-function loadKmlAuto(){
-  var p = new URLSearchParams(location.search).get('kml');
-  var candidates = []; if (p) candidates.push(p);
-  ['doc.kml','./doc.kml','data.kml','./data.kml'].forEach(function(u){ candidates.push(u); });
-  var tryOne = function(i){
-    if (i>=candidates.length) return Promise.reject(new Error('KML not found'));
-    return fetch(candidates[i]).then(function(res){
-      if (!res.ok) throw new Error(String(res.status)+' '+res.statusText);
-      return res.text();
-    }).catch(function(){ return tryOne(i+1); });
-  };
-  return tryOne(0);
-}
-function parsePlacemark(pm){
-  var nameEl = pm.querySelector('name');
-  var descEl = pm.querySelector('description');
-  var name = nameEl ? nameEl.textContent.trim() : '';
-  var descHtml = descEl ? descEl.textContent.trim() : '';
-  var desc = descHtml.replace(/<[^>]*>/g,' ').replace(/\s{2,}/g,' ').trim();
-  var coordEl = pm.querySelector('coordinates');
-  var coordText = coordEl ? coordEl.textContent.trim() : '';
-  var parts = coordText.split(/[\s,]+/);
-  var lon = parseFloat(parts[0]); var lat = parseFloat(parts[1]);
-  if (!isFinite(lat) || !isFinite(lon)) return null;
-  return { name:name, desc:desc, latlng:L.latLng(lat, lon) };
-}
-
-/* ===== Инициализация ===== */
+/* ------- Старт ------- */
 setTilesByColorScheme();
 
-loadKmlAuto().then(function(txt){
-  var xml = new DOMParser().parseFromString(txt, 'application/xml');
-  var placemarks = Array.prototype.slice.call(xml.querySelectorAll('Placemark'));
-  allItems = []; boundsAll = L.latLngBounds();
-  placemarks.forEach(function(pm){
-    var p = parsePlacemark(pm); if (!p) return;
-    var cat = detectCat(p.name, p.desc);
-    var icon = (cat==='temples') ? IconOrange : (cat==='stairs' ? IconGreen : (cat==='porches' ? IconRed : IconBlue));
-    var m = L.marker(p.latlng, { icon:icon });
-    var html = '<div class="title" style="font-weight:600;margin-bottom:4px">'+escapeHtml(p.name||'Без названия')+'</div>'
-             + (p.desc ? escapeHtml(p.desc) : '');
-    m.bindPopup(html);
-    allItems.push({ name:p.name, desc:p.desc, latlng:p.latlng, cat:cat, marker:m });
-    boundsAll.extend(p.latlng);
-  });
-  applyFilters();
-  if (boundsAll.isValid()) map.fitBounds(boundsAll, getFitPadding()); else map.setView([41.6938,44.8015],13);
-}).catch(function(e){
-  console.error('KML load error:', e);
-  map.setView([41.6938,44.8015],13);
-});
-
-/* ===== События UI ===== */
-document.querySelectorAll('.chip').forEach(function(ch){
-  ch.addEventListener('click', function(){
-    document.querySelectorAll('.chip').forEach(function(c){ c.dataset.active = 'false'; });
-    ch.dataset.active = 'true';
-    applyFilters();
-  });
-});
-var searchEl = byId('search'); if (searchEl) searchEl.addEventListener('input', applyFilters);
-
-var btnShowAll = byId('btnShowAll');
-if (btnShowAll) btnShowAll.addEventListener('click', function(){
-  var b;
-  if (visibleItems.length){
-    b = L.latLngBounds(visibleItems.map(function(i){ return i.latlng; }));
-  } else {
-    b = boundsAll;
+(async ()=>{
+  try {
+    const { txt } = await loadKmlAuto();
+    const kmlXml = new DOMParser().parseFromString(txt, 'application/xml');
+    const styleHrefMap = buildStyleHrefMap(kmlXml);
+    const geojson = toGeoJSON.kml(kmlXml);
+    renderGeoJSON(geojson, styleHrefMap);
+  } catch(e){
+    console.error('KML load error:', e);
+    enableKmlPicker();
+    map.setView([41.6938,44.8015],14);
   }
-  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
-});
-
-var btnLocate = byId('btnLocate');
-if (btnLocate) btnLocate.addEventListener('click', function(){
-  var a = document.querySelector('.leaflet-control-locate a');
-  if (a) a.click();
-});
-
-var btnToggleSidebar = byId('btnToggleSidebar');
-if (btnToggleSidebar) btnToggleSidebar.addEventListener('click', function(){
-  var sb = byId('sidebar'); if (!sb) return;
-  var disp = window.getComputedStyle(sb).display;
-  sb.style.display = (disp === 'none') ? '' : 'none';
-  var b = visibleItems.length ? L.latLngBounds(visibleItems.map(function(i){ return i.latlng; })) : boundsAll;
-  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
-});
-
-window.addEventListener('resize', function(){ setTilesByColorScheme(); map.invalidateSize(); });
+})();
