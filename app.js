@@ -377,12 +377,20 @@ function isMatchProps(p, activeCat, qLower){
   return matchCat && matchText;
 }
 function fitToVisible(){
-  const layers = markerGroup.getLayers();
+  let layers = markerGroup.getLayers();
+
+  // если вдруг ничего не добавлено в markerGroup (например, сразу после фильтров),
+  // соберём все маркеры из markersById
+  if (!layers.length && typeof markersById !== 'undefined' && markersById.size){
+    layers = Array.from(markersById.values()).filter(m => m && typeof m.getLatLng === 'function');
+  }
+
   if (!layers.length) return;
   const group = L.featureGroup(layers);
   const b = group.getBounds();
-  if (b.isValid()) map.fitBounds(b, getFitPadding());
+  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
 }
+
 function applyVisibility(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const activeCatBtn = document.querySelector('.chip[data-active="true"]');
@@ -451,9 +459,8 @@ document.querySelectorAll('.chip').forEach(btn=>{
   });
 });
 
-document.getElementById('btnShowAll').addEventListener('click', ()=>{
-  fitToAllPoints();
-});
+document.getElementById('btnShowAll').addEventListener('click', fitToVisible);
+
 
 document.getElementById('btnLocate').addEventListener('click', ()=> {
   document.querySelector('.leaflet-control-locate a')?.click();
