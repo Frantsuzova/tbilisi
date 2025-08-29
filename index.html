@@ -5,27 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP -->
-   <meta http-equiv="Content-Security-Policy" content="
+  <!-- CSP (разрешаем CDN, которые используются) -->
+  <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https: data:;
     script-src  'self' https://unpkg.com https://cdn.jsdelivr.net;
-    style-src   'self' https://unpkg.com https://cdn.jsdelivr.net;
+    style-src   'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline';
     img-src     'self' data: https:;
     connect-src 'self' https:;
     object-src  'none';
   ">
-...
+
+  <!-- Vendor CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+  <!-- Контейнер карты (обязателен для Leaflet) -->
+  <div id="map" aria-label="Карта" role="region"></div>
+
+  <!-- Верхняя панель -->
+  <header class="panel panel-header" id="headerPanel">
+    <div class="header-row">
+      <div class="counts">
+        <span id="countCat">0</span> / <span id="countTotal">0</span>
+      </div>
+
+      <div class="filters">
+        <input id="search" class="search" type="search" placeholder="Поиск по названию/описанию…" />
+        <button class="chip" data-cat="all" data-active="true">Все</button>
+        <button class="chip" data-cat="stairs">Лестницы</button>
+        <button class="chip" data-cat="porches">Парадные</button>
+        <button class="chip" data-cat="temples">Храмы</button>
+        <button class="chip" data-cat="other">Остальное</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="btnShowAll" title="Показать все точки">Показать всё</button>
+        <button class="btn btn-primary" id="btnLocate" title="Где я?">Где я?</button>
+        <button class="btn" id="btnToggleSidebar" title="Открыть список">Список</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Боковая панель со списком -->
+  <aside class="panel panel-sidebar" id="sidebar" aria-label="Список точек" role="complementary">
+    <div class="sidebar-head">
+      <div class="sidebar-title">Точки маршрута</div>
+    </div>
+    <div id="list" class="list" aria-live="polite"></div>
   </aside>
 
   <!-- FAB (моб.) -->
   <button id="fabToggleUI" class="fab" aria-label="Меню">Меню</button>
 
-  <!-- Vendor JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js"></script>
-  <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+  <!-- Vendor JS (defer — чтобы DOM успел загрузиться) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js" defer></script>
+  <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js" defer></script>
 
-  <!-- App -->
-  <script src="app.js"></script>
+  <!-- Приложение -->
+  <script src="app.js" defer></script>
 </body>
 </html>
+
