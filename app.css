@@ -4,10 +4,10 @@
   --text: #0f172a;
   --muted: #475569;
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #2563eb;
+  --chip-active: #bfe3ff;
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
-  --accent: #0ea5e9;
+  --accent: #bfe3ff;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -16,9 +16,9 @@
     --text: #e5e7eb;
     --muted: #94a3b8;
     --chip-bg: rgba(255,255,255,.06);
-    --chip-active: #60a5fa;
+    --chip-active: #cfe6ff;
     --shadow: 0 8px 24px rgba(0,0,0,.40);
-    --accent: #22d3ee;
+    --accent: #cfe6ff;
   }
 }
 
@@ -179,10 +179,24 @@ body:not(.ui-hidden) .panel-sidebar{
     -webkit-transform:none !important;
     -webkit-backdrop-filter:none !important;
     backdrop-filter:none !important;
-    background:rgba(28,35,45,.92) !important; /* без blur, чтобы не ломался композитинг */
+    background:rgba(255,255,255,.94) !important; /* без blur, чтобы не ломался композитинг; светлая тема на iOS */
   }
   .leaflet-container{
     touch-action:none !important;         /* события — в Leaflet */
     -ms-touch-action:none !important;
+  }
+}
+
+
+/* Force LIGHT UI on mobile regardless of OS appearance */
+@media (max-width:780px){
+  :root{
+    --panel-bg: rgba(255,255,255,.92);
+    --panel-border: rgba(0,0,0,.10);
+    --text: #0f172a;
+    --muted: #475569;
+    --chip-bg: rgba(15,23,42,.06);
+    --chip-active: #bfe3ff;  /* light blue for active */
+    --accent: #bfe3ff;       /* primary buttons also light blue */
   }
 }
