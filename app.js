@@ -418,6 +418,31 @@ function applyVisibility(){
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
 }
 
+// Сброс фильтров на "Все" + пустой поиск, затем пересчитать видимость
+function resetFiltersToAll(){
+  const chips = document.querySelectorAll('.chip');
+  chips.forEach(ch => ch.dataset.active = (ch.dataset.cat === 'all' ? 'true' : 'false'));
+  const q = document.getElementById('search');
+  if (q && q.value) q.value = '';
+  if (typeof applyVisibility === 'function') applyVisibility();
+}
+
+// fit по ВСЕМ точкам из markersById (независимо от фильтров)
+function fitToAllPoints(){
+  let layers = [];
+  if (typeof markersById !== 'undefined' && markersById && typeof markersById.forEach === 'function'){
+    markersById.forEach(m => { if (m && typeof m.getLatLng === 'function') layers.push(m); });
+  }
+  // подстраховка, если почему-то пусто — по текущей группе
+  if (!layers.length && typeof markerGroup !== 'undefined' && markerGroup && typeof markerGroup.getLayers === 'function'){
+    layers = markerGroup.getLayers();
+  }
+  if (!layers.length) return;
+  const b = L.featureGroup(layers).getBounds();
+  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
+}
+
+
 // Границы по ВСЕМ точкам (не только видимым)
 function fitToAllPoints(){
   const layers = [];
@@ -459,7 +484,10 @@ document.querySelectorAll('.chip').forEach(btn=>{
   });
 });
 
-document.getElementById('btnShowAll').addEventListener('click', fitToVisible);
+document.getElementById('btnShowAll').addEventListener('click', ()=>{
+  resetFiltersToAll();   // показываем все категории и очищаем поиск
+  fitToAllPoints();      // зум по всем маркерам
+});
 
 
 document.getElementById('btnLocate').addEventListener('click', ()=> {
