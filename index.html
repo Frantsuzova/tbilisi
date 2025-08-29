@@ -14,46 +14,7 @@
     connect-src 'self' https:;
     object-src  'none';
   ">
-
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
-  <link rel="stylesheet" href="app.css" />
-</head>
-<body>
-  <div id="map"></div>
-
-  <!-- Верхняя панель -->
-  <div class="panel panel-header" id="headerPanel">
-    <div>
-      <div class="title">Мой маршрут Тбилиси</div>
-      <div class="subtitle">
-        <span class="count" id="countTotal">0</span> точек ·
-        <span class="count" id="countCat"></span>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="btn" id="btnShowAll" title="Показать все точки">Показать всё</button>
-      <button class="btn btn-primary" id="btnLocate" title="Моё местоположение">Моё место</button>
-    </div>
-    <div class="filters">
-      <input id="search" class="search" type="search" placeholder="Поиск по названию/описанию…" />
-      <button class="chip" data-cat="all" data-active="true">Все</button>
-      <button class="chip" data-cat="stairs">Лестницы</button>
-      <button class="chip" data-cat="porches">Парадные</button>
-      <button class="chip" data-cat="temples">Храмы</button>
-      <button class="chip" data-cat="other">Остальное</button>
-    </div>
-  </div>
-
-  <!-- Сайдбар -->
-  <aside class="panel panel-sidebar" id="sidebar">
-    <div class="sidebar-head">
-      <div class="sidebar-title">Точки маршрута</div>
-      <button class="btn" id="btnToggleSidebar">Свернуть</button>
-    </div>
-    <div class="sidebar-body" id="list"></div>
+...
   </aside>
 
   <!-- FAB (моб.) -->
