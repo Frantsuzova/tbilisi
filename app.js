@@ -1,11 +1,11 @@
-// app.js — Leaflet + toGeoJSON + LocateControl
-// Фильтры: убираем буквенные маркеры (A/B/C/…) и служебные icon-17..icon-25.
-// «Показать всё» ≡ чип «Все»; «Где я?» зумирует близко (17).
-
 /* ------- Фолбэк-булавки ------- */
 var SHADOW = "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 function mkIcon(url){
-  return L.icon({ iconUrl:url, shadowUrl:SHADOW, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41] });
+  return L.icon({
+    iconUrl:url, shadowUrl:SHADOW,
+    iconSize:[25,41], iconAnchor:[12,41],
+    popupAnchor:[1,-34], shadowSize:[41,41]
+  });
 }
 var IconBlue   = mkIcon("https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-blue.png");
 var IconRed    = mkIcon("https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-icon-2x-red.png");
@@ -42,7 +42,9 @@ function toText(v){
   if (Array.isArray(v)) return v.map(toText).filter(Boolean).join(' ');
   if (typeof v === 'object') {
     var prefer = ['__cdata','#cdata-section','#text','text','value','content','description'];
-    for (var i=0;i<prefer.length;i++){ var k = prefer[i]; if (k in v) return toText(v[k]); }
+    for (var i=0;i<prefer.length;i++){
+      var k = prefer[i]; if (k in v) return toText(v[k]);
+    }
     return Object.keys(v).map(function(k){ return toText(v[k]); }).filter(Boolean).join(' ');
   }
   return '';
@@ -72,7 +74,8 @@ function escapeHtml(s) {
 function makePopupHtml(name, description) {
   var nameText = escapeHtml(cleanText(name)) || 'Без названия';
   var descText = stripHtmlToText(description);
-  return descText ? '<strong>'+nameText+'</strong><br>'+escapeHtml(descText) : '<strong>'+nameText+'</strong>';
+  return descText ? '<strong>'+nameText+'</strong><br>'+escapeHtml(descText)
+                  : '<strong>'+nameText+'</strong>';
 }
 
 /* ------- Категории ------- */
@@ -192,7 +195,12 @@ function sanitizeKmlString(txt){
 }
 
 /* ------- Карта ------- */
-var map = L.map('map', { zoomControl: false, tap: false, wheelDebounceTime: 10, inertia: true });
+var map = L.map('map', {
+  zoomControl: false,
+  tap: false,
+  wheelDebounceTime: 10,
+  inertia: true
+});
 var tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 var tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 var currentTiles = null;
@@ -211,7 +219,7 @@ if (window.matchMedia) {
 L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
 
-// LocateControl: зум близко
+// LocateControl: зум близко + плавный перелёт
 L.control.locate({
   position: 'topright',
   setView: 'always',
@@ -221,6 +229,8 @@ L.control.locate({
   strings: { title: 'Где я?' },
   locateOptions: { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
 }).addTo(map);
+
+// Подстраховка: если initialZoomLevel не применился
 map.on('locationfound', function(e){
   if (e && e.latlng) {
     var targetZoom = 17;
@@ -228,6 +238,32 @@ map.on('locationfound', function(e){
     map.flyTo(e.latlng, z < targetZoom ? targetZoom : z, { duration: 0.8 });
   }
 });
+
+/* ------- iOS: UI внутрь карты + жесты ------- */
+var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+document.documentElement.classList.toggle('is-ios', !!isIOS);
+
+if (isIOS) {
+  var mapEl = document.getElementById('map');
+  var moveEls = [
+    document.getElementById('headerPanel'),
+    document.getElementById('sidebar'),
+    document.getElementById('fabToggleUI'),
+    document.querySelector('.kml-picker')
+  ];
+  for (var mi=0; mi<moveEls.length; mi++){ if (moveEls[mi]) mapEl.appendChild(moveEls[mi]); }
+
+  map.touchZoom.enable();
+  map.dragging.enable();
+  map.doubleClickZoom.enable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+
+  ['gesturestart','gesturechange','gestureend'].forEach(function(t){
+    document.addEventListener(t, function(e){ e.preventDefault(); }, { passive:false });
+  });
+}
 
 /* ------- Паддинги под UI при fitBounds ------- */
 function getFitPadding() {
@@ -238,32 +274,47 @@ function getFitPadding() {
   return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, 16] };
 }
 
-/* ------- Фильтры специальных точек ------- */
-// буквенные маркеры A/B/C/… (латиница/кириллица)
-function isLetterPlacemark(feature, styleHrefMap){
-  try{
-    var p = feature && feature.properties ? feature.properties : {};
-    var nm = String(p.name || '').trim();
-    if (/^[A-Za-zА-ЯЁІЇЄҐ]$/.test(nm)) return true;
-    // доп.проверка по иконке, если она прямая буква
-    var styleUrl = typeof p.styleUrl === 'string' ? p.styleUrl : '';
-    var href = styleUrl ? (styleHrefMap[styleUrl] || '') : '';
-    if (!href) return false;
-    var file = href.split('?')[0].split('#')[0].split('/').pop() || '';
-    if (/^(?:[A-Z]|_[A-Z]|-[A-Z])\.png$/i.test(file)) return true;
-    if (/\/paddle\/[A-Z]\.png$/i.test(href)) return true;
-  }catch(_){}
-  return false;
+/* ------- Сайдбар: подготовка DOM + вычисление высоты списка ------- */
+function ensureSidebarHeader(){
+  var sb = document.getElementById('sidebar');
+  if (!sb) return;
+  if (!sb.querySelector('.sidebar-header')){
+    var header = document.createElement('div');
+    header.className = 'sidebar-header';
+
+    var title = document.createElement('div');
+    title.className = 'sidebar-title';
+    title.textContent = 'Точки маршрута';
+
+    var btn = document.createElement('button');
+    btn.id = 'btnCloseSidebar';
+    btn.className = 'icon-btn';
+    btn.setAttribute('aria-label', 'Закрыть');
+    btn.textContent = '×';
+
+    header.appendChild(title);
+    header.appendChild(btn);
+    sb.insertBefore(header, sb.firstChild);
+
+    btn.addEventListener('click', function(){
+      sb.style.display = 'none';
+      setTimeout(function(){ map.invalidateSize(); }, 0);
+    });
+  }
 }
-// служебные иконки icon-17..icon-25 из KML (по реальному href, не по _seq)
-function isServiceIconFeature(feature, styleHrefMap){
-  var p = feature && feature.properties ? feature.properties : {};
-  var styleUrl = typeof p.styleUrl === 'string' ? p.styleUrl : '';
-  if (!styleUrl) return false;
-  var href = styleHrefMap && styleHrefMap[styleUrl] ? styleHrefMap[styleUrl] : '';
-  var id = idFromHref(href);
-  return id != null && id >= 17 && id <= 25;
+function adjustListHeight(){
+  var sb = document.getElementById('sidebar');
+  var list = document.getElementById('list');
+  var header = sb ? sb.querySelector('.sidebar-header') : null;
+  if (!sb || !list) return;
+  var rect = sb.getBoundingClientRect();
+  var top = rect.top;
+  var headerH = header ? header.offsetHeight : 0;
+  var avail = window.innerHeight - top - 12; // нижний внутренний отступ
+  list.style.maxHeight = Math.max(180, avail - headerH) + 'px';
 }
+window.addEventListener('resize', function(){ adjustListHeight(); });
+ensureSidebarHeader();
 
 /* ------- Состояние данных ------- */
 var shapesLayer = null;
@@ -288,12 +339,7 @@ function renderGeoJSON(geojson, styleHrefMap){
   var feats = Array.isArray(geojson.features) ? geojson.features : [];
   feats.forEach(function(f,i){ f.properties = Object.assign({}, f.properties||{}, { _seq:i }); });
 
-  // ТОЛЬКО точки, и отфильтровываем рудименты/служебные
-  pointFeatures = feats.filter(function(f){
-    return f.geometry && f.geometry.type === 'Point'
-           && !isLetterPlacemark(f, styleHrefMap)
-           && !isServiceIconFeature(f, styleHrefMap);
-  });
+  pointFeatures = feats.filter(function(f){ return f.geometry && f.geometry.type === 'Point'; });
   var shapeFeatures = feats.filter(function(f){ return !f.geometry || f.geometry.type !== 'Point'; });
 
   pointFeatures.forEach(function(f,pi){
@@ -343,6 +389,7 @@ function renderGeoJSON(geojson, styleHrefMap){
   updateCounters();
   buildList();
   applyVisibility();
+  adjustListHeight();
 }
 
 /* ------- Подсчёт/список ------- */
@@ -356,6 +403,7 @@ function updateCounters(){
 }
 function buildList(){
   var list = document.getElementById('list'); if (!list) return;
+  list.classList.add('list');
   list.innerHTML = '';
   pointFeatures.forEach(function(f){
     var p = f.properties || {};
@@ -363,12 +411,12 @@ function buildList(){
     var cat = detectCategory(p);
 
     var item = document.createElement('div');
-    item.className = 'item';
+    item.className = 'list-item';
     item.dataset.cat = cat;
-    var short = p.description.length > 180 ? p.description.slice(0, 180) + '…' : p.description;
-    item.innerHTML = '<h4>'+escapeHtml(cleanText(p.name) || 'Без названия')+'</h4><div class="meta"></div>';
-    var meta = item.querySelector('.meta');
-    if (meta) meta.textContent = (CAT_LABEL[cat] || '') + ' · ' + short;
+    var short = p.description.length > 220 ? p.description.slice(0, 220) + '…' : p.description;
+    item.innerHTML =
+      '<h4 class="title">'+escapeHtml(cleanText(p.name) || 'Без названия')+'</h4>'+
+      '<div class="meta">'+escapeHtml(short)+'</div>';
 
     item.addEventListener('click', function(){
       var m = markersById.get(ptIdx);
@@ -406,7 +454,7 @@ function applyVisibility(){
   var activeCatBtn = document.querySelector('.chip[data-active="true"]');
   var activeCat = activeCatBtn ? activeCatBtn.dataset.cat : 'all';
 
-  var items = Array.prototype.slice.call(document.querySelectorAll('#list .item'));
+  var items = Array.prototype.slice.call(document.querySelectorAll('#list .list-item'));
   items.forEach(function(el, idx){
     var f = pointFeatures[idx];
     var p = f && f.properties ? f.properties : {};
@@ -447,21 +495,31 @@ if (searchInput) searchInput.addEventListener('input', function(){ applyVisibili
 
 var chipBtns = document.querySelectorAll('.chip');
 for (var cb=0; cb<chipBtns.length; cb++){
-  (function(btn){ btn.addEventListener('click', function(){ selectCategory(btn.dataset.cat); }); })(chipBtns[cb]);
+  (function(btn){
+    btn.addEventListener('click', function(){ selectCategory(btn.dataset.cat); });
+  })(chipBtns[cb]);
 }
+
+// «Показать всё» — эквивалент чипа «Все»
 var btnShowAll = document.getElementById('btnShowAll');
 if (btnShowAll) btnShowAll.addEventListener('click', function(){ selectCategory('all'); });
+
+// «Где я?» — кликаем по контролу
 var btnLocate = document.getElementById('btnLocate');
 if (btnLocate) btnLocate.addEventListener('click', function(){
   var a = document.querySelector('.leaflet-control-locate a');
   if (a) a.click();
 });
+
+// «Меню»: открыть/закрыть, пересчитать высоту списка
 var btnToggleSidebar = document.getElementById('btnToggleSidebar');
 if (btnToggleSidebar) btnToggleSidebar.addEventListener('click', function(){
   var sb = document.getElementById('sidebar'); if (!sb) return;
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
-  setTimeout(function(){ map.invalidateSize(); fitToVisible(); }, 0);
+  setTimeout(function(){ adjustListHeight(); map.invalidateSize(); fitToVisible(); }, 0);
 });
+
+// FAB «скрыть интерфейс»
 var fab = document.getElementById('fabToggleUI');
 if (fab){
   fab.addEventListener('click', function(){
@@ -469,7 +527,9 @@ if (fab){
     setTimeout(function(){ map.invalidateSize(); fitToVisible(); }, 0);
   });
 }
-function ensureMobileUI(){ if (window.innerWidth <= 780) document.body.classList.remove('ui-hidden'); }
+function ensureMobileUI(){
+  if (window.innerWidth <= 780) document.body.classList.remove('ui-hidden');
+}
 ensureMobileUI();
 window.addEventListener('resize', function(){ map.invalidateSize(); fitToVisible(); });
 setTimeout(function(){ map.invalidateSize(); }, 0);
@@ -477,6 +537,7 @@ setTimeout(function(){ map.invalidateSize(); }, 0);
 /* ------- Загрузка KML ------- */
 var kmlParam = new URLSearchParams(location.search).get('kml');
 var KML_CANDIDATES = [kmlParam, './doc.kml', 'doc.kml', '../doc.kml'].filter(Boolean);
+
 async function tryFetch(url){
   var r = await fetch(url, { cache: 'no-store' });
   if (!r.ok) throw new Error('HTTP '+r.status+' '+url);
@@ -510,7 +571,7 @@ function enableKmlPicker(){
   host.appendChild(bar);
 
   var fileEl = bar.querySelector('#kmlFile');
-  if (fileEl) fileEl.addEventListener('change', function(){
+  if (fileEl) fileEl.addEventListener('change', function(e){
     var f = fileEl.files && fileEl.files[0]; if (!f) return;
     var fr = new FileReader();
     fr.onload = function(){
