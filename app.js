@@ -199,12 +199,14 @@ const tilesLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/
 const tilesDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO' });
 let currentTiles = null;
 function setTilesByColorScheme(){
+  const isMobile = window.innerWidth <= 780;
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const next = prefersDark ? tilesDark : tilesLight;
+  const next = isMobile ? tilesLight : (prefersDark ? tilesDark : tilesLight);
   if (currentTiles !== next){
     if (currentTiles) map.removeLayer(currentTiles);
     next.addTo(map); currentTiles = next;
   }
+}
 }
 setTilesByColorScheme();
 if (window.matchMedia) {
@@ -246,11 +248,25 @@ function getFitPadding() {
   const header  = document.getElementById('headerPanel');
   const sidebar = document.getElementById('sidebar');
 
-  const topPad   = (header  && header.offsetHeight) ? header.offsetHeight + 16 : 16;
-  const rightPad = (sidebar && getComputedStyle(sidebar).display !== 'none')
-    ? sidebar.offsetWidth + 16 : 16;
+  const topPad = (header && header.offsetHeight) ? header.offsetHeight + 16 : 16;
 
-  return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, 16] };
+  let rightPad = 16, bottomPad = 16;
+  if (sidebar && getComputedStyle(sidebar).display !== 'none') {
+    const rect = sidebar.getBoundingClientRect();
+    const isMobile = window.innerWidth <= 780;
+    if (isMobile) {
+      // На мобиле сайдбар — «нижний лист»
+      bottomPad = Math.round(rect.height) + 16;
+      rightPad = 16;
+    } else {
+      // На десктопе — правый сайдбар
+      rightPad = Math.round(rect.width) + 16;
+      bottomPad = 16;
+    }
+  }
+
+  return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, bottomPad] };
+};
 }
 
 /* ---------------- Состояние данных ---------------- */
@@ -429,7 +445,11 @@ document.querySelectorAll('.chip').forEach(btn=>{
 });
 
 document.getElementById('btnShowAll').addEventListener('click', ()=>{
-  if (boundsAll && boundsAll.isValid()) map.fitBounds(boundsAll, getFitPadding());
+  if (boundsAll && boundsAll.isValid()) {
+    map.fitBounds(boundsAll, getFitPadding());
+  } else {
+    fitToVisible();
+  }
 });
 document.getElementById('btnLocate').addEventListener('click', ()=> {
   document.querySelector('.leaflet-control-locate a')?.click();
@@ -448,7 +468,7 @@ function ensureMobileUI(){
   if (window.innerWidth <= 780) document.body.classList.remove('ui-hidden');
 }
 ensureMobileUI();
-window.addEventListener('resize', () => { map.invalidateSize(); fitToVisible(); });
+window.addEventListener('resize', () => { setTilesByColorScheme(); map.invalidateSize(); fitToVisible(); });
 setTimeout(() => map.invalidateSize(), 0);
 
 /* ---------------- Загрузка KML ---------------- */
