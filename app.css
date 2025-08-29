@@ -104,28 +104,60 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 /* марджины у «Показать всё» и «Где я?» */
 #btnShowAll, #btnLocate{ margin:0 8px; }
 
-/* сайдбар */
+/* ===== САЙДБАР ===== */
 .panel-sidebar{
   top:calc(84px + env(safe-area-inset-top));
   right:12px; bottom:12px; width:332px;
-  padding:12px 12px;
-  overflow:auto;
+  padding:0; /* перенесли паддинги внутрь */
+  overflow:hidden; /* скролл у списка */
 }
 @media (max-width: 780px){
   .panel-sidebar{
     top:auto; right:12px; left:12px;
     bottom:calc(12px + env(safe-area-inset-bottom));
-    height:auto; max-height:45vh;
+    height:auto; max-height:60vh; /* уверенная высота на мобиле */
+    border-radius:16px;
+    box-shadow: 0 -12px 30px rgba(0,0,0,.15);
   }
 }
-.sidebar-head{ font-weight:600; margin-bottom:8px; }
+
+/* шапка сайдбара */
+.sidebar-header{
+  position:sticky; top:0; z-index:1;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding:12px 14px;
+  background:#fff; border-bottom:1px solid rgba(0,0,0,.06);
+}
+.sidebar-title{ font-weight:700; }
+
+/* кнопка-крестик */
+.icon-btn{
+  min-width:32px; height:32px; line-height:30px;
+  border:0; border-radius:10px; cursor:pointer;
+  background:#eef2ff; color:#111; font-size:18px;
+}
+.icon-btn:hover{ background:#e2e8ff; }
+
+/* список внутри сайдбара — отдельный скролл */
+#list{
+  padding:10px 12px 14px;
+  overflow-y:auto;
+  max-height:calc(100% - 52px); /* 52px ≈ высота .sidebar-header */
+  -webkit-overflow-scrolling:touch;
+}
+
+/* карточки списка */
 .list{ display:flex; flex-direction:column; gap:8px; }
 .list-item{
-  padding:8px 10px; border-radius:12px;
-  background:rgba(255,255,255,.66); border:1px solid var(--panel-border);
-  color:var(--text);
+  padding:10px 12px; border-radius:12px;
+  background:#fff; border:1px solid var(--panel-border);
+  color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.06);
 }
-.list-item .title{ font-weight:600; }
+.list-item .title{ font-weight:600; margin:0 0 6px; font-size:15px; line-height:1.35; }
+.list-item .meta{
+  color:#6b7280; font-size:13px; line-height:1.4;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}
 
 /* FAB (моб.) */
 .fab{
