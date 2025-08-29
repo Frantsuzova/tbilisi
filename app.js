@@ -1,5 +1,5 @@
 // app.js — Leaflet + toGeoJSON + LocateControl
-// Удаляем буквенные маркеры (A/B/C/…): имя = одна буква ИЛИ иконка вида .../A.png.
+// Фильтры: убираем буквенные маркеры (A/B/C/…) и служебные icon-17..icon-25.
 // «Показать всё» ≡ чип «Все»; «Где я?» зумирует близко (17).
 
 /* ------- Фолбэк-булавки ------- */
@@ -66,7 +66,8 @@ function stripHtmlToText(input) {
 }
 function escapeHtml(s) {
   s = String(s == null ? '' : s);
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function makePopupHtml(name, description) {
   var nameText = escapeHtml(cleanText(name)) || 'Без названия';
@@ -237,25 +238,31 @@ function getFitPadding() {
   return { paddingTopLeft: [16, topPad], paddingBottomRight: [rightPad, 16] };
 }
 
-/* ------- Служебные таблицы ------- */
+/* ------- Фильтры специальных точек ------- */
+// буквенные маркеры A/B/C/… (латиница/кириллица)
 function isLetterPlacemark(feature, styleHrefMap){
   try{
     var p = feature && feature.properties ? feature.properties : {};
     var nm = String(p.name || '').trim();
-
-    // имя — ровно одна буква (латиница/кириллица)
     if (/^[A-Za-zА-ЯЁІЇЄҐ]$/.test(nm)) return true;
-
-    // иконка вида .../A.png
+    // доп.проверка по иконке, если она прямая буква
     var styleUrl = typeof p.styleUrl === 'string' ? p.styleUrl : '';
     var href = styleUrl ? (styleHrefMap[styleUrl] || '') : '';
     if (!href) return false;
     var file = href.split('?')[0].split('#')[0].split('/').pop() || '';
-    if (/^(?:[A-Z]|_[A-Z]|-[A-Z])\.png$/i.test(file)) return true; // A.png, _A.png, -A.png
-    if (/(^|[_-])[A-Z]\.png$/i.test(file)) return true;            // *_A.png
-    if (/\/paddle\/[A-Z]\.png$/i.test(href)) return true;          // .../paddle/A.png
+    if (/^(?:[A-Z]|_[A-Z]|-[A-Z])\.png$/i.test(file)) return true;
+    if (/\/paddle\/[A-Z]\.png$/i.test(href)) return true;
   }catch(_){}
   return false;
+}
+// служебные иконки icon-17..icon-25 из KML (по реальному href, не по _seq)
+function isServiceIconFeature(feature, styleHrefMap){
+  var p = feature && feature.properties ? feature.properties : {};
+  var styleUrl = typeof p.styleUrl === 'string' ? p.styleUrl : '';
+  if (!styleUrl) return false;
+  var href = styleHrefMap && styleHrefMap[styleUrl] ? styleHrefMap[styleUrl] : '';
+  var id = idFromHref(href);
+  return id != null && id >= 17 && id <= 25;
 }
 
 /* ------- Состояние данных ------- */
@@ -281,9 +288,11 @@ function renderGeoJSON(geojson, styleHrefMap){
   var feats = Array.isArray(geojson.features) ? geojson.features : [];
   feats.forEach(function(f,i){ f.properties = Object.assign({}, f.properties||{}, { _seq:i }); });
 
-  // только точки, и сразу отбрасываем буквенные маркеры
+  // ТОЛЬКО точки, и отфильтровываем рудименты/служебные
   pointFeatures = feats.filter(function(f){
-    return f.geometry && f.geometry.type === 'Point' && !isLetterPlacemark(f, styleHrefMap);
+    return f.geometry && f.geometry.type === 'Point'
+           && !isLetterPlacemark(f, styleHrefMap)
+           && !isServiceIconFeature(f, styleHrefMap);
   });
   var shapeFeatures = feats.filter(function(f){ return !f.geometry || f.geometry.type !== 'Point'; });
 
