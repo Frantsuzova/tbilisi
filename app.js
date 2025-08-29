@@ -410,6 +410,29 @@ function applyVisibility(){
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
 }
 
+// Границы по ВСЕМ точкам (не только видимым)
+function fitToAllPoints(){
+  const layers = [];
+  // приоритет — наши маркеры из markersById (все точки)
+  markersById.forEach(m => { if (m && typeof m.getLatLng === 'function') layers.push(m); });
+
+  // fallback: если по каким-то причинам пусто — обойти все слои карты
+  if (!layers.length){
+    map.eachLayer(l => {
+      if (l instanceof L.TileLayer) return;
+      if (typeof l.getLatLng === 'function') layers.push(l);
+      else if (typeof l.eachLayer === 'function'){
+        l.eachLayer(sl => { if (sl && typeof sl.getLatLng === 'function') layers.push(sl); });
+      }
+    });
+  }
+
+  if (!layers.length) return;
+  const group = L.featureGroup(layers);
+  const b = group.getBounds();
+  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
+}
+
 /* ---------------- UI ---------------- */
 const searchInput = document.getElementById('search');
 
@@ -429,8 +452,9 @@ document.querySelectorAll('.chip').forEach(btn=>{
 });
 
 document.getElementById('btnShowAll').addEventListener('click', ()=>{
-  if (boundsAll && boundsAll.isValid()) map.fitBounds(boundsAll, getFitPadding());
+  fitToAllPoints();
 });
+
 document.getElementById('btnLocate').addEventListener('click', ()=> {
   document.querySelector('.leaflet-control-locate a')?.click();
 });
