@@ -76,15 +76,14 @@ function detectCategory(p){
   const name = cleanText(p?.name).toLowerCase();
   const desc = cleanText(p?.description).toLowerCase();
 
-  // Храмы/церкви — «церк*» + общие ключи
+  // Храмы/церкви
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(name) ||
       /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(desc)) {
     return 'temples';
   }
-
-  if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';   // Лестницы
-  if (name.includes('парадн')  || desc.includes('парадн'))  return 'porches';  // Парадные
-  return 'other';                                                               // Остальное
+  if (name.includes('лестниц') || desc.includes('лестниц')) return 'stairs';
+  if (name.includes('парадн')  || desc.includes('парадн'))  return 'porches';
+  return 'other';
 }
 const CAT_LABEL = {
   stairs:"Лестницы",
@@ -214,7 +213,12 @@ if (window.matchMedia) {
 }
 L.control.zoom({ position:'topright' }).addTo(map);
 L.control.scale({ imperial:false }).addTo(map);
-L.control.locate({ position:'topright', setView:'untilPan', keepCurrentZoomLevel:true, strings:{ title:'Показать моё местоположение' } }).addTo(map);
+L.control.locate({
+  position:'topright',
+  setView:'untilPan',
+  keepCurrentZoomLevel:true,
+  strings:{ title:'Где я?' }
+}).addTo(map);
 
 /* ---------------- iOS: UI внутрь карты + жесты ---------------- */
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -378,19 +382,14 @@ function isMatchProps(p, activeCat, qLower){
 }
 function fitToVisible(){
   let layers = markerGroup.getLayers();
-
-  // если вдруг ничего не добавлено в markerGroup (например, сразу после фильтров),
-  // соберём все маркеры из markersById
   if (!layers.length && typeof markersById !== 'undefined' && markersById.size){
     layers = Array.from(markersById.values()).filter(m => m && typeof m.getLatLng === 'function');
   }
-
   if (!layers.length) return;
   const group = L.featureGroup(layers);
   const b = group.getBounds();
   if (b && b.isValid()) map.fitBounds(b, getFitPadding());
 }
-
 function applyVisibility(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const activeCatBtn = document.querySelector('.chip[data-active="true"]');
@@ -418,77 +417,31 @@ function applyVisibility(){
   if (sub) sub.textContent = `${lastSummaryBase} · Показано: ${visible}`;
 }
 
-// Сброс фильтров на "Все" + пустой поиск, затем пересчитать видимость
-function resetFiltersToAll(){
+/* ---------------- ЕДИНЫЙ ВЫБОР КАТЕГОРИИ ---------------- */
+function selectCategory(cat){
+  // переключаем чипы
   const chips = document.querySelectorAll('.chip');
-  chips.forEach(ch => ch.dataset.active = (ch.dataset.cat === 'all' ? 'true' : 'false'));
+  chips.forEach(ch => ch.dataset.active = (ch.dataset.cat === cat ? 'true' : 'false'));
+
+  // сбрасываем поиск
   const q = document.getElementById('search');
   if (q && q.value) q.value = '';
-  if (typeof applyVisibility === 'function') applyVisibility();
-}
 
-// fit по ВСЕМ точкам из markersById (независимо от фильтров)
-function fitToAllPoints(){
-  let layers = [];
-  if (typeof markersById !== 'undefined' && markersById && typeof markersById.forEach === 'function'){
-    markersById.forEach(m => { if (m && typeof m.getLatLng === 'function') layers.push(m); });
-  }
-  // подстраховка, если почему-то пусто — по текущей группе
-  if (!layers.length && typeof markerGroup !== 'undefined' && markerGroup && typeof markerGroup.getLayers === 'function'){
-    layers = markerGroup.getLayers();
-  }
-  if (!layers.length) return;
-  const b = L.featureGroup(layers).getBounds();
-  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
-}
-
-
-// Границы по ВСЕМ точкам (не только видимым)
-function fitToAllPoints(){
-  const layers = [];
-  // приоритет — наши маркеры из markersById (все точки)
-  markersById.forEach(m => { if (m && typeof m.getLatLng === 'function') layers.push(m); });
-
-  // fallback: если по каким-то причинам пусто — обойти все слои карты
-  if (!layers.length){
-    map.eachLayer(l => {
-      if (l instanceof L.TileLayer) return;
-      if (typeof l.getLatLng === 'function') layers.push(l);
-      else if (typeof l.eachLayer === 'function'){
-        l.eachLayer(sl => { if (sl && typeof sl.getLatLng === 'function') layers.push(sl); });
-      }
-    });
-  }
-
-  if (!layers.length) return;
-  const group = L.featureGroup(layers);
-  const b = group.getBounds();
-  if (b && b.isValid()) map.fitBounds(b, getFitPadding());
+  // применяем видимость и зумим по текущей (теперь — «все») выборке
+  applyVisibility();
+  fitToVisible();
 }
 
 /* ---------------- UI ---------------- */
 const searchInput = document.getElementById('search');
-
 searchInput.addEventListener('input', ()=> { applyVisibility(); });
 
 document.querySelectorAll('.chip').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.chip').forEach(b=>b.dataset.active='false');
-    btn.dataset.active = 'true';
-
-    // Сбрасываем поиск при смене категории
-    if (searchInput.value.trim() !== '') searchInput.value = '';
-
-    applyVisibility();
-    fitToVisible();
-  });
+  btn.addEventListener('click', ()=> selectCategory(btn.dataset.cat));
 });
 
-document.getElementById('btnShowAll').addEventListener('click', ()=>{
-  resetFiltersToAll();   // показываем все категории и очищаем поиск
-  fitToAllPoints();      // зум по всем маркерам
-});
-
+// «Показать всё» — то же самое, что клик по чипу «Все»
+document.getElementById('btnShowAll').addEventListener('click', ()=> selectCategory('all'));
 
 document.getElementById('btnLocate').addEventListener('click', ()=> {
   document.querySelector('.leaflet-control-locate a')?.click();
@@ -496,7 +449,6 @@ document.getElementById('btnLocate').addEventListener('click', ()=> {
 document.getElementById('btnToggleSidebar').addEventListener('click', ()=>{
   const sb = document.getElementById('sidebar');
   sb.style.display = (sb.style.display === 'none') ? '' : 'none';
-  // при изменении ширины сайдбара — пересчитать паддинги
   setTimeout(()=>{ map.invalidateSize(); fitToVisible(); }, 0);
 });
 const fab = document.getElementById('fabToggleUI');
