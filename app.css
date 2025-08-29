@@ -5,14 +5,13 @@
   --muted: #475569;
 
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;   /* light blue */
-
-  --accent: #bfe3ff;        /* for .btn-primary */
+  --chip-active: #bfe3ff;   /* активные чипы и primary — светло-голубые */
+  --accent: #bfe3ff;
 
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
 
-  /* buttons */
+  /* кнопки */
   --btn-bg: #eaf6ff;
   --btn-bg-hover: #e1f1ff;
   --btn-border: #b9dcff;
@@ -23,8 +22,6 @@
   :root{
     --panel-bg: rgba(17,24,39,.72);
     --panel-border: rgba(255,255,255,.08);
-    --text: #0f172a;  /* для контраста в голубых кнопках */
-    --muted: #475569;
 
     --chip-bg: rgba(255,255,255,.06);
     --chip-active: #cfe6ff;
@@ -37,30 +34,22 @@
   }
 }
 
-/* ===== БАЗА / КАРТА ===== */
-html, body, #map{
-  height:100%;
-  width:100%;
-  margin:0;
-  padding:0;
-}
+/* ===== КАРТА ===== */
+html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 #map{ position:fixed; inset:0; }
 
-/* Leaflet panes z-index (поднимаем попапы над маркерами) */
-.leaflet-top,
-.leaflet-bottom { z-index:1000 !important; }
-.leaflet-marker-pane { z-index:1050 !important; }
+/* поднимем попап над маркерами */
+.leaflet-top, .leaflet-bottom{ z-index:1000 !important; }
+.leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 .leaflet-tooltip-pane{ z-index:10010 !important; }
 
-/* ===== ПАНЕЛИ / UI ===== */
+/* ===== ПАНЕЛИ ===== */
 .panel{
-  position:fixed;
-  z-index:5000;                 
+  position:fixed; z-index:5000;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  background:var(--panel-bg);
-  color:var(--text);
+  background:var(--panel-bg); color:var(--text);
   border:1px solid var(--panel-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
@@ -72,34 +61,16 @@ html, body, #map{
   top:calc(12px + env(safe-area-inset-top));
   left:12px; right:360px;
   padding:12px 14px;
-  display:grid; grid-template-columns:1fr auto;
-  gap:10px 12px; align-items:center;
 }
+@media (max-width: 980px){ .panel-header{ right:12px; } }
 
-@media (max-width: 780px){
-  .panel-header{ left:12px; right:12px; }
+/* гибкая раскладка шапки — ничего не «ломает» при сжатии */
+.header-row{
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px;
 }
-
-.panel-sidebar{
-  top:calc(84px + env(safe-area-inset-top));
-  right:12px; bottom:12px; width:332px;
-  padding:12px 12px;
-  overflow:auto;
-}
-@media (max-width: 780px){
-  .panel-sidebar{
-    top:auto; right:12px; left:12px;
-    bottom:calc(12px + env(safe-area-inset-bottom));
-    height:auto; max-height:45vh;
-  }
-}
-
-.header-row{ display:grid; grid-template-columns:1fr auto; gap:10px 12px; }
-.counts{ font-size:12px; color:var(--muted); }
-
-.filters{
-  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
-}
+.counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
+.filters{ flex: 1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.actions{ flex: 0 0 auto; display:flex; gap:8px; align-items:center; }
 
 .search{
   min-width:260px; flex:1 1 240px;
@@ -108,9 +79,9 @@ html, body, #map{
   background:rgba(255,255,255,.66); color:var(--text);
   outline:none;
 }
-.search::placeholder{ color: #64748b; }
+.search::placeholder{ color:#64748b; }
 
-/* Кнопки и чипы */
+/* кнопки и чипы */
 .btn{
   border:1px solid var(--btn-border, var(--panel-border));
   background:var(--btn-bg, var(--chip-bg));
@@ -125,7 +96,6 @@ html, body, #map{
 .btn-primary{ background:var(--accent); color:#04121a; border-color:transparent; }
 .btn-primary:hover{ filter:brightness(1.05); }
 
-/* чипы-фильтры */
 .chip{
   display:inline-flex; align-items:center; gap:6px;
   border:1px solid var(--panel-border);
@@ -134,19 +104,25 @@ html, body, #map{
 }
 .chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
 
-/* марджины для кнопок «Показать всё» и «Где я?» */
+/* марджины у «Показать всё» и «Где я?» */
 #btnShowAll, #btnLocate{ margin:0 8px; }
 
-/* FAB для мобилки */
-.fab{
-  position:fixed; z-index:5001;
-  right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
-  width:52px; height:52px; border-radius:50%;
-  background:var(--accent); color:#04121a; border:0;
-  box-shadow:var(--shadow);
+/* сайдбар */
+.panel-sidebar{
+  top:calc(84px + env(safe-area-inset-top));
+  right:12px; bottom:12px; width:332px;
+  padding:12px 12px;
+  overflow:auto;
+}
+@media (max-width: 780px){
+  .panel-sidebar{
+    top:auto; right:12px; left:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    height:auto; max-height:45vh;
+  }
 }
 
-/* Список в сайдбаре */
+.sidebar-head{ font-weight:600; margin-bottom:8px; }
 .list{ display:flex; flex-direction:column; gap:8px; }
 .list-item{
   padding:8px 10px; border-radius:12px;
@@ -155,19 +131,26 @@ html, body, #map{
 }
 .list-item .title{ font-weight:600; }
 
-/* iOS override — делаем фон светлым, без blur для стабильности */
+/* FAB (моб.) */
+.fab{
+  position:fixed; z-index:5001;
+  right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
+  width:52px; height:52px; border-radius:50%;
+  background:var(--accent); color:#04121a; border:0;
+  box-shadow:var(--shadow);
+}
+
+/* iOS override — фон светлый, без blur */
 @supports (-webkit-touch-callout: none) {
   .panel, .fab, .kml-picker{
     z-index:2147483647 !important;
-    transform:none !important;
-    -webkit-transform:none !important;
-    -webkit-backdrop-filter:none !important;
-    backdrop-filter:none !important;
-    background:rgba(255,255,255,.94) !important; /* светлая тема */
+    transform:none !important; -webkit-transform:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+    background:rgba(255,255,255,.94) !important;
   }
 }
 
-/* Принудительно светлая тема на мобильных */
+/* принудительно светлая мобильная тема */
 @media (max-width:780px){
   :root{
     --panel-bg: rgba(255,255,255,.92);
@@ -185,5 +168,4 @@ html, body, #map{
   }
 }
 
-/* Доп. утилиты */
 .hidden{ display:none !important; }
