@@ -101,22 +101,30 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
 
-/* марджины у «Показать всё» и «Где я?» */
+/* отступы у «Показать всё» и «Где я?» */
 #btnShowAll, #btnLocate{ margin:0 8px; }
 
 /* ===== САЙДБАР ===== */
+/* Десктоп: компактно справа, фиксированная ширина */
 .panel-sidebar{
   top:calc(84px + env(safe-area-inset-top));
-  right:12px; bottom:12px; width:332px;
-  padding:0; /* перенесли паддинги внутрь */
+  right:12px; bottom:12px;
+  width:min(34vw, 360px);
+  padding:0;
   overflow:hidden; /* скролл у списка */
+  border-radius:16px;
 }
+@media (max-width: 1200px){
+  .panel-sidebar{ width: 332px; }
+}
+
+/* Мобильный: «лист» справа, не закрывает экран целиком */
 @media (max-width: 780px){
   .panel-sidebar{
-    top:auto; right:12px; left:12px;
+    top:auto; right:12px; left:auto;
     bottom:calc(12px + env(safe-area-inset-bottom));
-    height:auto; max-height:60vh; /* уверенная высота на мобиле */
-    border-radius:16px;
+    width:min(92vw, 380px);
+    max-height:70vh;
     box-shadow: 0 -12px 30px rgba(0,0,0,.15);
   }
 }
@@ -159,16 +167,16 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
 }
 
-/* FAB (моб.) */
+/* FAB (меню) — всегда поверх и в поле зрения */
 .fab{
-  position:fixed; z-index:5001;
+  position:fixed; z-index:7000;         /* выше сайдбара */
   right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
   width:52px; height:52px; border-radius:50%;
   background:var(--accent); color:#04121a; border:0;
   box-shadow:var(--shadow);
 }
 
-/* iOS override — светлый фон, без blur */
+/* iOS override — светлый фон, без blur и с большим z-index */
 @supports (-webkit-touch-callout: none) {
   .panel, .fab, .kml-picker{
     z-index:2147483647 !important;
@@ -178,7 +186,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   }
 }
 
-/* принудительно светлая мобильная тема */
+/* Принудительно светлая мобильная тема */
 @media (max-width:780px){
   :root{
     --panel-bg: rgba(255,255,255,.92);
