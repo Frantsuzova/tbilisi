@@ -11,22 +11,20 @@
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
 
-  /* кнопки */
   --btn-bg: #eaf6ff;
   --btn-bg-hover: #e1f1ff;
   --btn-border: #b9dcff;
   --btn-text-strong: #083a66;
 }
 
+/* тёмная системная тема — оставляем светлую UI-гамму */
 @media (prefers-color-scheme: dark){
   :root{
     --panel-bg: rgba(17,24,39,.72);
     --panel-border: rgba(255,255,255,.08);
-
     --chip-bg: rgba(255,255,255,.06);
     --chip-active: #cfe6ff;
     --accent: #cfe6ff;
-
     --btn-bg: #eaf6ff;
     --btn-bg-hover: #e1f1ff;
     --btn-border: #b9dcff;
@@ -34,17 +32,17 @@
   }
 }
 
-/* ===== КАРТА ===== */
+/* ===== карта ===== */
 html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 #map{ position:fixed; inset:0; }
 
-/* попап/тултип поверх маркеров */
+/* попап поверх маркеров */
 .leaflet-top, .leaflet-bottom{ z-index:1000 !important; }
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 .leaflet-tooltip-pane{ z-index:10010 !important; }
 
-/* ===== ПАНЕЛИ ===== */
+/* ===== верхняя панель ===== */
 .panel{
   position:fixed; z-index:5000;
   backdrop-filter: blur(10px);
@@ -59,10 +57,12 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
-  left:12px; right:360px;
+  left:12px; right:360px;          /* место справа под сайдбар */
   padding:12px 14px;
 }
-@media (max-width: 980px){ .panel-header{ right:12px; } }
+@media (max-width: 980px){
+  .panel-header{ right:12px; }     /* на мобиле не резервируем место */
+}
 
 .header-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
@@ -78,7 +78,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .search::placeholder{ color:#64748b; }
 
-/* кнопки и чипы */
+/* чипы и кнопки */
 .btn{
   border:1px solid var(--btn-border, var(--panel-border));
   background:var(--btn-bg, var(--chip-bg));
@@ -101,26 +101,24 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
 
-/* отступы у «Показать всё» и «Где я?» */
+/* небольшой отступ у «Показать всё» и «Где я?» */
 #btnShowAll, #btnLocate{ margin:0 8px; }
 
-/* ===== САЙДБАР ===== */
+/* ===== САЙДБАР (совпадает с твоей разметкой: class="panel sidebar") ===== */
+
 /* Десктоп: компактно справа, фиксированная ширина */
-.panel-sidebar{
+.sidebar{
   top:calc(84px + env(safe-area-inset-top));
   right:12px; bottom:12px;
   width:min(34vw, 360px);
   padding:0;
-  overflow:hidden; /* скролл у списка */
+  overflow:hidden;                 /* скролл у списка, не у контейнера */
   border-radius:16px;
 }
-@media (max-width: 1200px){
-  .panel-sidebar{ width: 332px; }
-}
 
-/* Мобильный: «лист» справа, не закрывает экран целиком */
+/* Мобильный: узкий лист справа, не закрывает весь экран */
 @media (max-width: 780px){
-  .panel-sidebar{
+  .sidebar{
     top:auto; right:12px; left:auto;
     bottom:calc(12px + env(safe-area-inset-bottom));
     width:min(92vw, 380px);
@@ -129,7 +127,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   }
 }
 
-/* шапка сайдбара */
+/* шапка сайдбара со встроенным крестиком — всегда видна */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
@@ -146,11 +144,11 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .icon-btn:hover{ background:#e2e8ff; }
 
-/* список внутри сайдбара — отдельный скролл */
+/* список — отдельный скроллируемый контейнер */
 #list{
   padding:10px 12px 14px;
   overflow-y:auto;
-  max-height:calc(100% - 52px); /* 52px ≈ высота .sidebar-header */
+  max-height:calc(100% - 52px);    /* 52px ≈ высота .sidebar-header */
   -webkit-overflow-scrolling:touch;
 }
 
@@ -167,26 +165,16 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
 }
 
-/* FAB (меню) — всегда поверх и в поле зрения */
-.fab{
-  position:fixed; z-index:7000;         /* выше сайдбара */
-  right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
-  width:52px; height:52px; border-radius:50%;
-  background:var(--accent); color:#04121a; border:0;
-  box-shadow:var(--shadow);
-}
-
-/* iOS override — светлый фон, без blur и с большим z-index */
+/* iOS override — светлая заливка без blur и с большим z-index */
 @supports (-webkit-touch-callout: none) {
-  .panel, .fab, .kml-picker{
+  .panel{
     z-index:2147483647 !important;
-    transform:none !important; -webkit-transform:none !important;
     -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
     background:rgba(255,255,255,.94) !important;
   }
 }
 
-/* Принудительно светлая мобильная тема */
+/* принудительно светлая моб. тема */
 @media (max-width:780px){
   :root{
     --panel-bg: rgba(255,255,255,.92);
@@ -196,7 +184,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
     --chip-bg: rgba(15,23,42,.06);
     --chip-active: #bfe3ff;
     --accent: #bfe3ff;
-
     --btn-bg: #eaf6ff;
     --btn-bg-hover: #e1f1ff;
     --btn-border: #b9dcff;
