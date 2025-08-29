@@ -41,10 +41,16 @@
   </header>
 
   <!-- Правый сайдбар / нижний лист (моб.) -->
-  <aside class="panel panel-sidebar" id="sidebar" aria-label="Список точек" role="complementary">
-    <div class="sidebar-head">Точки маршрута</div>
-    <div id="list" class="list" aria-live="polite"></div>
-  </aside>
+  <div id="sidebar" class="panel sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">Список локаций</div>
+    <button id="btnCloseSidebar" class="icon-btn" aria-label="Закрыть">×</button>
+  </div>
+
+  <!-- список точек -->
+  <div id="list" class="list"></div>
+</div>
+
 
 
 
