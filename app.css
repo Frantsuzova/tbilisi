@@ -1,54 +1,72 @@
 :root{
   --panel-bg: rgba(255,255,255,.78);
-  --panel-border: rgba(0,0,0,.1);
+  --panel-border: rgba(0,0,0,.10);
   --text: #0f172a;
   --muted: #475569;
+
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;
+  --chip-active: #bfe3ff;   /* light blue */
+
+  --accent: #bfe3ff;        /* for .btn-primary */
+
   --shadow: 0 8px 24px rgba(0,0,0,.18);
   --radius: 16px;
-  --accent: #bfe3ff;
+
+  /* buttons */
+  --btn-bg: #eaf6ff;
+  --btn-bg-hover: #e1f1ff;
+  --btn-border: #b9dcff;
+  --btn-text-strong: #083a66;
 }
+
 @media (prefers-color-scheme: dark){
   :root{
     --panel-bg: rgba(17,24,39,.72);
     --panel-border: rgba(255,255,255,.08);
-    --text: #e5e7eb;
-    --muted: #94a3b8;
+    --text: #0f172a;  /* для контраста в голубых кнопках */
+    --muted: #475569;
+
     --chip-bg: rgba(255,255,255,.06);
     --chip-active: #cfe6ff;
-    --shadow: 0 8px 24px rgba(0,0,0,.40);
     --accent: #cfe6ff;
+
+    --btn-bg: #eaf6ff;
+    --btn-bg-hover: #e1f1ff;
+    --btn-border: #b9dcff;
+    --btn-text-strong: #083a66;
   }
 }
 
 /* ===== БАЗА / КАРТА ===== */
-html, body { height:100%; margin:0; padding:0; overflow:hidden; }
-#map { position:absolute; inset:0; z-index:0; }
-body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial; }
+html, body, #map{
+  height:100%;
+  width:100%;
+  margin:0;
+  padding:0;
+}
+#map{ position:fixed; inset:0; }
 
-/* Leaflet слои ниже нашего UI */
-.leaflet-pane,
-.leaflet-control-container,
+/* Leaflet panes z-index (поднимаем попапы над маркерами) */
 .leaflet-top,
 .leaflet-bottom { z-index:1000 !important; }
 .leaflet-marker-pane { z-index:1050 !important; }
+.leaflet-popup-pane{ z-index:10000 !important; }
+.leaflet-tooltip-pane{ z-index:10010 !important; }
 
 /* ===== ПАНЕЛИ / UI ===== */
 .panel{
   position:fixed;
-  z-index:5000;                 /* всегда выше карты и её контролов */
-  backdrop-filter: blur(8px) saturate(1.2);
-  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  z-index:5000;                 
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   background:var(--panel-bg);
+  color:var(--text);
   border:1px solid var(--panel-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-
-  /* важное: чтобы жесты карты проходили сквозь свободные места панели */
   pointer-events:none;
 }
-.panel *{ pointer-events:auto; } /* кликаемы только элементы внутри */
+.panel *{ pointer-events:auto; }
 
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
@@ -57,138 +75,99 @@ body { color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,
   display:grid; grid-template-columns:1fr auto;
   gap:10px 12px; align-items:center;
 }
-.title{ font-weight:700; letter-spacing:.2px; }
-.subtitle{ color:var(--muted); font-size:12px; }
-.actions{ display:flex; gap:8px; align-items:center; }
 
+@media (max-width: 780px){
+  .panel-header{ left:12px; right:12px; }
+}
+
+.panel-sidebar{
+  top:calc(84px + env(safe-area-inset-top));
+  right:12px; bottom:12px; width:332px;
+  padding:12px 12px;
+  overflow:auto;
+}
+@media (max-width: 780px){
+  .panel-sidebar{
+    top:auto; right:12px; left:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    height:auto; max-height:45vh;
+  }
+}
+
+.header-row{ display:grid; grid-template-columns:1fr auto; gap:10px 12px; }
+.counts{ font-size:12px; color:var(--muted); }
+
+.filters{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+}
+
+.search{
+  min-width:260px; flex:1 1 240px;
+  height:32px; padding:6px 10px;
+  border-radius:999px; border:1px solid var(--panel-border);
+  background:rgba(255,255,255,.66); color:var(--text);
+  outline:none;
+}
+.search::placeholder{ color: #64748b; }
+
+/* Кнопки и чипы */
 .btn{
-  border:1px solid var(--panel-border);
-  background:var(--chip-bg);
+  border:1px solid var(--btn-border, var(--panel-border));
+  background:var(--btn-bg, var(--chip-bg));
   border-radius:999px;
   padding:6px 10px;
   cursor:pointer; user-select:none;
   color:var(--text); transition:.15s ease;
 }
-.btn:hover{ transform:translateY(-1px); }
+.btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
+.btn:active{ transform:translateY(0); }
+
 .btn-primary{ background:var(--accent); color:#04121a; border-color:transparent; }
 .btn-primary:hover{ filter:brightness(1.05); }
 
-.filters{ grid-column:1 / -1; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.search{
-  min-width:220px; flex:1 1 260px;
-  border:1px solid var(--panel-border);
-  background:var(--chip-bg);
-  border-radius:10px; padding:8px 10px; color:var(--text); outline:none;
-}
+/* чипы-фильтры */
 .chip{
+  display:inline-flex; align-items:center; gap:6px;
   border:1px solid var(--panel-border);
   background:var(--chip-bg);
   border-radius:999px; padding:6px 10px; cursor:pointer; font-size:12px;
 }
 .chip[data-active="true"]{ background:var(--chip-active); color:#031018; border-color:transparent; }
 
-.panel-sidebar{
-  top:calc(12px + env(safe-area-inset-top));
-  right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
-  width:320px; display:flex; flex-direction:column; overflow:hidden;
-}
-.sidebar-head{ padding:12px 14px; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
-.sidebar-title{ font-weight:600; }
-.sidebar-body{ padding:8px 8px 12px; overflow:auto; }
-.item{
-  display:grid; grid-template-columns:1fr auto; gap:4px 8px;
-  padding:10px 10px; border-radius:12px; border:1px solid var(--panel-border);
-  background:rgba(0,0,0,.03); margin-bottom:8px; cursor:pointer;
-}
-@media (prefers-color-scheme: dark){ .item{ background:rgba(255,255,255,.06); } }
-.item h4{ margin:0; font-size:13px; font-weight:600; }
-.item .meta{ grid-column:1/-1; color:var(--muted); font-size:12px; }
+/* марджины для кнопок «Показать всё» и «Где я?» */
+#btnShowAll, #btnLocate{ margin:0 8px; }
 
-.panel-legend{
-  left:12px; bottom:calc(12px + env(safe-area-inset-bottom));
-  max-width:420px; padding:10px 12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
-}
-.legend-group{ display:flex; gap:10px; flex-wrap:wrap; }
-.legend{
-  display:flex; gap:6px; align-items:center;
-  background:var(--chip-bg); border:1px solid var(--panel-border);
-  padding:6px 10px; border-radius:999px; font-size:12px;
-}
-.legend img{ width:18px; height:18px; display:block; }
-
-/* FAB (моб.) */
+/* FAB для мобилки */
 .fab{
-  position:fixed; right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
-  z-index:6000; border:none; background:var(--accent); color:#04121a;
-  border-radius:999px; padding:12px 14px; font-weight:700; box-shadow:var(--shadow);
-  pointer-events:auto;
-}
-@media (min-width:781px){ .fab{ display:none; } }
-
-/* Скрытие UI */
-body.ui-hidden .panel-header,
-body.ui-hidden .panel-legend,
-body.ui-hidden .panel-sidebar{
-  opacity:0; pointer-events:none; transform:translateY(6px);
-  transition:opacity .15s ease, transform .15s ease;
-}
-body:not(.ui-hidden) .panel-header,
-body:not(.ui-hidden) .panel-legend,
-body:not(.ui-hidden) .panel-sidebar{
-  opacity:1; transform:none; transition:opacity .15s ease, transform .15s ease;
+  position:fixed; z-index:5001;
+  right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
+  width:52px; height:52px; border-radius:50%;
+  background:var(--accent); color:#04121a; border:0;
+  box-shadow:var(--shadow);
 }
 
-/* Адаптив */
-@media (max-width:980px){
-  .panel-header{ right:12px; }
-  .panel-sidebar{ width:300px; }
+/* Список в сайдбаре */
+.list{ display:flex; flex-direction:column; gap:8px; }
+.list-item{
+  padding:8px 10px; border-radius:12px;
+  background:rgba(255,255,255,.66); border:1px solid var(--panel-border);
+  color:var(--text);
 }
-@media (max-width:780px){
-  .panel-header{ left:12px; right:12px; }
-  .panel-sidebar{
-    left:12px; right:12px; width:auto;
-    top:auto; height:45vh;       /* «нижний лист» */
-  }
-  /* чтобы ничего не перекрывало панели на телефоне — можно скрыть служебные контролы */
-  .leaflet-control-attribution,
-  .leaflet-control-scale{ display:none !important; }
-}
+.list-item .title{ font-weight:600; }
 
-/* Разное */
-.hidden{ display:none !important; }
-.count{ font-variant-numeric: tabular-nums; }
-.leaflet-popup-content img{ display:none !important; max-width:0 !important; max-height:0 !important; }
-
-/* Пикер KML */
-.kml-picker{
-  top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
-  padding:8px 10px; display:flex; gap:8px; align-items:center;
-}
-.kml-url{
-  width:240px; border:1px solid var(--panel-border);
-  background:var(--chip-bg); border-radius:8px; padding:6px 8px; color:var(--text);
-}
-
-/* ===== iOS OVERRIDES =====
-   Убираем backdrop-filter/transform у панелей (частая причина «ухода под карту»),
-   и гарантируем, что жесты обрабатывает Leaflet, а не страница. */
+/* iOS override — делаем фон светлым, без blur для стабильности */
 @supports (-webkit-touch-callout: none) {
   .panel, .fab, .kml-picker{
-    z-index:2147483647 !important;        /* максимум */
+    z-index:2147483647 !important;
     transform:none !important;
     -webkit-transform:none !important;
     -webkit-backdrop-filter:none !important;
     backdrop-filter:none !important;
-    background:rgba(255,255,255,.94) !important; /* без blur, чтобы не ломался композитинг; светлая тема на iOS */
-  }
-  .leaflet-container{
-    touch-action:none !important;         /* события — в Leaflet */
-    -ms-touch-action:none !important;
+    background:rgba(255,255,255,.94) !important; /* светлая тема */
   }
 }
 
-
-/* Force LIGHT UI on mobile regardless of OS appearance */
+/* Принудительно светлая тема на мобильных */
 @media (max-width:780px){
   :root{
     --panel-bg: rgba(255,255,255,.92);
@@ -196,7 +175,15 @@ body:not(.ui-hidden) .panel-sidebar{
     --text: #0f172a;
     --muted: #475569;
     --chip-bg: rgba(15,23,42,.06);
-    --chip-active: #bfe3ff;  /* light blue for active */
-    --accent: #bfe3ff;       /* primary buttons also light blue */
+    --chip-active: #bfe3ff;
+    --accent: #bfe3ff;
+
+    --btn-bg: #eaf6ff;
+    --btn-bg-hover: #e1f1ff;
+    --btn-border: #b9dcff;
+    --btn-text-strong: #083a66;
   }
 }
+
+/* Доп. утилиты */
+.hidden{ display:none !important; }
