@@ -7,18 +7,8 @@
 
   <meta name="description" content="маршрут по тбилиси от чижика">
   <meta name="application-name" content="chizhik">
-
-  <!-- CSP (мета, без frame-ancestors) -->
   <meta http-equiv="Content-Security-Policy"
-        content="
-        default-src 'self';
-        script-src 'self' https://unpkg.com;
-        style-src  'self' https://unpkg.com 'unsafe-inline';
-        img-src    'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com;
-        connect-src 'self';
-        object-src 'none';
-        base-uri 'none';
-        upgrade-insecure-requests">
+        content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com; connect-src 'self'; object-src 'none'; base-uri 'none'; upgrade-insecure-requests">
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.webmanifest?v=3">
@@ -46,11 +36,12 @@
         Показано: <span id="countCat">0</span> / <span id="countTotal">0</span>
       </div>
 
-      <!-- ЛОГО слева, в контенте три ряда: действия, поиск, чипы -->
+      <!-- Весь интерфейс внутри .filters -->
       <div class="filters">
+        <!-- Лого слева (занимает две верхние строки) -->
         <img class="brand-ui" src="./icons/ui-logo-white.png?v=1" alt="chizhik" loading="lazy" />
 
-        <!-- Ряд действий НАД поиском -->
+        <!-- 1-й ряд: действия -->
         <div class="actions-top">
           <!-- Дом (Показать всё) -->
           <button class="btn icon-round" id="btnShowAll" title="Показать всё" aria-label="Показать всё">
@@ -63,23 +54,21 @@
           <button class="btn btn-primary" id="btnLocate" title="Где я?">Где я?</button>
 
           <!-- Установить (Android; показывается из beforeinstallprompt) -->
-          <button class="btn icon-round" id="btnInstall" style="display:none" title="Установить приложение" aria-label="Установить приложение">
+          <button class="btn icon-round" id="btnInstall" style="display:none"
+                  title="Установить приложение" aria-label="Установить приложение">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14a1 1 0 0 0 1-1v-3H4v3a1 1 0 0 0 1 1Z"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-
-          <!-- Список точек -->
-          <button class="btn" id="btnToggleSidebar" title="Открыть список">Список точек</button>
         </div>
 
-        <!-- Поиск (в одну линию с логотипом) -->
+        <!-- 2-й ряд: поиск (в линию с логотипом) -->
         <input id="search" class="search" type="search" placeholder="Поиск по названию/описанию…" />
 
-        <!-- Фильтры ниже, переносятся при нехватке места -->
+        <!-- 3-й ряд: фильтры -->
         <div class="chips">
-          <button class="chip" data-cat="all"   data-active="true">Все</button>
+          <button class="chip" data-cat="all" data-active="true">Все</button>
           <button class="chip" data-cat="stairs">Лестницы</button>
           <button class="chip" data-cat="porches">Парадные</button>
           <button class="chip" data-cat="temples">Храмы</button>
@@ -89,12 +78,18 @@
     </div>
   </header>
 
-  <!-- Сайдбар / нижний лист -->
-  <div id="sidebar" class="panel sidebar">
+  <!-- Нижний лист (и на десктопе, и на мобиле) -->
+  <div id="sidebar" class="panel sidebar" aria-hidden="true">
+    <!-- Ручка-липучка -->
+    <button id="sheetHandle" class="sheet-handle" aria-controls="sidebar" aria-expanded="false">
+      Список точек
+    </button>
+
     <div class="sidebar-header">
       <div class="sidebar-title">Список локаций</div>
       <button id="btnCloseSidebar" class="icon-btn" aria-label="Закрыть">×</button>
     </div>
+
     <div id="list" class="list"></div>
   </div>
 
