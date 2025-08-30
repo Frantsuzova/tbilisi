@@ -16,7 +16,7 @@
   --btn-border: #b9dcff;
 
   --ctrl-h: 36px;             /* единая высота контролов */
-  --filters-row-gap: 8px;     /* GAP между строками внутри .filters */
+  --filters-row-gap: 8px;     /* gap между строками в .filters */
 
   --locate-active-bg: #ffd7ec; /* розовая подсветка locate */
   --locate-active-br: #ffb8de;
@@ -29,7 +29,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 
-/* ===== панель ===== */
 .panel{
   position:fixed; z-index:5000;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -51,49 +50,57 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .header-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
 
-/* === Компоновка фильтров: иконка слева, справа поиск и под ним чипы === */
+/* === filters: 3 ряда контента справа от лого === */
 .filters{
   flex: 1 1 520px;
   display: grid;
-  grid-template-columns: auto 1fr;                 /* слева логотип, справа контент */
-  grid-template-rows: var(--ctrl-h) auto;          /* верх: поиск; низ: чипы */
+  grid-template-columns: auto 1fr;                       /* [logo] [content] */
+  grid-template-rows: var(--ctrl-h) var(--ctrl-h) auto;  /* actions, search, chips */
   column-gap: 12px;
   row-gap: var(--filters-row-gap);
   align-items: center;
 }
 
-/* интерфейсная иконка — по высоте двух строк (поиск + gap + чипы) */
+/* логотип — занимает две верхние строки (actions + search),
+   нижняя его грань совпадает с низом строки поиска */
 .brand-ui{
   grid-column: 1;
-  grid-row: 1 / span 2; /* занимает обе строки */
-  width: clamp(56px, calc(var(--ctrl-h)*2 + 8px), 88px);
+  grid-row: 1 / span 2;
   height: calc(var(--ctrl-h) * 2 + var(--filters-row-gap));
+  aspect-ratio: 1 / 1;
+  width: auto;
   object-fit: contain;
   border-radius: 12px;
+  background: #fff;
   box-shadow: 0 1px 2px rgba(0,0,0,.08);
-  background: transparent;
-  align-self: start;   /* верх ровно с поиском */
+  border: 1px solid var(--panel-border);
+  align-self: start;
 }
 
-/* поиск — сжимается, не переполняет грид */
+/* верхний ряд кнопок */
+.actions-top{
+  grid-column: 2; grid-row: 1;
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  min-width:0;
+}
+
+/* поиск — полностью тянется, не распирает панель */
 .search{
-  grid-column: 2;
-  grid-row: 1;
+  grid-column: 2; grid-row: 2;
   width: 100%;
-  min-width: 0;                 /* критично: разрешить ужиматься в grid */
+  min-width: 0;
   box-sizing: border-box;
-  height:var(--ctrl-h);
-  padding:0 12px;
-  border-radius:999px;
-  border:1px solid var(--panel-border);
-  background:rgba(255,255,255,.66); color:var(--text);
+  height: var(--ctrl-h);
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,.66); color: var(--text);
 }
 .search::placeholder{ color:#64748b; }
 
-/* контейнер чипов — перенос на новые строки при нехватке места */
+/* чипы — переносятся */
 .chips{
-  grid-column: 2;
-  grid-row: 2;
+  grid-column: 2; grid-row: 3;
   display:flex; flex-wrap:wrap; gap:8px; align-items:center;
 }
 
@@ -103,12 +110,11 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   border:1px solid var(--panel-border);
   background:var(--chip-bg);
   border-radius:999px; padding:0 12px; cursor:pointer; font-size:12px;
-  white-space: nowrap;          /* чтобы текст на кнопке не рвался */
+  white-space: nowrap;
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
-.actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; }
-
+/* кнопки */
 .btn{
   height:var(--ctrl-h);
   border:1px solid var(--btn-border, var(--panel-border));
@@ -118,9 +124,22 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
-#btnShowAll, #btnLocate{ margin:0; }
 
-/* ===== Сайдбар (десктоп) ===== */
+/* круглые иконки (дом/установить) */
+.btn.icon-round{
+  width: var(--ctrl-h);
+  min-width: var(--ctrl-h);
+  padding: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+}
+.btn.icon-round svg{ width: 18px; height: 18px; }
+@media (max-width: 350px){
+  .btn.icon-round svg{ width: 16px; height: 16px; }
+}
+
+/* ===== Сайдбар ===== */
 .sidebar{
   position:fixed;
   box-sizing:border-box;
@@ -132,8 +151,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   background:var(--panel-bg); border:1px solid var(--panel-border);
   box-shadow:var(--shadow);
 }
-
-/* Шапка и список */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
@@ -231,7 +248,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
     width: clamp(48px, calc(var(--ctrl-h)*2 + 6px), 72px);
     border-radius: 10px;
   }
-
   .search{
     height: var(--ctrl-h);
     padding: 0 10px;
@@ -243,18 +259,4 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
     font-size: 13px;
     border-radius: 14px;
   }
-}
-
-/* ==== Иконки-кнопки (дом/установить) ==== */
-.btn.icon-round{
-  width: var(--ctrl-h);
-  min-width: var(--ctrl-h);
-  padding: 0;
-  border-radius: 999px;
-  display: inline-grid;
-  place-items: center;
-}
-.btn.icon-round svg{ width: 18px; height: 18px; }
-@media (max-width: 350px){
-  .btn.icon-round svg{ width: 16px; height: 16px; }
 }
