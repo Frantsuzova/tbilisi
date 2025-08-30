@@ -29,6 +29,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 
+/* ===== панель ===== */
 .panel{
   position:fixed; z-index:5000;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -61,8 +62,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   align-items: center;
 }
 
-/* логотип — занимает две верхние строки (actions + search),
-   нижняя его грань совпадает с низом строки поиска */
+/* логотип — занимает две верхние строки (actions + search) */
 .brand-ui{
   grid-column: 1;
   grid-row: 1 / span 2;
@@ -84,7 +84,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   min-width:0;
 }
 
-/* поиск — полностью тянется, не распирает панель */
+/* поиск — тянется и не распирает панель */
 .search{
   grid-column: 2; grid-row: 2;
   width: 100%;
@@ -103,7 +103,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   grid-column: 2; grid-row: 3;
   display:flex; flex-wrap:wrap; gap:8px; align-items:center;
 }
-
 .chip{
   height:var(--ctrl-h);
   display:inline-flex; align-items:center; gap:6px;
@@ -259,4 +258,11 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
     font-size: 13px;
     border-radius: 14px;
   }
+}
+
+/* --- фикс перекрытия статистики на очень узких экранах --- */
+@media (max-width: 360px){
+  .counts{ display:block; width:100%; margin-bottom: 12px; }
+  .filters{ row-gap: 10px; }
+  .actions-top{ gap: 8px 8px; }
 }
