@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ру">
+<html lang="ru">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width" />
@@ -8,7 +8,7 @@
   <meta name="description" content="маршрут по тбилиси от чижика">
   <meta name="application-name" content="chizhik">
 
-  <!-- CSP (без frame-ancestors, т.к. meta его игнорирует) -->
+  <!-- CSP (мета, без frame-ancestors) -->
   <meta http-equiv="Content-Security-Policy"
         content="
         default-src 'self';
@@ -23,8 +23,6 @@
   <!-- PWA -->
   <link rel="manifest" href="./manifest.webmanifest?v=3">
   <meta name="theme-color" content="#cfe6ff">
-
-  <!-- iOS ярлык -->
   <link rel="apple-touch-icon" href="./icons/icon-180.png?v=3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="chizhik">
@@ -48,43 +46,45 @@
         Показано: <span id="countCat">0</span> / <span id="countTotal">0</span>
       </div>
 
-      <!-- Фильтры: иконка слева, справа поиск, ниже чипы -->
+      <!-- ЛОГО слева, в контенте три ряда: действия, поиск, чипы -->
       <div class="filters">
-        <!-- интерфейсная иконка -->
         <img class="brand-ui" src="./icons/ui-logo-white.png?v=1" alt="chizhik" loading="lazy" />
 
+        <!-- Ряд действий НАД поиском -->
+        <div class="actions-top">
+          <!-- Дом (Показать всё) -->
+          <button class="btn icon-round" id="btnShowAll" title="Показать всё" aria-label="Показать всё">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9.5Z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <!-- Где я? -->
+          <button class="btn btn-primary" id="btnLocate" title="Где я?">Где я?</button>
+
+          <!-- Установить (Android; показывается из beforeinstallprompt) -->
+          <button class="btn icon-round" id="btnInstall" style="display:none" title="Установить приложение" aria-label="Установить приложение">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14a1 1 0 0 0 1-1v-3H4v3a1 1 0 0 0 1 1Z"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <!-- Список точек -->
+          <button class="btn" id="btnToggleSidebar" title="Открыть список">Список точек</button>
+        </div>
+
+        <!-- Поиск (в одну линию с логотипом) -->
         <input id="search" class="search" type="search" placeholder="Поиск по названию/описанию…" />
 
+        <!-- Фильтры ниже, переносятся при нехватке места -->
         <div class="chips">
-          <button class="chip" data-cat="all" data-active="true">Все</button>
+          <button class="chip" data-cat="all"   data-active="true">Все</button>
           <button class="chip" data-cat="stairs">Лестницы</button>
           <button class="chip" data-cat="porches">Парадные</button>
           <button class="chip" data-cat="temples">Храмы</button>
           <button class="chip" data-cat="other">Остальное</button>
         </div>
-      </div>
-
-      <div class="actions">
-        <!-- Показать всё: иконка "дом" -->
-        <button class="btn icon-round" id="btnShowAll" title="Показать всё" aria-label="Показать всё">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9.5Z" fill="currentColor"/>
-          </svg>
-        </button>
-
-        <!-- Где я? -->
-        <button class="btn btn-primary" id="btnLocate" title="Где я?">Где я?</button>
-
-        <!-- Список точек -->
-        <button class="btn" id="btnToggleSidebar" title="Открыть список">Список точек</button>
-
-        <!-- Установить (Android) -->
-        <button class="btn icon-round" id="btnInstall" style="display:none" title="Установить приложение" aria-label="Установить приложение">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14a1 1 0 0 0 1-1v-3H4v3a1 1 0 0 0 1 1Z"
-                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
       </div>
     </div>
   </header>
@@ -105,8 +105,6 @@
 
   <!-- App -->
   <script src="app.js" defer></script>
-
-  <!-- PWA / установка / авто-перезагрузка / анти-embed -->
   <script src="pwa.js" defer></script>
 </body>
 </html>
