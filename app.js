@@ -1,6 +1,5 @@
-// app.js — подсказка для "Где я?", розовая индикация активного locate,
-// кнопки одной высоты, мобильный лист на 1/3 экрана, список без описаний,
-// фильтр буквеных и служебных маркеров (icon-17..25).
+// Подсказка для "Где я?", розовая индикация locate и нашей кнопки,
+// мобильный лист снизу «напротив» верхней панели, остальные правки сохранены.
 
 var SHADOW="https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 function mkIcon(url){return L.icon({iconUrl:url,shadowUrl:SHADOW,iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});}
@@ -44,7 +43,7 @@ function popupHtml(name,desc){ var n=esc(cleanText(name))||'Без назван�
 function detectCategory(p){
   var n=cleanText(p&&p.name).toLowerCase(), d=cleanText(p&&p.description).toLowerCase();
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n)||/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
-  if (n.indexOf('лестниц')>=0||d.indexOf('лестниц')>=0) return 'stairs';
+  if (n.indexOf('лестниц')>=0||d.indexоф('лестниц')>=0) return 'stairs';
   if (n.indexOf('парадн')>=0||d.indexOf('парадн')>=0) return 'porches';
   return 'other';
 }
@@ -69,7 +68,6 @@ function idFromHref(href){
 }
 function buildStyleHrefMap(xml){
   var map=Object.create(null);
-
   var styles=xml.getElementsByTagName('Style');
   for(var i=0;i<styles.length;i++){
     var st=styles[i]; var id=st.getAttribute('id'); if(!id) continue;
@@ -80,7 +78,6 @@ function buildStyleHrefMap(xml){
     }
     if(href) map['#'+id]=href;
   }
-
   var sms=xml.getElementsByTagName('StyleMap');
   for(var j=0;j<sms.length;j++){
     var sm=sms[j]; var id2=sm.getAttribute('id'); if(!id2) continue;
@@ -90,7 +87,6 @@ function buildStyleHrefMap(xml){
       if(keyEl && /normal/i.test(keyEl.textContent)){ chosen=pairs[k]; break; }
     }
     if(!chosen && pairs.length) chosen=pairs[0];
-
     var href2=null;
     if(chosen){
       var suEl=chosen.getElementsByTagName('styleUrl')[0];
@@ -137,7 +133,7 @@ function svgIcon(hex){
 function isLetterPlacemark(feature, hrefMap){
   var p=feature && feature.properties ? feature.properties : {};
   var nm=String(p.name||'').trim();
-  if (/^[A-Za-zА-ЯЁІЇЄҐ]$/.test(nm)) return true; // одиночная буква
+  if (/^[A-Za-zА-ЯЁІЇЄҐ]$/.test(nm)) return true;
   var su=typeof p.styleUrl==='string' ? p.styleUrl : '';
   var href=su ? (hrefMap[su]||'') : '';
   if(!href) return false;
@@ -164,7 +160,7 @@ setTiles(); if(window.matchMedia){ var mm=window.matchMedia('(prefers-color-sche
 L.control.zoom({position:'topright'}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
 
-/* locate — розовая подсветка, подсказка при "далеко" */
+/* locate + розовая подсветка + подсказка при «далеко» */
 var dataBounds=null, dataCenter=null;
 var locateCtrl=L.control.locate({
   position:'topright', setView:'always', keepCurrentZoomLevel:false,
@@ -173,7 +169,7 @@ var locateCtrl=L.control.locate({
   locateOptions:{ enableHighAccuracy:true, maximumAge:10000, timeout:10000 }
 }).addTo(map);
 
-var farHintShown=false;  // чтобы не спамить
+var farHintShown=false;
 function showLocateHint(){
   if (farHintShown) return;
   farHintShown=true;
@@ -187,14 +183,28 @@ function showLocateHint(){
   setTimeout(hide, 6000);
 }
 
+/* синхронизация розовой подсветки с нашей кнопкой #btnLocate */
+function syncLocateButtonActive(){
+  var cont=document.querySelector('.leaflet-control-locate');
+  var btn=document.getElementById('btnLocate');
+  if(!cont || !btn) return;
+  var active=cont.classList.contains('active') ||
+             cont.classList.contains('following') ||
+             cont.classList.contains('requesting');
+  btn.classList.toggle('active', active);
+}
+var locateContainerObs=new MutationObserver(syncLocateButtonActive);
+setTimeout(function(){
+  var cont=document.querySelector('.leaflet-control-locate');
+  if(cont) locateContainerObs.observe(cont, { attributes:true, attributeFilter:['class']});
+  syncLocateButtonActive();
+}, 0);
+
 map.on('locationfound', function(e){
   if(e && e.latlng){
     var z=map.getZoom();
     map.flyTo(e.latlng, z<17?17:z, {duration:.8});
-    if (dataCenter){
-      var dist=e.latlng.distanceTo(dataCenter); // м
-      if (dist>20000){ showLocateHint(); }
-    }
+    if (dataCenter && e.latlng.distanceTo(dataCenter)>20000){ showLocateHint(); }
   }
 });
 
@@ -215,14 +225,6 @@ function bindClose(){
     btn.addEventListener('click', function(){
       sb.style.display='none';
       setTimeout(function(){ map.invalidateSize(); }, 0);
-    });
-  }
-  if(sb){
-    sb.addEventListener('click', function(e){
-      if(e.target.closest('.sidebar-close,[data-close-sidebar]')){
-        sb.style.display='none';
-        setTimeout(function(){ map.invalidateSize(); }, 0);
-      }
     });
   }
 }
@@ -296,7 +298,7 @@ function renderGeoJSON(geojson, hrefMap){
     if (b.isValid()){
       dataBounds=b; dataCenter=b.getCenter();
       map.fitBounds(b, fitPadding());
-    } else {
+    }else{
       dataBounds=null; dataCenter=null;
       map.setView([41.6938,44.8015],14);
     }
@@ -323,7 +325,7 @@ function buildList(){
     var p=featuresPoints[i].properties||{}, idx=p._ptSeq, cat=detectCategory(p);
     var item=document.createElement('div');
     item.className='list-item'; item.dataset.cat=cat;
-    item.innerHTML='<h4 class="title">'+esc(cleanText(p.name)||'Без названия')+'</h4>'; // без описаний
+    item.innerHTML='<h4 class="title">'+esc(cleanText(p.name)||'Без названия')+'</h4>';
     (function(idxLocal){
       item.addEventListener('click', function(){
         var m=markersById.get(idxLocal); if(!m) return;
