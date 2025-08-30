@@ -1,4 +1,5 @@
-const CACHE = "tbilisi-v1";
+const CACHE = "tbilisi-v2";
+
 const ASSETS = [
   "./",
   "./index.html",
