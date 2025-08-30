@@ -1,7 +1,7 @@
 {
-  "name": "Мой маршрут Тбилиси",
-  "short_name": "Тбилиси",
-  "description": "Личная карта маршрута по Тбилиси.",
+  "name": "chizhik",
+  "short_name": "chizhik",
+  "description": "маршрут по тбилиси от чижика",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
