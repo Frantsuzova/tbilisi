@@ -46,6 +46,8 @@
         <button class="btn" id="btnShowAll" title="Показать все точки">Показать всё</button>
         <button class="btn btn-primary" id="btnLocate" title="Где я?">Где я?</button>
         <button class="btn" id="btnToggleSidebar" title="Открыть список">Список точек</button>
+        <!-- КНОПКА УСТАНОВКИ (покажется только на Android, когда событие доступно) -->
+        <button class="btn" id="btnInstall" style="display:none" title="Установить приложение">Установить</button>
       </div>
     </div>
   </header>
@@ -68,18 +70,68 @@
   <!-- App -->
   <script src="app.js" defer></script>
 
-  <!-- PWA: регистрация SW + гасим beforeinstallprompt только на десктопе -->
+  <!-- PWA: регистрация SW + установка на Android через свою кнопку -->
   <script>
-    window.addEventListener('beforeinstallprompt', function (e) {
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      if (!isAndroid) e.preventDefault(); // десктоп — скрыть, Android — показать
-    });
-
+    // 1) Регистрация сервис-воркера
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(console.warn);
       });
     }
+
+    // 2) Установка PWA: собственная кнопка для Android
+    (function(){
+      var deferredPrompt = null;
+      var btn = null;
+
+      function isStandalone(){
+        // iOS Safari
+        if ('standalone' in navigator && navigator.standalone) return true;
+        // PWA в Chrome
+        return window.matchMedia('(display-mode: standalone)').matches;
+      }
+
+      window.addEventListener('beforeinstallprompt', function(e){
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        if (!isAndroid) {
+          // на десктопе скрываем системную подсказку
+          e.preventDefault();
+          return;
+        }
+        // На Android берём управление сами (чтобы показать свою кнопку), системную подсказку скрываем
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Показать кнопку, если ещё не установлено
+        if (!isStandalone()) {
+          btn = document.getElementById('btnInstall');
+          if (btn) btn.style.display = 'inline-block';
+        }
+      });
+
+      // Клик по кнопке "Установить"
+      window.addEventListener('DOMContentLoaded', function(){
+        btn = document.getElementById('btnInstall');
+        if (!btn) return;
+        btn.addEventListener('click', async function(){
+          if (!deferredPrompt) {
+            // запасной путь: системное меню Chrome
+            alert('Если кнопка не сработала — откройте меню Chrome и выберите «Установить приложение».');
+            return;
+          }
+          deferredPrompt.prompt();
+          try {
+            var choice = await deferredPrompt.userChoice; // { outcome: 'accepted' | 'dismissed', platform: ... }
+          } finally {
+            deferredPrompt = null;
+            btn.style.display = 'none';
+          }
+        });
+
+        // Если уже установлено — кнопку не показываем
+        if (isStandalone() && btn) btn.style.display = 'none';
+      });
+    })();
   </script>
 </body>
 </html>
