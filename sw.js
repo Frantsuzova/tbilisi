@@ -1,9 +1,11 @@
-const CACHE = "tbilisi-v4";
+// sw.js — безопасное кэширование только http/https GET и только same-origin статики
+const CACHE = "chizhik-v1";
 const ASSETS = [
   "./",
   "./index.html",
   "./app.css",
   "./app.js",
+  "./pwa.js",
   "./doc.kml",
   "./manifest.webmanifest",
   "./icons/icon-180.png",
@@ -37,7 +39,7 @@ self.addEventListener("fetch", (e) => {
   // 1) Только GET
   if (req.method !== "GET") return;
 
-  // 2) Только http/https (пропускаем chrome-extension:, data:, blob:, file:, about:)
+  // 2) Только http/https
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
 
   // 3) Навигация (HTML) — network first с откатом в кэш
@@ -52,7 +54,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // 5) Внешние ресурсы — сеть, без кэширования (тайлы карт и т.п.)
+  // 5) Внешние ресурсы — сеть, без кэширования
   e.respondWith(fetch(req).catch(() => caches.match(req)));
 });
 
@@ -60,7 +62,6 @@ self.addEventListener("fetch", (e) => {
 async function networkFirst(req) {
   try {
     const fresh = await fetch(req);
-    // кэшируем навигацию только если same-origin
     if (new URL(req.url).origin === self.location.origin) {
       const cache = await caches.open(CACHE);
       try { await cache.put(req, fresh.clone()); } catch (_) {}
@@ -70,7 +71,6 @@ async function networkFirst(req) {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
     if (cached) return cached;
-    // запасной вариант — главная
     const fallback = await cache.match("./index.html");
     return fallback || Response.error();
   }
