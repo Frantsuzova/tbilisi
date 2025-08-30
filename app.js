@@ -1,7 +1,3 @@
-/* app.js
- * Совместим с index.html/app.css из предыдущего шага.
- * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
- */
 (function () {
   'use strict';
 
@@ -22,7 +18,7 @@
   const mapEl = $('#map');
   const chipsBox = $('.chips');
   const searchInput = $('#search');
-  const btnShowAll = $('#btnShowAll');
+  const btnShowAll = $('#btnShowAll');   // «Дом»
   const btnLocate = $('#btnLocate');
   const countCatEl = $('#countCat');
   const countTotalEl = $('#countTotal');
@@ -30,7 +26,7 @@
   // Нижний лист
   const sidebarEl = $('#sidebar');
   const sheetHandle = $('#sheetHandle');
-  const btnExpandCollapse = $('#btnCloseSidebar'); // переиспользуем как стрелку
+  const btnExpandCollapse = $('#btnCloseSidebar'); // стрелка вверх/вниз в шапке
   const listEl = $('#list');
 
   // Тост
@@ -58,6 +54,7 @@
 
   const poiLayer = L.layerGroup().addTo(map);
 
+  // Locate (скрываем штатную кнопку, управляем своей)
   const locate = L.control.locate({
     position: 'topleft', setView: true, keepCurrentZoom: false, flyTo: true,
     showCompass: true, drawCircle: true, drawMarker: true, strings: { title: 'Где я?' }
@@ -82,6 +79,7 @@
     return 'other';
   };
 
+  // styleId -> href
   function buildStyleHrefMap(kmlDoc) {
     const map = new Map();
     const styles = kmlDoc.querySelectorAll('Style,StyleMap');
@@ -101,14 +99,20 @@
     });
     return map;
   }
+
   const iconNumFromHref = (href) => {
     const m = (href||'').match(/icon-(\d+)\.png/i);
     return m ? parseInt(m[1], 10) : null;
   };
+
   function makeIcon(num) {
-    return L.icon({ iconUrl:`./icon-${num}.png`, iconSize:[30,30], iconAnchor:[15,29], popupAnchor:[0,-28] });
+    return L.icon({
+      iconUrl:`./icon-${num}.png`,
+      iconSize:[30,30], iconAnchor:[15,29], popupAnchor:[0,-28]
+    });
   }
 
+  // ---------- ЗАГРУЗКА KML ----------
   async function loadKml() {
     try {
       const res = await fetch('./doc.kml', { cache: 'no-store' });
@@ -157,6 +161,7 @@
     }
   }
 
+  // ---------- ФИЛЬТР/ПОИСК/ОТРИСОВКА ----------
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
   function applyFilters(fitAll=false){
@@ -172,12 +177,14 @@
     renderList(filtered);
     if (fitAll) fitToItems(filtered.length?filtered:state.items);
   }
+
   function fitToItems(list){
     if (!list.length) return;
     const b = L.latLngBounds(list.map(it=>it.latlng));
     if (b.isValid()) map.fitBounds(b.pad(0.12));
   }
 
+  // ---------- СПИСОК ----------
   function renderList(arr){
     listEl.innerHTML = '';
     const frag = document.createDocumentFragment();
@@ -188,7 +195,8 @@
       li.addEventListener('click', ()=>{
         map.setView(it.latlng, Math.max(map.getZoom(), 16), { animate:true });
         it.marker.openPopup();
-        setOpen(false); // свернуть вниз до ручки после перехода
+        // по клику на локацию — задвинуть вниз (до ручки)
+        setOpen(false);
       });
       frag.appendChild(li);
     });
@@ -199,51 +207,73 @@
   const svgUp = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-  function updateArrow() {
+  function sheetState(){
+    const open = sidebarEl.classList.contains('open');
     const expanded = sidebarEl.classList.contains('expanded');
-    btnExpandCollapse.innerHTML = expanded ? svgDown : svgUp;
-    btnExpandCollapse.title = expanded ? 'Свернуть' : 'Развернуть вверх';
+    return open ? (expanded ? 'expanded' : 'open') : 'closed';
+  }
+
+  function updateArrow() {
+    const st = sheetState();
+    if (st === 'closed') {
+      btnExpandCollapse.innerHTML = svgUp;
+      btnExpandCollapse.title = 'Развернуть (1/3)';
+    } else if (st === 'open') {
+      btnExpandCollapse.innerHTML = svgDown;
+      btnExpandCollapse.title = 'Свернуть до ручки';
+    } else {
+      // expanded
+      btnExpandCollapse.innerHTML = svgDown;
+      btnExpandCollapse.title = 'Свернуть до 1/3';
+    }
     btnExpandCollapse.setAttribute('aria-label', btnExpandCollapse.title);
   }
 
-  // open/close (до ручки)
+  // открыть/закрыть (ручка <-> 1/3)
   function setOpen(open){
     sidebarEl.classList.toggle('open', open);
     sidebarEl.setAttribute('aria-hidden', open ? 'false' : 'true');
     sheetHandle?.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (!open){
-      // при полном сворачивании убираем «развернуто»
-      setExpanded(false);
+      setExpanded(false); // убираем «развернуто»
     }
+    updateArrow();
   }
 
-  // expand/collapse высоты (85vh / 33vh)
+  // развернуть/свернуть высоту (85vh <-> 1/3)
   function setExpanded(expanded){
     if (expanded) setOpen(true);
     sidebarEl.classList.toggle('expanded', expanded);
-    // без правок CSS: задаём inline max-height
+    // управляем maxHeight инлайново (CSS дефолт = 33vh)
     sidebarEl.style.maxHeight = expanded ? '85vh' : '';
     updateArrow();
   }
 
-  // изначально ставим стрелку «вверх»
+  // стрелка в шапке: цикл состояний
   if (btnExpandCollapse){
     btnExpandCollapse.textContent = ''; // убрать '×' если был
     updateArrow();
     btnExpandCollapse.addEventListener('click', ()=>{
-      const exp = sidebarEl.classList.contains('expanded');
-      setExpanded(!exp);
+      const st = sheetState();
+      if (st === 'expanded') {
+        setExpanded(false);      // 85vh -> 33vh
+      } else if (st === 'open') {
+        setOpen(false);          // 33vh -> ручка
+      } else {
+        setOpen(true);           // ручка -> 33vh
+      }
     });
   }
 
+  // ручка: ручка <-> 1/3
   sheetHandle?.addEventListener('click', ()=>{
-    const isOpen = sidebarEl.classList.contains('open');
-    setOpen(!isOpen);
+    const st = sheetState();
+    setOpen(st === 'closed'); // закрыто -> открыть на 1/3; иначе -> закрыть
   });
 
   function openPopupAndMaybeOpenSheet(it){
     it.marker.openPopup();
-    // поведение листа не меняем
+    // лист не трогаем
   }
 
   // ---------- СОБЫТИЯ UI ----------
@@ -254,6 +284,7 @@
     applyFilters(true);
   });
 
+  // «Дом» (= показать всё)
   btnShowAll.addEventListener('click', ()=>{
     const allBtn = $('.chip[data-cat="all"]');
     if (allBtn){ $$('.chip').forEach(c=>c.dataset.active='false'); allBtn.dataset.active='true'; }
@@ -261,6 +292,7 @@
     applyFilters(true);
   });
 
+  // Поиск
   const handleSearch = debounce(()=>{
     state.q = searchInput.value || '';
     applyFilters(false);
