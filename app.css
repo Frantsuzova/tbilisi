@@ -26,7 +26,6 @@
 html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 #map{ position:fixed; inset:0; }
 
-/* попап поверх маркеров */
 .leaflet-top, .leaflet-bottom{ z-index:1000 !important; }
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
@@ -53,7 +52,9 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .header-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
 .filters{ flex:1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.actions{ flex:0 0 auto; display:flex; gap:8px; align-items:center; }
+
+/* ВЕСЬ ряд с кнопками — на 100% ширины, старт слева как у поиска */
+.actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; }
 
 /* поиск + кнопки одной высоты */
 .search{
@@ -74,6 +75,9 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
 
+/* убираем локальные внешние отступы — выравнивание по левому краю */
+#btnShowAll, #btnLocate{ margin:0; }
+
 .chip{
   height:var(--ctrl-h);
   display:inline-flex; align-items:center; gap:6px;
@@ -82,8 +86,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   border-radius:999px; padding:0 12px; cursor:pointer; font-size:12px;
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
-
-#btnShowAll, #btnLocate{ margin:0 8px; }
 
 /* ===== САЙДБАР ===== */
 .sidebar{
@@ -98,11 +100,10 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 @media (max-width:780px){
   .sidebar{
     top:auto;
-    left:12px !important; right:12px;      /* ширина как у .panel-header */
+    left:12px !important; right:12px;
     bottom:calc(12px + env(safe-area-inset-bottom));
     width:auto; max-height:33vh;
-    border-top-left-radius:16px; border-top-right-radius:16px;
-    border-bottom-left-radius:16px; border-bottom-right-radius:16px;
+    border-radius:16px;
     box-shadow:0 12px 30px rgba(0,0,0,.18);
   }
 }
@@ -140,20 +141,16 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .list-item .title{ margin:0; font-weight:600; font-size:15px; line-height:1.35; }
 .list-item .meta{ display:none; }
 
-/* ===== Розовая подсветка locate ===== */
+/* Розовая подсветка locate + синхрон нашей кнопки */
 .leaflet-control-locate.active a,
 .leaflet-control-locate.following a,
 .leaflet-control-locate.requesting a{
   background:var(--locate-active-bg) !important;
   border-color:var(--locate-active-br) !important;
 }
-/* та же подсветка для нашей кнопки "Где я?" */
-#btnLocate.active{
-  background:var(--locate-active-bg);
-  border-color:var(--locate-active-br);
-}
+#btnLocate.active{ background:var(--locate-active-bg); border-color:var(--locate-active-br); }
 
-/* ===== тост-подсказка ===== */
+/* Тост */
 .toast-hint{
   position:fixed; z-index:9000;
   right:16px; top:100px;
@@ -166,7 +163,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .toast-hint.show{ opacity:1; transform:none; }
 .toast-hint .close{ margin-left:8px; cursor:pointer; text-decoration:underline; }
 
-/* тёмная системная — оставляем светлый UI */
 @media (prefers-color-scheme: dark){
   :root{
     --panel-bg: rgba(17,24,39,.72);
