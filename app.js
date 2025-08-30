@@ -425,7 +425,15 @@ function sanitizeKmlString(txt){
    .replace(/url\((['"]?)https?:\/\/mymaps\.usercontent\.google\.com\/[^)]+?\1\)/gi,'none')
    .replace(/<\/?(?:iframe|audio|video|source|script)\b[^>]*>/gi,'');
 }
-var kmlParam=new URLSearchParams(location.search).get('kml');
+var kmlParam = (function(){
+  var raw = new URLSearchParams(location.search).get('kml');
+  if (!raw) return null;
+  try {
+    var u = new URL(raw, location.href);
+    return (u.origin === location.origin) ? u.href : null;
+  } catch(_) { return null; }
+})();
+
 var CANDS=[kmlParam,'./doc.kml','doc.kml','../doc.kml'].filter(Boolean);
 async function getKml(url){ var r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status); return r.text(); }
 (async function(){
