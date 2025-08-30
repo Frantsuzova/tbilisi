@@ -204,3 +204,15 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 @media (max-width: 350px){
   .btn.icon-round svg{ width: 16px; height: 16px; }
 }
+
+/* Иконка бренда в панели */
+.brand-icon{
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+  flex: 0 0 auto;
+}
+@media (max-width: 350px){
+  .brand-icon{ width: 18px; height: 18px; }
+}
