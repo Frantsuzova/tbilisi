@@ -5,12 +5,25 @@
   <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width" />
   <title>Мой маршрут Тбилиси</title>
 
+  <!-- CSP: ограничиваем источники (оставил 'unsafe-inline' из-за инлайнового скрипта ниже) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="
+        default-src 'self';
+        script-src 'self' https://unpkg.com 'unsafe-inline';
+        style-src  'self' https://unpkg.com 'unsafe-inline';
+        img-src    'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com;
+        connect-src 'self';
+        object-src 'none';
+        base-uri 'none';
+        frame-ancestors 'none';
+        upgrade-insecure-requests">
+
   <!-- PWA -->
-  <link rel="manifest" href="./manifest.webmanifest?v=4">
+  <link rel="manifest" href="./manifest.webmanifest?v=2">
   <meta name="theme-color" content="#cfe6ff">
 
   <!-- iOS ярлык и полноэкранный режим -->
-  <link rel="apple-touch-icon" href="./icons/icon-180.png?v=4">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png?v=2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Тбилиси">
   <meta name="apple-mobile-web-app-status-bar-style" content="white-translucent">
@@ -86,7 +99,7 @@
 
   <!-- PWA: SW + авто-перезагрузка при первом контроле + установка на Android -->
   <script>
-    // Авто-перезагрузка один раз, когда SW впервые берёт контроль (чтобы не было необходимости жать F5 дважды)
+    // Авто-перезагрузка один раз, когда SW впервые берёт контроль
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (sessionStorage.getItem('sw-refreshed')) return;
@@ -95,9 +108,8 @@
       });
 
       window.addEventListener('load', async function () {
-        try {
-          await navigator.serviceWorker.register('./sw.js', { scope: './' });
-        } catch (e) { console.warn(e); }
+        try { await navigator.serviceWorker.register('./sw.js', { scope: './' }); }
+        catch (e) { console.warn(e); }
       });
     }
 
@@ -125,15 +137,10 @@
         if (!btn) return;
 
         btn.addEventListener('click', async function(){
-          if (!deferredPrompt) {
-            alert('Откройте меню Chrome и выберите «Установить приложение».');
-            return;
-          }
+          if (!deferredPrompt) { alert('Откройте меню Chrome и выберите «Установить приложение».'); return; }
           deferredPrompt.prompt();
-          try { await deferredPrompt.userChoice; } finally {
-            deferredPrompt = null;
-            btn.style.display = 'none';
-          }
+          try { await deferredPrompt.userChoice; }
+          finally { deferredPrompt = null; btn.style.display = 'none'; }
         });
 
         if (isStandalone() && btn) btn.style.display = 'none';
