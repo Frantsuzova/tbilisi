@@ -87,7 +87,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
-/* ===== САЙДБАР ===== */
+/* ===== САЙДБАР (как было) ===== */
 .sidebar{
   position:fixed;
   box-sizing:border-box;
@@ -100,19 +100,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   box-shadow:var(--shadow);
 }
 
-/* Мобильный: ширина = ширина верхней панели (12px слева/справа),
-   убираем max-width от десктопа */
-@media (max-width:780px){
-  .sidebar{
-    top:auto;
-    left:12px !important; right:12px;
-    bottom:calc(12px + env(safe-area-inset-bottom));
-    width:auto; max-width:none; min-width:0;
-    border-radius:16px;
-    box-shadow:0 12px 30px rgba(0,0,0,.18);
-  }
-}
-
+/* список */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
@@ -127,7 +115,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .icon-btn:hover{ background:#e2e8ff; }
 
-/* список — отдельный скролл */
 #list{
   padding:10px 12px 14px;
   overflow-y:auto;
@@ -135,7 +122,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   -webkit-overflow-scrolling:touch;
 }
 
-/* карточки списка */
 .list{ display:flex; flex-direction:column; gap:8px; }
 .list-item{
   padding:10px 12px; border-radius:12px;
@@ -182,3 +168,15 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 
 .hidden{ display:none !important; }
+
+/* === MOBILE: растягиваем ТОЛЬКО ширину sidebar под размер верхней панели === */
+@media (max-width: 780px){
+  #sidebar.sidebar{
+    left: 12px !important;
+    right: 12px !important;
+    width: calc(100% - 24px) !important;  /* ширина как у .panel-header */
+    max-width: none !important;
+    min-width: 0;
+    /* положение/высота/скругления остаются как было */
+  }
+}
