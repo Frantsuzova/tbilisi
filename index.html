@@ -5,7 +5,7 @@
   <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP: без 'unsafe-inline' для script; для стилей оставляем из-за Leaflet -->
+  <!-- CSP (без frame-ancestors, т.к. meta его игнорирует) -->
   <meta http-equiv="Content-Security-Policy"
         content="
         default-src 'self';
@@ -15,14 +15,13 @@
         connect-src 'self';
         object-src 'none';
         base-uri 'none';
-        frame-ancestors 'none';
         upgrade-insecure-requests">
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.webmanifest?v=2">
   <meta name="theme-color" content="#cfe6ff">
 
-  <!-- iOS ярлык и полноэкранный режим -->
+  <!-- iOS ярлык -->
   <link rel="apple-touch-icon" href="./icons/icon-180.png?v=2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Тбилиси">
@@ -69,7 +68,7 @@
         <!-- Список точек -->
         <button class="btn" id="btnToggleSidebar" title="Открыть список">Список точек</button>
 
-        <!-- Установить (Android; показывается через beforeinstallprompt) -->
+        <!-- Установить (Android) -->
         <button class="btn icon-round" id="btnInstall" style="display:none" title="Установить приложение" aria-label="Установить приложение">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14a1 1 0 0 0 1-1v-3H4v3a1 1 0 0 0 1 1Z"
@@ -80,7 +79,7 @@
     </div>
   </header>
 
-  <!-- Правый сайдбар / нижний лист (моб.) -->
+  <!-- Сайдбар -->
   <div id="sidebar" class="panel sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">Список локаций</div>
@@ -97,7 +96,7 @@
   <!-- App -->
   <script src="app.js" defer></script>
 
-  <!-- PWA / установка / авто-перезагрузка -->
+  <!-- PWA / установка / авто-перезагрузка / анти-embed -->
   <script src="pwa.js" defer></script>
 </body>
 </html>
