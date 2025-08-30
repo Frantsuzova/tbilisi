@@ -1,5 +1,5 @@
-// app.js — фикс парсинга KML (без :contains), компактный сайдбар, кликабельный список,
-// без описаний, скрываем буквенные маркеры и служебные иконки 17..25.
+// app.js — стабильный парсер KML, кликабельные точки, без описаний,
+// фильтр A/B/C и служебных icon-17..25, узкий сайдбар.
 
 var SHADOW="https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 function mkIcon(url){return L.icon({iconUrl:url,shadowUrl:SHADOW,iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});}
@@ -15,31 +15,31 @@ function personalIcon(id){ if(!id||id<1||id>ICONS.count) return null;
 var imgExistsCache=new Map();
 function imageExists(url){
   if(imgExistsCache.has(url)) return imgExistsCache.get(url);
-  var p=new Promise(function(res){ var im=new Image(); im.onload=function(){res(true)}; im.onerror=function(){res(false)}; im.src=url+(url.includes('?')?'&':'?')+'v='+Date.now(); })
+  var p=new Promise(function(res){ var im=new Image(); im.onload=function(){res(true)}; im.onerror=function(){res(false)}; im.src=url+(url.indexOf('?')>=0?'&':'?')+'v='+Date.now(); })
     .then(function(ok){ imgExistsCache.set(url,ok); return ok; });
   imgExistsCache.set(url,p); return p;
 }
 
-/* --- текстовые утилиты --- */
+/* ===== текстовые утилиты ===== */
 function toText(v){ if(v==null) return ''; if(typeof v==='string') return v;
   if(typeof v==='number'||typeof v==='boolean') return String(v);
   if(Array.isArray(v)) return v.map(toText).filter(Boolean).join(' ');
   if(typeof v==='object'){ var pref=['__cdata','#cdata-section','#text','text','value','content','description'];
     for(var i=0;i<pref.length;i++){ var k=pref[i]; if(k in v) return toText(v[k]); }
-    var s=''; for (var key in v){ s += ' ' + toText(v[key]); } return s.trim();
+    var s=''; for(var k2 in v){ s+=' '+toText(v[k2]); } return s.trim();
   } return '';
 }
 function cleanText(v){ var s=toText(v); return s.replace(/\[object Object\]/gi,' ').replace(/\s{2,}/g,' ').trim(); }
 function stripHtmlToText(input){ var html=cleanText(input); if(!html) return '';
   var tmp=document.createElement('div'); tmp.innerHTML=html;
-  tmp.querySelectorAll('img,picture,source,iframe,video,audio,svg,script,style').forEach(function(n){n.remove()});
+  var rm=tmp.querySelectorAll('img,picture,source,iframe,video,audio,svg,script,style'); for(var i=0;i<rm.length;i++) rm[i].remove();
   var t=(tmp.textContent||'').replace(/\s+\n/g,'\n').replace(/\s{2,}/g,' ').trim();
   return t.replace(/\[object Object\]/gi,'').replace(/\s{2,}/g,' ').trim();
 }
 function esc(s){ s=String(s==null?'':s); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function popupHtml(name,desc){ var n=esc(cleanText(name))||'Без названия'; var d=stripHtmlToText(desc); return d?('<strong>'+n+'</strong><br>'+esc(d)):('<strong>'+n+'</strong>'); }
 
-/* --- категории --- */
+/* ===== категории ===== */
 function detectCategory(p){
   var n=cleanText(p&&p.name).toLowerCase(), d=cleanText(p&&p.description).toLowerCase();
   if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n)||/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
@@ -48,52 +48,70 @@ function detectCategory(p){
   return 'other';
 }
 
-/* --- styleUrl → href (без :contains) --- */
-function qText(node,sel){ var el=node?node.querySelector(sel):null; return (el&&el.textContent)?el.textContent.trim():''; }
-function idFromHref(href){ if(!href) return null; var fn=href.split('?')[0].split('#')[0].split('/').pop()||""; var m=fn.match(/(?:^|[^\d])([1-9]\d{0,2})(?=\D|$)/); if(!m) return null; var n=parseInt(m[1],10); return (n>=1 && n<=ICONS.count) ? n : null; }
-
+/* ===== styleUrl → href (без :contains) ===== */
+function getDescText(el, chain){
+  var cur=el;
+  for(var i=0;i<chain.length;i++){
+    if(!cur) return '';
+    var list=cur.getElementsByTagName(chain[i]);
+    cur = list && list.length ? list[0] : null;
+  }
+  return cur && cur.textContent ? cur.textContent.trim() : '';
+}
+function idFromHref(href){
+  if(!href) return null;
+  var fn=href.split('?')[0].split('#')[0].split('/').pop()||"";
+  var m=fn.match(/(?:^|[^\d])([1-9]\d{0,2})(?=\D|$)/);
+  if(!m) return null;
+  var n=parseInt(m[1],10);
+  return (n>=1 && n<=ICONS.count) ? n : null;
+}
 function buildStyleHrefMap(xml){
   var map=Object.create(null);
 
-  // Простые <Style id="..."><IconStyle><Icon><href>...</href>
-  var styles=xml.querySelectorAll('Style[id]');
-  for (var i=0;i<styles.length;i++){
-    var st=styles[i];
-    var id=st.getAttribute('id');
-    var href=qText(st,'IconStyle Icon href');
-    if (id && href) map['#'+id]=href;
+  // <Style>
+  var styles=xml.getElementsByTagName('Style');
+  for(var i=0;i<styles.length;i++){
+    var st=styles[i]; var id=st.getAttribute('id'); if(!id) continue;
+    var href=getDescText(st, ['IconStyle','Icon','href']);
+    if(!href){
+      var hrefEls=st.getElementsByTagName('href');
+      if(hrefEls.length) href=hrefEls[0].textContent.trim();
+    }
+    if(href) map['#'+id]=href;
   }
 
-  // <StyleMap> — ищем Pair с key="normal"; если нет — берём первый Pair.
-  var sms=xml.querySelectorAll('StyleMap[id]');
-  for (var j=0;j<sms.length;j++){
-    var sm=sms[j];
-    var id2=sm.getAttribute('id');
+  // <StyleMap> — берём Pair, где <key>normal</key>, иначе первый Pair
+  var sms=xml.getElementsByTagName('StyleMap');
+  for(var j=0;j<sms.length;j++){
+    var sm=sms[j]; var id2=sm.getAttribute('id'); if(!id2) continue;
+    var pairs=sm.getElementsByTagName('Pair'), chosen=null, k;
+    for(k=0;k<pairs.length;k++){
+      var keyEl=pairs[k].getElementsByTagName('key')[0];
+      if(keyEl && /normal/i.test(keyEl.textContent)){ chosen=pairs[k]; break; }
+    }
+    if(!chosen && pairs.length) chosen=pairs[0];
+
     var href2=null;
-
-    var pairs=sm.querySelectorAll('Pair');
-    var chosen=null;
-    for (var k=0;k<pairs.length;k++){
-      var keyEl=pairs[k].querySelector('key');
-      if (keyEl && /normal/i.test(keyEl.textContent)) { chosen=pairs[k]; break; }
-    }
-    if (!chosen && pairs.length) chosen=pairs[0];
-
-    if (chosen){
-      var suEl=chosen.querySelector('styleUrl');
+    if(chosen){
+      var suEl=chosen.getElementsByTagName('styleUrl')[0];
       var su=suEl ? suEl.textContent.trim() : '';
-      if (su && map[su]) href2=map[su];
+      if(su && map[su]) href2=map[su];
     }
-    if (!href2){
-      var direct=qText(sm,'IconStyle Icon href');
-      if (direct) href2=direct;
+    if(!href2){
+      var direct=getDescText(sm, ['IconStyle','Icon','href']);
+      if(!direct){
+        var hrefEls2=sm.getElementsByTagName('href');
+        if(hrefEls2.length) direct=hrefEls2[0].textContent.trim();
+      }
+      if(direct) href2=direct;
     }
-    if (id2 && href2) map['#'+id2]=href2;
+    if(href2) map['#'+id2]=href2;
   }
   return map;
 }
 
-/* --- цвет из href --- */
+/* ===== цвет из href ===== */
 function colorFromHref(href){
   if(!href) return null;
   var m=href.match(/(?:[?&#]color=)(?:0x)?([0-9a-f]{6,8})/i);
@@ -116,7 +134,7 @@ function svgIcon(hex){
   return L.divIcon({className:'pin-svg',html:html,iconSize:[w,h],iconAnchor:[ax,ay],popupAnchor:[0,-34]});
 }
 
-/* --- фильтры спец-точек --- */
+/* ===== фильтры спец-точек ===== */
 function isLetterPlacemark(feature, hrefMap){
   var p=feature && feature.properties ? feature.properties : {};
   var nm=String(p.name||'').trim();
@@ -125,7 +143,7 @@ function isLetterPlacemark(feature, hrefMap){
   var href=su ? (hrefMap[su]||'') : '';
   if(!href) return false;
   var file=(href.split('?')[0].split('#')[0].split('/').pop()||'').toLowerCase();
-  if (/^([a-z])\.png$/.test(file)) return true;        // A.png и т.п.
+  if (/^([a-z])\.png$/.test(file)) return true;        // a.png и т.п.
   if (/\/paddle\/[a-z]\.png$/.test(href.toLowerCase())) return true;
   return false;
 }
@@ -137,7 +155,7 @@ function isServiceIconFeature(feature, hrefMap){
   return id!=null && id>=17 && id<=25;
 }
 
-/* --- карта --- */
+/* ===== карта ===== */
 var map=L.map('map',{zoomControl:false,tap:false,wheelDebounceTime:10,inertia:true});
 var tilesLight=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap & CARTO'});
 var tilesDark =L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' ,{subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap & CARTO'});
@@ -147,6 +165,7 @@ setTiles(); if(window.matchMedia){ var mm=window.matchMedia('(prefers-color-sche
 L.control.zoom({position:'topright'}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
 
+/* где я — близкий зум */
 L.control.locate({
   position:'topright', setView:'always', keepCurrentZoomLevel:false,
   initialZoomLevel:17, flyTo:true,
@@ -155,7 +174,7 @@ L.control.locate({
 }).addTo(map);
 map.on('locationfound', function(e){ if(e&&e.latlng){ var z=map.getZoom(); map.flyTo(e.latlng, z<17?17:z, {duration:.8}); }});
 
-/* --- fitBounds padding --- */
+/* fitBounds padding */
 function fitPadding(){
   var header=document.getElementById('headerPanel');
   var sidebar=document.getElementById('sidebar');
@@ -164,7 +183,7 @@ function fitPadding(){
   return { paddingTopLeft:[16, top], paddingBottomRight:[right, 16] };
 }
 
-/* --- закрытие/высота списка --- */
+/* закрытие/высота списка */
 function bindClose(){
   var btn=document.getElementById('btnCloseSidebar');
   var sb =document.getElementById('sidebar');
@@ -176,7 +195,7 @@ function bindClose(){
   }
   if(sb){
     sb.addEventListener('click', function(e){
-      if (e.target.closest('.sidebar-close,[data-close-sidebar]')) {
+      if(e.target.closest('.sidebar-close,[data-close-sidebar]')){
         sb.style.display='none';
         setTimeout(function(){ map.invalidateSize(); }, 0);
       }
@@ -193,7 +212,7 @@ function adjustListHeight(){
 window.addEventListener('resize', adjustListHeight);
 bindClose();
 
-/* --- состояние --- */
+/* состояние */
 var markerGroup=L.layerGroup().addTo(map);
 var shapesLayer=null;
 var markersById=new Map();
@@ -207,26 +226,26 @@ function iconIdFor(feature, hrefMap){
   return ((seq % ICONS.count) + 1);
 }
 
-/* --- рендер --- */
+/* рендер */
 function renderGeoJSON(geojson, hrefMap){
   var feats=Array.isArray(geojson.features)?geojson.features:[];
-  for (var i=0;i<feats.length;i++){ var f=feats[i]; f.properties=Object.assign({}, f.properties||{}, {_seq:i}); }
+  for(var i=0;i<feats.length;i++){ var f=feats[i]; f.properties=Object.assign({}, f.properties||{}, {_seq:i}); }
 
-  // Только точки + вырезаем A/B/C и icon-17..25
-  featuresPoints = feats.filter(function(f){
+  // точки без A/B/C и без icon-17..25
+  featuresPoints=feats.filter(function(f){
     return f.geometry && f.geometry.type==='Point'
            && !isLetterPlacemark(f, hrefMap)
            && !isServiceIconFeature(f, hrefMap);
   });
   var shapes=feats.filter(function(f){ return !f.geometry || f.geometry.type!=='Point'; });
 
-  for (var j=0;j<featuresPoints.length;j++){
+  for(var j=0;j<featuresPoints.length;j++){
     var fp=featuresPoints[j], p=fp.properties||{};
     p._ptSeq=j; p.name=cleanText(p.name); p.description=stripHtmlToText(p.description);
   }
 
   if(shapesLayer){ try{ map.removeLayer(shapesLayer); }catch(_){ } }
-  shapesLayer = shapes.length ? L.geoJSON(shapes,{ style:function(){ return {color:'#2563eb', weight:3, opacity:.8}; } }).addTo(map) : null;
+  shapesLayer = shapes.length ? L.geoJSON(shapes,{ style:function(){ return {color:'#2563eb',weight:3,opacity:.8}; } }).addTo(map) : null;
 
   markerGroup.clearLayers(); markersById.clear();
 
@@ -237,15 +256,12 @@ function renderGeoJSON(geojson, hrefMap){
       var id=iconIdFor(feat, hrefMap);
       imageExists(ICONS.prefix+id+'.'+ICONS.ext).then(function(ok){ if(ok) m.setIcon(personalIcon(id)); });
 
-      var p=feat.properties||{};
-      markersById.set(p._ptSeq, m);
-      m.featureCat = detectCategory(p);
-      m.featureProps = p;
+      var p=feat.properties||{}; markersById.set(p._ptSeq, m);
+      m.featureCat=detectCategory(p); m.featureProps=p;
       return m;
     },
     onEachFeature:function(feat,layer){
-      var p=feat.properties||{};
-      layer.bindPopup(popupHtml(p.name, p.description));
+      var p=feat.properties||{}; layer.bindPopup(popupHtml(p.name, p.description));
     }
   });
   tmp.eachLayer(function(l){ markerGroup.addLayer(l); });
@@ -259,10 +275,10 @@ function renderGeoJSON(geojson, hrefMap){
   updateCounters(); buildList(); applyVisibility(); adjustListHeight();
 }
 
-/* --- счётчики/список --- */
+/* счётчики/список */
 function updateCounters(){
   var c={stairs:0, porches:0, temples:0, other:0};
-  featuresPoints.forEach(function(f){ c[detectCategory(f.properties)]++; });
+  for(var i=0;i<featuresPoints.length;i++) c[detectCategory(featuresPoints[i].properties)]++;
   summaryBase='лестницы '+c.stairs+', парадные '+c.porches+', храмы '+c.temples+', остальное '+c.other;
   var el=document.getElementById('countCat'); if(el) el.textContent=summaryBase;
   var t=document.getElementById('countTotal'); if(t) t.textContent=featuresPoints.length;
@@ -270,25 +286,27 @@ function updateCounters(){
 function buildList(){
   var list=document.getElementById('list'); if(!list) return;
   list.className='list'; list.innerHTML='';
-  featuresPoints.forEach(function(f){
-    var p=f.properties||{}, idx=p._ptSeq, cat=detectCategory(p);
+  for(var i=0;i<featuresPoints.length;i++){
+    var p=featuresPoints[i].properties||{}, idx=p._ptSeq, cat=detectCategory(p);
     var item=document.createElement('div');
     item.className='list-item'; item.dataset.cat=cat;
     item.innerHTML='<h4 class="title">'+esc(cleanText(p.name)||'Без названия')+'</h4>'; // без описаний
-    item.addEventListener('click', function(){
-      var m=markersById.get(idx); if(!m) return;
-      map.flyTo(m.getLatLng(), Math.max(map.getZoom(),17), {duration:.8});
-      setTimeout(function(){ m.openPopup(); }, 850);
-    });
+    (function(idxLocal){
+      item.addEventListener('click', function(){
+        var m=markersById.get(idxLocal); if(!m) return;
+        map.flyTo(m.getLatLng(), Math.max(map.getZoom(),17), {duration:.8});
+        setTimeout(function(){ m.openPopup(); }, 850);
+      });
+    })(idx);
     list.appendChild(item);
-  });
+  }
 }
 
-/* --- фильтр/видимость --- */
+/* фильтр/видимость */
 function match(p, cat, q){
   var c=detectCategory(p), n=cleanText(p.name).toLowerCase(), d=cleanText(p.description).toLowerCase();
   var okCat=(cat==='all')||(c===cat);
-  var okText=!q || n.includes(q) || d.includes(q);
+  var okText=!q || n.indexOf(q)>=0 || d.indexOf(q)>=0;
   return okCat && okText;
 }
 function fitToVisible(){
@@ -306,31 +324,30 @@ function applyVisibility(){
   var cat=active? active.dataset.cat : 'all';
 
   var items=[].slice.call(document.querySelectorAll('#list .list-item'));
-  items.forEach(function(el, i){
+  for(var i=0;i<items.length;i++){
     var p=featuresPoints[i] && featuresPoints[i].properties || {};
     var show=match(p, cat, q);
-    el.classList.toggle('hidden', !show);
-  });
+    items[i].classList.toggle('hidden', !show);
+  }
 
   markerGroup.clearLayers(); var shown=0;
-  featuresPoints.forEach(function(f){
-    var p=f.properties||{}; if (!match(p, cat, q)) return;
-    var m=markersById.get(p._ptSeq); if(m){ markerGroup.addLayer(m); shown++; }
-  });
+  for(var j=0;j<featuresPoints.length;j++){
+    var p2=featuresPoints[j].properties||{}; if(!match(p2, cat, q)) continue;
+    var m=markersById.get(p2._ptSeq); if(m){ markerGroup.addLayer(m); shown++; }
+  }
   var sub=document.getElementById('countCat');
   if(sub) sub.textContent=summaryBase+' · Показано: '+shown;
 }
 
-/* --- категории/кнопки --- */
+/* категории/кнопки */
 function selectCategory(cat){
-  document.querySelectorAll('.chip').forEach(function(ch){
-    ch.dataset.active = (ch.dataset.cat===cat ? 'true' : 'false');
-  });
+  var chips=document.querySelectorAll('.chip');
+  for(var i=0;i<chips.length;i++){ chips[i].dataset.active=(chips[i].dataset.cat===cat?'true':'false'); }
   var q=document.getElementById('search'); if(q&&q.value) q.value='';
   applyVisibility(); fitToVisible();
 }
 var searchInput=document.getElementById('search'); if(searchInput) searchInput.addEventListener('input', applyVisibility);
-document.querySelectorAll('.chip').forEach(function(btn){ btn.addEventListener('click', function(){ selectCategory(btn.dataset.cat); }); });
+var chipBtns=document.querySelectorAll('.chip'); for(var cb=0; cb<chipBtns.length; cb++){ (function(btn){ btn.addEventListener('click', function(){ selectCategory(btn.dataset.cat); }); })(chipBtns[cb]); }
 var btnShowAll=document.getElementById('btnShowAll'); if(btnShowAll) btnShowAll.addEventListener('click', function(){ selectCategory('all'); });
 var btnLocate=document.getElementById('btnLocate'); if(btnLocate) btnLocate.addEventListener('click', function(){ var a=document.querySelector('.leaflet-control-locate a'); if(a) a.click(); });
 var btnToggleSidebar=document.getElementById('btnToggleSidebar');
@@ -340,7 +357,7 @@ if(btnToggleSidebar) btnToggleSidebar.addEventListener('click', function(){
   setTimeout(function(){ adjustListHeight(); map.invalidateSize(); fitToVisible(); }, 0);
 });
 
-/* --- загрузка KML --- */
+/* загрузка KML */
 function sanitizeKmlString(txt){
   return String(txt)
    .replace(/<img\b[^>]*>/gi,'')
@@ -352,7 +369,7 @@ var CANDS=[kmlParam,'./doc.kml','doc.kml','../doc.kml'].filter(Boolean);
 async function getKml(url){ var r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status); return r.text(); }
 (async function(){
   try{
-    var raw=null, last=null;
+    var raw=null,last=null;
     for(var i=0;i<CANDS.length;i++){ try{ raw=await getKml(CANDS[i]); break; }catch(e){ last=e; } }
     if(!raw) throw last||new Error('no KML');
     var txt=sanitizeKmlString(raw);
