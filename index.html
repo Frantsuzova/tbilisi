@@ -1,15 +1,14 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ру">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width" />
   <title>chizhik · маршрут по тбилиси от чижика</title>
 
-  <!-- Description / app name -->
   <meta name="description" content="маршрут по тбилиси от чижика">
   <meta name="application-name" content="chizhik">
 
-  <!-- CSP (без frame-ancestors, т.к. <meta> его игнорирует) -->
+  <!-- CSP (без frame-ancestors, т.к. meta его игнорирует) -->
   <meta http-equiv="Content-Security-Policy"
         content="
         default-src 'self';
@@ -49,16 +48,20 @@
         Показано: <span id="countCat">0</span> / <span id="countTotal">0</span>
       </div>
 
+      <!-- Фильтры: иконка слева, справа поиск, ниже чипы -->
       <div class="filters">
-        <!-- Бренд-иконка -->
-        <img class="brand-icon" src="./icons/icon-180.png?v=3" alt="chizhik" loading="lazy" />
+        <!-- НОВОЕ: интерфейсная иконка с прозрачным фоном -->
+        <img class="brand-ui" src="./icons/ui-logo.svg?v=1" alt="chizhik" loading="lazy" />
 
         <input id="search" class="search" type="search" placeholder="Поиск по названию/описанию…" />
-        <button class="chip" data-cat="all" data-active="true">Все</button>
-        <button class="chip" data-cat="stairs">Лестницы</button>
-        <button class="chip" data-cat="porches">Парадные</button>
-        <button class="chip" data-cat="temples">Храмы</button>
-        <button class="chip" data-cat="other">Остальное</button>
+
+        <div class="chips">
+          <button class="chip" data-cat="all" data-active="true">Все</button>
+          <button class="chip" data-cat="stairs">Лестницы</button>
+          <button class="chip" data-cat="porches">Парадные</button>
+          <button class="chip" data-cat="temples">Храмы</button>
+          <button class="chip" data-cat="other">Остальное</button>
+        </div>
       </div>
 
       <div class="actions">
@@ -75,7 +78,7 @@
         <!-- Список точек -->
         <button class="btn" id="btnToggleSidebar" title="Открыть список">Список точек</button>
 
-        <!-- Установить (Android; показывается через beforeinstallprompt) -->
+        <!-- Установить (Android) -->
         <button class="btn icon-round" id="btnInstall" style="display:none" title="Установить приложение" aria-label="Установить приложение">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14a1 1 0 0 0 1-1v-3H4v3a1 1 0 0 0 1 1Z"
