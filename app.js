@@ -41,10 +41,11 @@ function popupHtml(name,desc){ var n=esc(cleanText(name))||'Без назван�
 
 /* ===== категории ===== */
 function detectCategory(p){
-  var n=cleanText(p&&p.name).toLowerCase(), d=cleanText(p&&p.description).toLowerCase();
-  if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n)||/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
-  if (n.indexOf('лестниц')>=0||d.indexоф('лестниц')>=0) return 'stairs';
-  if (n.indexOf('парадн')>=0||d.indexOf('парадн')>=0) return 'porches';
+  var n=(p&&p.name? String(p.name):'').toLowerCase();
+  var d=(p&&p.description? String(p.description):'').toLowerCase();
+  if (/(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(n) || /(храм|церк|собор|монастыр|кост(?:е|ё)л)/i.test(d)) return 'temples';
+  if (n.indexOf('лестниц') >= 0 || d.indexOf('лестниц') >= 0) return 'stairs';
+  if (n.indexOf('парадн') >= 0 || d.indexOf('парадн') >= 0) return 'porches';
   return 'other';
 }
 
@@ -183,7 +184,7 @@ function showLocateHint(){
   setTimeout(hide, 6000);
 }
 
-/* синхронизация розовой подсветки с нашей кнопкой #btnLocate */
+/* синхроним розовый стиль с нашей кнопкой */
 function syncLocateButtonActive(){
   var cont=document.querySelector('.leaflet-control-locate');
   var btn=document.getElementById('btnLocate');
@@ -314,7 +315,7 @@ function renderGeoJSON(geojson, hrefMap){
 function updateCounters(){
   var c={stairs:0, porches:0, temples:0, other:0};
   for(var i=0;i<featuresPoints.length;i++) c[detectCategory(featuresPoints[i].properties)]++;
-  summaryBase='лестницы '+c.stairs+', парадные '+c.porches+', храмы '+c.temples+', остальное '+c.other;
+  summaryBase='лестницы '+c.stairs+', парадные '+c.pорches+', храмы '+c.temples+', остальное '+c.other;
   var el=document.getElementById('countCat'); if(el) el.textContent=summaryBase;
   var t=document.getElementById('countTotal'); if(t) t.textContent=featuresPoints.length;
 }
