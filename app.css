@@ -5,7 +5,7 @@
   --muted: #475569;
 
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;     /* светло-голубые активные */
+  --chip-active: #bfe3ff;     /* активные — светло-голубые */
   --accent: #bfe3ff;
 
   --shadow: 0 8px 24px rgba(0,0,0,.18);
@@ -15,10 +15,10 @@
   --btn-bg-hover: #e1f1ff;
   --btn-border: #b9dcff;
 
-  /* единая высота всех контролов */
+  /* единая высота контролов */
   --ctrl-h: 36px;
 
-  /* розовый для "Где я?" */
+  /* розовая подсветка для активного locate */
   --locate-active-bg: #ffd7ec;
   --locate-active-br: #ffb8de;
 }
@@ -55,7 +55,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .filters{ flex:1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .actions{ flex:0 0 auto; display:flex; gap:8px; align-items:center; }
 
-/* единая высота для поиска/кнопок/чипов */
+/* поиск + кнопки одной высоты */
 .search{
   min-width:260px; flex:1 1 240px;
   height:var(--ctrl-h); padding:0 12px;
@@ -83,7 +83,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
-/* небольшой отступ у «Показать всё» и «Где я?» */
 #btnShowAll, #btnLocate{ margin:0 8px; }
 
 /* ===== САЙДБАР ===== */
@@ -95,14 +94,16 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   padding:0; overflow:hidden; border-radius:16px;
 }
 
-/* Мобильный: лист снизу на всю ширину и ~треть высоты */
+/* Мобильный: «лист» снизу напротив верхней панели — те же 12px слева/справа */
 @media (max-width:780px){
   .sidebar{
-    top:auto; left:0 !important; right:0; bottom:0;
-    width:100vw; max-height:33vh;
+    top:auto;
+    left:12px !important; right:12px;      /* ширина как у .panel-header */
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    width:auto; max-height:33vh;
     border-top-left-radius:16px; border-top-right-radius:16px;
-    border-bottom-left-radius:0; border-bottom-right-radius:0;
-    box-shadow:0 -12px 30px rgba(0,0,0,.15);
+    border-bottom-left-radius:16px; border-bottom-right-radius:16px;
+    box-shadow:0 12px 30px rgba(0,0,0,.18);
   }
 }
 
@@ -137,14 +138,19 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   cursor:pointer;
 }
 .list-item .title{ margin:0; font-weight:600; font-size:15px; line-height:1.35; }
-.list-item .meta{ display:none; } /* описания в списке не показываем */
+.list-item .meta{ display:none; }
 
-/* ===== "Где я?" — розовый при активном состоянии LocateControl ===== */
+/* ===== Розовая подсветка locate ===== */
 .leaflet-control-locate.active a,
 .leaflet-control-locate.following a,
 .leaflet-control-locate.requesting a{
   background:var(--locate-active-bg) !important;
   border-color:var(--locate-active-br) !important;
+}
+/* та же подсветка для нашей кнопки "Где я?" */
+#btnLocate.active{
+  background:var(--locate-active-bg);
+  border-color:var(--locate-active-br);
 }
 
 /* ===== тост-подсказка ===== */
