@@ -5,7 +5,7 @@
   --muted: #475569;
 
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;      /* активные — светло-голубые */
+  --chip-active: #bfe3ff;     /* светло-голубые активные */
   --accent: #bfe3ff;
 
   --shadow: 0 8px 24px rgba(0,0,0,.18);
@@ -14,15 +14,24 @@
   --btn-bg: #eaf6ff;
   --btn-bg-hover: #e1f1ff;
   --btn-border: #b9dcff;
+
+  /* единая высота всех контролов */
+  --ctrl-h: 36px;
+
+  /* розовый для "Где я?" */
+  --locate-active-bg: #ffd7ec;
+  --locate-active-br: #ffb8de;
 }
 
 html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 #map{ position:fixed; inset:0; }
 
+/* попап поверх маркеров */
 .leaflet-top, .leaflet-bottom{ z-index:1000 !important; }
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 
+/* ===== верхняя панель ===== */
 .panel{
   position:fixed; z-index:5000;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -34,11 +43,9 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .panel *{ pointer-events:auto; }
 
-/* верхняя панель */
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
-  left:12px;
-  right:360px;                /* место под сайдбар справа */
+  left:12px; right:360px;
   padding:12px 14px;
 }
 @media (max-width:980px){ .panel-header{ right:12px; } }
@@ -48,59 +55,62 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .filters{ flex:1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .actions{ flex:0 0 auto; display:flex; gap:8px; align-items:center; }
 
+/* единая высота для поиска/кнопок/чипов */
 .search{
   min-width:260px; flex:1 1 240px;
-  height:32px; padding:6px 10px;
+  height:var(--ctrl-h); padding:0 12px;
   border-radius:999px; border:1px solid var(--panel-border);
   background:rgba(255,255,255,.66); color:var(--text);
 }
 .search::placeholder{ color:#64748b; }
 
 .btn{
+  height:var(--ctrl-h);
   border:1px solid var(--btn-border, var(--panel-border));
   background:var(--btn-bg);
-  border-radius:999px; padding:6px 10px;
-  cursor:pointer; transition:.15s ease;
+  border-radius:999px; padding:0 12px;
+  cursor:pointer; transition:.15s ease; line-height:calc(var(--ctrl-h) - 2px);
 }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
+
 .chip{
+  height:var(--ctrl-h);
   display:inline-flex; align-items:center; gap:6px;
-  border:1px solid var(--panel-border); background:var(--chip-bg);
-  border-radius:999px; padding:6px 10px; cursor:pointer; font-size:12px;
+  border:1px solid var(--panel-border);
+  background:var(--chip-bg);
+  border-radius:999px; padding:0 12px; cursor:pointer; font-size:12px;
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
+/* небольшой отступ у «Показать всё» и «Где я?» */
 #btnShowAll, #btnLocate{ margin:0 8px; }
 
-/* ---- САЙДБАР (class="panel sidebar" в твоём HTML) ---- */
-
-/* десктоп: узкая правая колонка */
+/* ===== САЙДБАР ===== */
 .sidebar{
   top:calc(84px + env(safe-area-inset-top));
   right:12px; bottom:12px;
-  left:auto !important;                 /* не растягиваться на всю ширину */
+  left:auto !important;
   width:360px; max-width:34vw;
   padding:0; overflow:hidden; border-radius:16px;
 }
 
-/* мобилка: узкая панель справа, не вся ширина/высота */
+/* Мобильный: лист снизу на всю ширину и ~треть высоты */
 @media (max-width:780px){
   .sidebar{
-    top:auto; bottom:calc(12px + env(safe-area-inset-bottom));
-    right:12px; left:auto !important;
-    width:min(92vw, 360px); max-height:70vh;
+    top:auto; left:0 !important; right:0; bottom:0;
+    width:100vw; max-height:33vh;
+    border-top-left-radius:16px; border-top-right-radius:16px;
+    border-bottom-left-radius:0; border-bottom-right-radius:0;
     box-shadow:0 -12px 30px rgba(0,0,0,.15);
   }
 }
 
-/* шапка сайдбара + крестик */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
   gap:8px; padding:12px 14px;
   background:#fff; border-bottom:1px solid rgba(0,0,0,.06);
-  border-top-left-radius:16px; border-top-right-radius:16px;
 }
 .sidebar-title{ font-weight:700; }
 .icon-btn{
@@ -114,11 +124,11 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 #list{
   padding:10px 12px 14px;
   overflow-y:auto;
-  max-height:calc(100% - 52px);      /* ~высота .sidebar-header */
+  max-height:calc(100% - 52px);
   -webkit-overflow-scrolling:touch;
 }
 
-/* карточки */
+/* карточки списка */
 .list{ display:flex; flex-direction:column; gap:8px; }
 .list-item{
   padding:10px 12px; border-radius:12px;
@@ -127,7 +137,41 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   cursor:pointer;
 }
 .list-item .title{ margin:0; font-weight:600; font-size:15px; line-height:1.35; }
-/* описания в списке НЕ показываем */
-.list-item .meta{ display:none; }
+.list-item .meta{ display:none; } /* описания в списке не показываем */
+
+/* ===== "Где я?" — розовый при активном состоянии LocateControl ===== */
+.leaflet-control-locate.active a,
+.leaflet-control-locate.following a,
+.leaflet-control-locate.requesting a{
+  background:var(--locate-active-bg) !important;
+  border-color:var(--locate-active-br) !important;
+}
+
+/* ===== тост-подсказка ===== */
+.toast-hint{
+  position:fixed; z-index:9000;
+  right:16px; top:100px;
+  background:#fff6fb; color:#5a1d3e;
+  border:1px solid #ffcbe3; border-radius:12px;
+  padding:10px 12px; box-shadow:0 12px 32px rgba(0,0,0,.18);
+  max-width:300px; font-size:13px; line-height:1.35;
+  opacity:0; transform:translateY(-8px); transition:.25s ease;
+}
+.toast-hint.show{ opacity:1; transform:none; }
+.toast-hint .close{ margin-left:8px; cursor:pointer; text-decoration:underline; }
+
+/* тёмная системная — оставляем светлый UI */
+@media (prefers-color-scheme: dark){
+  :root{
+    --panel-bg: rgba(17,24,39,.72);
+    --panel-border: rgba(255,255,255,.08);
+    --chip-bg: rgba(255,255,255,.06);
+    --chip-active: #cfe6ff;
+    --accent: #cfe6ff;
+    --btn-bg: #eaf6ff;
+    --btn-bg-hover: #e1f1ff;
+    --btn-border: #b9dcff;
+  }
+}
 
 .hidden{ display:none !important; }
