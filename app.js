@@ -1,7 +1,3 @@
-// app.js — iOS-надёжная загрузка: parse 'text/xml' (+fallback), тайлы с фолбэком,
-// кликабельные точки, фильтр буквенных и служебных маркеров (icon-17..25),
-// «Где я?» — розовая индикация + тост-подсказка, мобильный лист снизу.
-
 var SHADOW="https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 function mkIcon(url){return L.icon({iconUrl:url,shadowUrl:SHADOW,iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});}
 
