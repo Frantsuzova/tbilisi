@@ -50,7 +50,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .header-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
 .filters{ flex:1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; } /* кнопки под поиском во всю строку */
+.actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; }
 
 .search{
   min-width:260px; flex:1 1 240px;
@@ -69,6 +69,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
+
 #btnShowAll, #btnLocate{ margin:0; }
 
 .chip{
@@ -80,7 +81,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
-/* ===== САЙДБАР (как на десктопе) ===== */
+/* ===== Сайдбар (десктоп) ===== */
 .sidebar{
   position:fixed;
   box-sizing:border-box;
@@ -93,7 +94,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   box-shadow:var(--shadow);
 }
 
-/* Заголовок/список */
+/* Шапка и список */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
@@ -147,6 +148,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .toast-hint.show{ opacity:1; transform:none; }
 .toast-hint .close{ margin-left:8px; cursor:pointer; text-decoration:underline; }
 
+/* Тёмная тема */
 @media (prefers-color-scheme: dark){
   :root{
     --panel-bg: rgba(17,24,39,.72);
@@ -162,18 +164,49 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 
 .hidden{ display:none !important; }
 
-/* ===== MOBILE: список опускаем вниз, карта видна сверху ===== */
+/* ===== MOBILE: список снизу, ширина как у верхней панели ===== */
 @media (max-width: 780px){
   #sidebar.sidebar{
-    top: auto !important;                                /* не прилипает к верхней панели */
+    top: auto !important;
     left: 12px !important;
     right: 12px !important;
-    bottom: calc(12px + env(safe-area-inset-bottom));    /* как и у верхней панели отступы */
-    width: calc(100% - 24px) !important;                 /* ширина = ширина верхней панели */
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    width: calc(100% - 24px) !important;
     max-width: none !important;
     min-width: 0;
-    max-height: 33vh;                                    /* ~ треть экрана */
+    max-height: 33vh !important;              /* видна карта сверху */
     border-radius: 16px;
     box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  }
+}
+
+/* ===== COMPACT для очень узких экранов (≤ 350px) ===== */
+@media (max-width: 350px){
+  :root{
+    --ctrl-h: 30px;                 /* было 36px */
+  }
+
+  .panel-header{
+    padding: 8px 10px;
+  }
+
+  .header-row{ gap: 6px 8px; }
+  .filters{ gap: 6px; }
+  .actions{ gap: 6px; }
+
+  .counts{ font-size: 11px; }
+
+  .search{
+    height: var(--ctrl-h);
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .chip,
+  .btn{
+    height: var(--ctrl-h);
+    padding: 0 10px;
+    font-size: 13px;
+    border-radius: 14px;
   }
 }
