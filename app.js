@@ -1,5 +1,6 @@
-// app.js — стабильный парсер KML, кликабельные точки, без описаний,
-// фильтр A/B/C и служебных icon-17..25, узкий сайдбар.
+// app.js — подсказка для "Где я?", розовая индикация активного locate,
+// кнопки одной высоты, мобильный лист на 1/3 экрана, список без описаний,
+// фильтр буквеных и служебных маркеров (icon-17..25).
 
 var SHADOW="https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@v1.0/img/marker-shadow.png";
 function mkIcon(url){return L.icon({iconUrl:url,shadowUrl:SHADOW,iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});}
@@ -48,7 +49,7 @@ function detectCategory(p){
   return 'other';
 }
 
-/* ===== styleUrl → href (без :contains) ===== */
+/* ===== styleUrl → href ===== */
 function getDescText(el, chain){
   var cur=el;
   for(var i=0;i<chain.length;i++){
@@ -69,7 +70,6 @@ function idFromHref(href){
 function buildStyleHrefMap(xml){
   var map=Object.create(null);
 
-  // <Style>
   var styles=xml.getElementsByTagName('Style');
   for(var i=0;i<styles.length;i++){
     var st=styles[i]; var id=st.getAttribute('id'); if(!id) continue;
@@ -81,12 +81,11 @@ function buildStyleHrefMap(xml){
     if(href) map['#'+id]=href;
   }
 
-  // <StyleMap> — берём Pair, где <key>normal</key>, иначе первый Pair
   var sms=xml.getElementsByTagName('StyleMap');
   for(var j=0;j<sms.length;j++){
     var sm=sms[j]; var id2=sm.getAttribute('id'); if(!id2) continue;
-    var pairs=sm.getElementsByTagName('Pair'), chosen=null, k;
-    for(k=0;k<pairs.length;k++){
+    var pairs=sm.getElementsByTagName('Pair'), chosen=null;
+    for(var k=0;k<pairs.length;k++){
       var keyEl=pairs[k].getElementsByTagName('key')[0];
       if(keyEl && /normal/i.test(keyEl.textContent)){ chosen=pairs[k]; break; }
     }
@@ -143,7 +142,7 @@ function isLetterPlacemark(feature, hrefMap){
   var href=su ? (hrefMap[su]||'') : '';
   if(!href) return false;
   var file=(href.split('?')[0].split('#')[0].split('/').pop()||'').toLowerCase();
-  if (/^([a-z])\.png$/.test(file)) return true;        // a.png и т.п.
+  if (/^([a-z])\.png$/.test(file)) return true;
   if (/\/paddle\/[a-z]\.png$/.test(href.toLowerCase())) return true;
   return false;
 }
@@ -165,14 +164,39 @@ setTiles(); if(window.matchMedia){ var mm=window.matchMedia('(prefers-color-sche
 L.control.zoom({position:'topright'}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
 
-/* где я — близкий зум */
-L.control.locate({
+/* locate — розовая подсветка, подсказка при "далеко" */
+var dataBounds=null, dataCenter=null;
+var locateCtrl=L.control.locate({
   position:'topright', setView:'always', keepCurrentZoomLevel:false,
   initialZoomLevel:17, flyTo:true,
   strings:{ title:'Где я?' },
   locateOptions:{ enableHighAccuracy:true, maximumAge:10000, timeout:10000 }
 }).addTo(map);
-map.on('locationfound', function(e){ if(e&&e.latlng){ var z=map.getZoom(); map.flyTo(e.latlng, z<17?17:z, {duration:.8}); }});
+
+var farHintShown=false;  // чтобы не спамить
+function showLocateHint(){
+  if (farHintShown) return;
+  farHintShown=true;
+  var el=document.createElement('div');
+  el.className='toast-hint';
+  el.innerHTML='Вы далеко от карты. Нажмите ещё раз «Где я?», чтобы перестать следовать за своим местоположением. <span class="close">Понятно</span>';
+  document.body.appendChild(el);
+  setTimeout(function(){ el.classList.add('show'); }, 10);
+  function hide(){ el.classList.remove('show'); setTimeout(function(){ el.remove(); }, 260); }
+  el.addEventListener('click', function(e){ if(e.target.classList.contains('close')) hide(); });
+  setTimeout(hide, 6000);
+}
+
+map.on('locationfound', function(e){
+  if(e && e.latlng){
+    var z=map.getZoom();
+    map.flyTo(e.latlng, z<17?17:z, {duration:.8});
+    if (dataCenter){
+      var dist=e.latlng.distanceTo(dataCenter); // м
+      if (dist>20000){ showLocateHint(); }
+    }
+  }
+});
 
 /* fitBounds padding */
 function fitPadding(){
@@ -242,7 +266,7 @@ function renderGeoJSON(geojson, hrefMap){
   for(var j=0;j<featuresPoints.length;j++){
     var fp=featuresPoints[j], p=fp.properties||{};
     p._ptSeq=j; p.name=cleanText(p.name); p.description=stripHtmlToText(p.description);
-  }
+  });
 
   if(shapesLayer){ try{ map.removeLayer(shapesLayer); }catch(_){ } }
   shapesLayer = shapes.length ? L.geoJSON(shapes,{ style:function(){ return {color:'#2563eb',weight:3,opacity:.8}; } }).addTo(map) : null;
@@ -269,8 +293,17 @@ function renderGeoJSON(geojson, hrefMap){
   try{
     var group=L.featureGroup([markerGroup, shapesLayer].filter(Boolean));
     var b=group.getBounds();
-    if (b.isValid()) map.fitBounds(b, fitPadding()); else map.setView([41.6938,44.8015],14);
-  }catch(_){ map.setView([41.6938,44.8015],14); }
+    if (b.isValid()){
+      dataBounds=b; dataCenter=b.getCenter();
+      map.fitBounds(b, fitPadding());
+    } else {
+      dataBounds=null; dataCenter=null;
+      map.setView([41.6938,44.8015],14);
+    }
+  }catch(_){
+    dataBounds=null; dataCenter=null;
+    map.setView([41.6938,44.8015],14);
+  }
 
   updateCounters(); buildList(); applyVisibility(); adjustListHeight();
 }
