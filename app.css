@@ -146,7 +146,6 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   opacity:0; transform:translateY(-8px); transition:.25s ease;
 }
 .toast-hint.show{ opacity:1; transform:none; }
-.toast-hint .close{ margin-left:8px; cursor:pointer; text-decoration:underline; }
 
 /* Тёмная тема */
 @media (prefers-color-scheme: dark){
@@ -174,39 +173,34 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
     width: calc(100% - 24px) !important;
     max-width: none !important;
     min-width: 0;
-    max-height: 33vh !important;              /* видна карта сверху */
+    max-height: 33vh !important;
     border-radius: 16px;
     box-shadow: 0 12px 30px rgba(0,0,0,.18);
   }
 }
 
-/* ===== COMPACT для очень узких экранов (≤ 350px) ===== */
+/* ===== COMPACT (≤ 350px) ===== */
 @media (max-width: 350px){
-  :root{
-    --ctrl-h: 30px;                 /* было 36px */
-  }
-
-  .panel-header{
-    padding: 8px 10px;
-  }
-
+  :root{ --ctrl-h: 30px; }
+  .panel-header{ padding: 8px 10px; }
   .header-row{ gap: 6px 8px; }
   .filters{ gap: 6px; }
   .actions{ gap: 6px; }
-
   .counts{ font-size: 11px; }
+  .search{ height: var(--ctrl-h); padding: 0 10px; font-size: 13px; }
+  .chip, .btn{ height: var(--ctrl-h); padding: 0 10px; font-size: 13px; border-radius: 14px; }
+}
 
-  .search{
-    height: var(--ctrl-h);
-    padding: 0 10px;
-    font-size: 13px;
-  }
-
-  .chip,
-  .btn{
-    height: var(--ctrl-h);
-    padding: 0 10px;
-    font-size: 13px;
-    border-radius: 14px;
-  }
+/* ==== Иконки-кнопки (дом/установить) ==== */
+.btn.icon-round{
+  width: var(--ctrl-h);
+  min-width: var(--ctrl-h);
+  padding: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+}
+.btn.icon-round svg{ width: 18px; height: 18px; }
+@media (max-width: 350px){
+  .btn.icon-round svg{ width: 16px; height: 16px; }
 }
