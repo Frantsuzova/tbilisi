@@ -1,3 +1,4 @@
+// Анти-embed (JS-костыль: блокируем показ во фреймах на чужих сайтах)
 (function antiEmbed(){
   try {
     if (window.top !== window.self) {
@@ -8,7 +9,7 @@
   }
 })();
 
-// Service Worker: авто-перезагрузка при первом контроле + регистрация
+// Service Worker: регистрация и авто-перезагрузка при первом контроле
 (function sw(){
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("controllerchange", function () {
