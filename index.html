@@ -2,15 +2,11 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="initial-scale=1, viewport-fit=cover, width=device-width"
-  />
+  <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width" />
   <title>Мой маршрут Тбилиси</title>
 
   <!-- PWA / ярлык -->
   <link rel="manifest" href="./manifest.webmanifest?v=2">
-
   <meta name="theme-color" content="#cfe6ff">
 
   <!-- iOS ярлык и полноэкранный режим -->
@@ -20,14 +16,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="white-translucent">
 
   <!-- Vendor CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 
   <!-- App CSS -->
   <link rel="stylesheet" href="app.css" />
@@ -78,14 +68,13 @@
   <!-- App -->
   <script src="app.js" defer></script>
 
-  <!-- PWA: регистрация SW + подавление десктопного beforeinstallprompt -->
+  <!-- PWA: регистрация SW + гасим beforeinstallprompt только на десктопе -->
   <script>
-    // Гасим системную подсказку «Установить приложение» в десктопных браузерах
     window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (!isAndroid) e.preventDefault(); // десктоп — скрыть, Android — показать
     });
 
-    // Регистрация сервис-воркера (работает и на десктопе, и на iOS/Android)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(console.warn);
