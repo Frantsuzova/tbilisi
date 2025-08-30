@@ -5,7 +5,7 @@
   --muted: #475569;
 
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;     /* активные — светло-голубые */
+  --chip-active: #bfe3ff;
   --accent: #bfe3ff;
 
   --shadow: 0 8px 24px rgba(0,0,0,.18);
@@ -28,7 +28,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 
-/* ===== верхняя панель ===== */
+/* ===== панель ===== */
 .panel{
   position:fixed; z-index:5000;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -49,16 +49,57 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 
 .header-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
-.filters{ flex:1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; }
+
+/* === НОВОЕ: компоновка фильтров через CSS Grid (иконка слева на 2 ряда) === */
+.filters{
+  flex: 1 1 520px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: var(--ctrl-h) auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  align-items: center;
+}
+
+/* интерфейсная иконка (высота ≈ две строки) */
+.brand-ui{
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: clamp(56px, calc(var(--ctrl-h)*2 + 8px), 88px);
+  height: clamp(56px, calc(var(--ctrl-h)*2 + 8px), 88px);
+  object-fit: contain;
+  border-radius: 12px;              /* если у SVG нет фона — чуть скруглить */
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  background: transparent;
+}
 
 .search{
+  grid-column: 2;
+  grid-row: 1;
   min-width:260px; flex:1 1 240px;
   height:var(--ctrl-h); padding:0 12px;
   border-radius:999px; border:1px solid var(--panel-border);
   background:rgba(255,255,255,.66); color:var(--text);
 }
 .search::placeholder{ color:#64748b; }
+
+/* контейнер чипов под поиском */
+.chips{
+  grid-column: 2;
+  grid-row: 2;
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+}
+
+.chip{
+  height:var(--ctrl-h);
+  display:inline-flex; align-items:center; gap:6px;
+  border:1px solid var(--panel-border);
+  background:var(--chip-bg);
+  border-radius:999px; padding:0 12px; cursor:pointer; font-size:12px;
+}
+.chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
+
+.actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; }
 
 .btn{
   height:var(--ctrl-h);
@@ -69,17 +110,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
-
 #btnShowAll, #btnLocate{ margin:0; }
-
-.chip{
-  height:var(--ctrl-h);
-  display:inline-flex; align-items:center; gap:6px;
-  border:1px solid var(--panel-border);
-  background:var(--chip-bg);
-  border-radius:999px; padding:0 12px; cursor:pointer; font-size:12px;
-}
-.chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
 /* ===== Сайдбар (десктоп) ===== */
 .sidebar{
@@ -126,7 +157,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .list-item .title{ margin:0; font-weight:600; font-size:15px; line-height:1.35; }
 .list-item .meta{ display:none; }
 
-/* Розовая подсветка locate + синхрон нашей кнопки */
+/* locate подсветка */
 .leaflet-control-locate.active a,
 .leaflet-control-locate.following a,
 .leaflet-control-locate.requesting a{
@@ -163,7 +194,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 
 .hidden{ display:none !important; }
 
-/* ===== MOBILE: список снизу, ширина как у верхней панели ===== */
+/* ===== MOBILE: список снизу ===== */
 @media (max-width: 780px){
   #sidebar.sidebar{
     top: auto !important;
@@ -184,11 +215,14 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   :root{ --ctrl-h: 30px; }
   .panel-header{ padding: 8px 10px; }
   .header-row{ gap: 6px 8px; }
-  .filters{ gap: 6px; }
-  .actions{ gap: 6px; }
+  .filters{ column-gap: 8px; row-gap: 6px; }
   .counts{ font-size: 11px; }
   .search{ height: var(--ctrl-h); padding: 0 10px; font-size: 13px; }
   .chip, .btn{ height: var(--ctrl-h); padding: 0 10px; font-size: 13px; border-radius: 14px; }
+  .brand-ui{
+    width: clamp(48px, calc(var(--ctrl-h)*2 + 6px), 72px);
+    height: clamp(48px, calc(var(--ctrl-h)*2 + 6px), 72px);
+  }
 }
 
 /* ==== Иконки-кнопки (дом/установить) ==== */
@@ -203,16 +237,4 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .btn.icon-round svg{ width: 18px; height: 18px; }
 @media (max-width: 350px){
   .btn.icon-round svg{ width: 16px; height: 16px; }
-}
-
-/* Иконка бренда в панели */
-.brand-icon{
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.1);
-  flex: 0 0 auto;
-}
-@media (max-width: 350px){
-  .brand-icon{ width: 18px; height: 18px; }
 }
