@@ -2,12 +2,31 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta
+    name="viewport"
+    content="initial-scale=1, viewport-fit=cover, width=device-width"
+  />
   <title>Мой маршрут Тбилиси</title>
 
+  <!-- PWA / ярлык -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#cfe6ff">
+
+  <!-- iOS ярлык и полноэкранный режим -->
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Тбилиси">
+  <meta name="apple-mobile-web-app-status-bar-style" content="white-translucent">
+
   <!-- Vendor CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css"
+  />
 
   <!-- App CSS -->
   <link rel="stylesheet" href="app.css" />
@@ -42,24 +61,35 @@
 
   <!-- Правый сайдбар / нижний лист (моб.) -->
   <div id="sidebar" class="panel sidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-title">Список локаций</div>
-    <button id="btnCloseSidebar" class="icon-btn" aria-label="Закрыть">×</button>
+    <div class="sidebar-header">
+      <div class="sidebar-title">Список локаций</div>
+      <button id="btnCloseSidebar" class="icon-btn" aria-label="Закрыть">×</button>
+    </div>
+    <!-- список точек -->
+    <div id="list" class="list"></div>
   </div>
 
-  <!-- список точек -->
-  <div id="list" class="list"></div>
-</div>
-
-
-
-
-  <!-- Vendor JS (defer, чтобы DOM успел) -->
+  <!-- Vendor JS (defer) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
   <script src="https://unpkg.com/@tmcw/togeojson@5.8.0/dist/togeojson.umd.js" defer></script>
   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js" defer></script>
 
   <!-- App -->
   <script src="app.js" defer></script>
+
+  <!-- PWA: регистрация SW + подавление десктопного beforeinstallprompt -->
+  <script>
+    // Гасим системную подсказку «Установить приложение» в десктопных браузерах
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+    });
+
+    // Регистрация сервис-воркера (работает и на десктопе, и на iOS/Android)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(console.warn);
+      });
+    }
+  </script>
 </body>
 </html>
