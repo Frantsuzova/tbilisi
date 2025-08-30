@@ -53,7 +53,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
 .filters{ flex:1 1 520px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 
-/* ВЕСЬ ряд с кнопками — на 100% ширины, старт слева как у поиска */
+/* ряд с кнопками — на 100% ширины, старт слева как у поиска */
 .actions{ flex:1 0 100%; display:flex; gap:8px; align-items:center; }
 
 /* поиск + кнопки одной высоты */
@@ -75,7 +75,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
 
-/* убираем локальные внешние отступы — выравнивание по левому краю */
+/* убрать локальные отступы у первых кнопок — выравнивание по левому краю */
 #btnShowAll, #btnLocate{ margin:0; }
 
 .chip{
@@ -89,20 +89,25 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 
 /* ===== САЙДБАР ===== */
 .sidebar{
+  position:fixed;
+  box-sizing:border-box;
   top:calc(84px + env(safe-area-inset-top));
   right:12px; bottom:12px;
   left:auto !important;
-  width:360px; max-width:34vw;
+  width:360px; max-width:34vw;   /* десктоп */
   padding:0; overflow:hidden; border-radius:16px;
+  background:var(--panel-bg); border:1px solid var(--panel-border);
+  box-shadow:var(--shadow);
 }
 
-/* Мобильный: «лист» снизу напротив верхней панели — те же 12px слева/справа */
+/* Мобильный: ширина = ширина верхней панели (12px слева/справа),
+   убираем max-width от десктопа */
 @media (max-width:780px){
   .sidebar{
     top:auto;
     left:12px !important; right:12px;
     bottom:calc(12px + env(safe-area-inset-bottom));
-    width:auto; max-height:33vh;
+    width:auto; max-width:none; min-width:0;
     border-radius:16px;
     box-shadow:0 12px 30px rgba(0,0,0,.18);
   }
