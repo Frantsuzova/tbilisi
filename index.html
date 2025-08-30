@@ -5,11 +5,11 @@
   <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width" />
   <title>Мой маршрут Тбилиси</title>
 
-  <!-- CSP: ограничиваем источники (оставил 'unsafe-inline' из-за инлайнового скрипта ниже) -->
+  <!-- CSP: без 'unsafe-inline' для script; для стилей оставляем из-за Leaflet -->
   <meta http-equiv="Content-Security-Policy"
         content="
         default-src 'self';
-        script-src 'self' https://unpkg.com 'unsafe-inline';
+        script-src 'self' https://unpkg.com;
         style-src  'self' https://unpkg.com 'unsafe-inline';
         img-src    'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com;
         connect-src 'self';
@@ -97,55 +97,7 @@
   <!-- App -->
   <script src="app.js" defer></script>
 
-  <!-- PWA: SW + авто-перезагрузка при первом контроле + установка на Android -->
-  <script>
-    // Авто-перезагрузка один раз, когда SW впервые берёт контроль
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (sessionStorage.getItem('sw-refreshed')) return;
-        sessionStorage.setItem('sw-refreshed', '1');
-        window.location.reload();
-      });
-
-      window.addEventListener('load', async function () {
-        try { await navigator.serviceWorker.register('./sw.js', { scope: './' }); }
-        catch (e) { console.warn(e); }
-      });
-    }
-
-    // Установка PWA: своя кнопка (Android). На десктопе системную подсказку скрываем.
-    (function(){
-      var deferredPrompt = null, btn = null;
-
-      function isStandalone(){
-        if ('standalone' in navigator && navigator.standalone) return true; // iOS
-        return window.matchMedia('(display-mode: standalone)').matches;     // Chrome
-      }
-
-      window.addEventListener('beforeinstallprompt', function(e){
-        var isAndroid = /Android/i.test(navigator.userAgent);
-        if (!isAndroid) { e.preventDefault(); return; } // десктоп — скрыть системный баннер
-        e.preventDefault();
-        deferredPrompt = e;
-
-        btn = document.getElementById('btnInstall');
-        if (btn && !isStandalone()) btn.style.display = 'inline-grid';
-      });
-
-      window.addEventListener('DOMContentLoaded', function(){
-        btn = document.getElementById('btnInstall');
-        if (!btn) return;
-
-        btn.addEventListener('click', async function(){
-          if (!deferredPrompt) { alert('Откройте меню Chrome и выберите «Установить приложение».'); return; }
-          deferredPrompt.prompt();
-          try { await deferredPrompt.userChoice; }
-          finally { deferredPrompt = null; btn.style.display = 'none'; }
-        });
-
-        if (isStandalone() && btn) btn.style.display = 'none';
-      });
-    })();
-  </script>
+  <!-- PWA / установка / авто-перезагрузка -->
+  <script src="pwa.js" defer></script>
 </body>
 </html>
