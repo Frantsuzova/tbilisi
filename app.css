@@ -5,7 +5,7 @@
   --muted: #475569;
 
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;      /* цвет «Все» — используем для листа */
+  --chip-active: #bfe3ff;      /* цвет «Все» — используем и для листа */
   --accent: #bfe3ff;
 
   --shadow: 0 8px 24px rgba(0,0,0,.18);
@@ -16,13 +16,20 @@
   --btn-border: #b9dcff;
 
   --ctrl-h: 36px;             /* единая высота контролов */
-  --filters-row-gap: 8px;     /* gap между строками в .filters */
+  --filters-row-gap: 8px;     /* gap внутри .filters */
 
   --locate-active-bg: #ffd7ec; /* розовая подсветка locate */
   --locate-active-br: #ffb8de;
+
+  --sheet-h: 46px;            /* высота «ручки» нижнего листа */
 }
 
+/* База */
 html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
+body{
+  font-family: "Comfortaa", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 400;
+}
 #map{ position:fixed; inset:0; }
 
 .leaflet-top, .leaflet-bottom{ z-index:1000 !important; }
@@ -109,6 +116,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   background:var(--chip-bg);
   border-radius:999px; padding:0 12px; cursor:pointer; font-size:12px;
   white-space: nowrap;
+  font-weight: 600;
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
@@ -119,6 +127,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   background:var(--btn-bg);
   border-radius:999px; padding:0 12px;
   cursor:pointer; transition:.15s ease; line-height:calc(var(--ctrl-h) - 2px);
+  font-weight: 600;
 }
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
@@ -137,7 +146,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   .btn.icon-round svg{ width: 16px; height: 16px; }
 }
 
-/* ===== НИЖНИЙ ЛИСТ (общий для десктопа и мобилы) ===== */
+/* ===== НИЖНИЙ ЛИСТ (два состояния: ручка ↔ 1/2 экрана) ===== */
 .sidebar{
   left: 12px !important;
   right: 12px !important;
@@ -147,8 +156,8 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   max-width: none !important;
   min-width: 0;
 
-  /* высота по умолчанию — 1/3 экрана */
-  max-height: 33vh !important;
+  /* высота при открытии — 1/2 экрана */
+  max-height: 50vh !important;
 
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0,0,0,.18);
@@ -159,15 +168,12 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   background: var(--chip-active);
   border: 1px solid transparent;
 
-  /* состояние по умолчанию — спрятан до ручки */
-  transform: translateY(calc(100% - 46px));
+  /* по умолчанию спрятан до ручки (видна только плашка) */
+  transform: translateY(calc(100% - var(--sheet-h)));
   transition: transform .25s ease;
 }
 .sidebar.open{
   transform: translateY(0);
-}
-.sidebar.expanded{
-  max-height: 85vh !important;   /* развернуто */
 }
 
 /* шапка листа — в тон листу */
@@ -180,7 +186,7 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
 }
 .sidebar-title{ font-weight:700; }
 
-/* стрелка (переисп. кнопка) */
+/* стрелка (вверх/вниз) */
 .icon-btn{
   min-width:32px; height:32px; line-height:30px;
   border:0; border-radius:10px; cursor:pointer;
@@ -213,12 +219,13 @@ html, body, #map{ height:100%; width:100%; margin:0; padding:0; }
   top: 0;
   translate: 0 -8px;                /* нависает над листом */
   padding: 8px 14px;
+  height: var(--sheet-h);
   border-radius: 999px;
   border: 1px solid rgba(0,0,0,.10);
   background: var(--chip-active);
   color: var(--text);
   box-shadow: 0 4px 12px rgba(0,0,0,.12);
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
