@@ -1,4 +1,4 @@
-/* app.js — лист: ручка ↔ 50vh, фиксы стрелки/повторного открытия и более крупный старт
+/* app.js — нижний лист: ручка ↔ 50vh, фиксы a11y и крупнее карта
  * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
  */
 (function () {
@@ -28,12 +28,16 @@
   const btnArrow = $('#btnCloseSidebar'); // стрелка вверх/вниз
   const listEl = $('#list');
 
-  // SVG для стрелки
+  // SVG стрелок
   const svgUp = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
+  // A11y: на всякий случай удалим aria-hidden, если осталось из старой разметки
+  sidebarEl?.removeAttribute('aria-hidden');
+
   const isOpen = () => sidebarEl.classList.contains('open');
   function updateArrow(){
+    if (!btnArrow) return;
     if (isOpen()){
       btnArrow.innerHTML = svgDown;
       btnArrow.title = 'Свернуть';
@@ -43,8 +47,9 @@
       btnArrow.title = 'Развернуть (1/2)';
       btnArrow.setAttribute('aria-label','Развернуть (1/2)');
     }
+    // стрелка готова — показать кнопку (в HTML она скрыта во избежание «▲»)
+    btnArrow.style.visibility = 'visible';
   }
-  // отрисуем SVG сразу (иначе останется символ ▲ из HTML)
   updateArrow();
 
   // Тост
@@ -63,7 +68,7 @@
 
   // --- Map ---
   const map = L.map(mapEl, { zoomControl: true, attributionControl: true })
-    .setView([41.716, 44.783], 13); // крупнее старт
+    .setView([41.716, 44.783], 13); // крупнее стартовый зум
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap & CARTO'
@@ -182,8 +187,8 @@
     if (!list.length) return;
     const b = L.latLngBounds(list.map(it=>it.latlng));
     if (b.isValid()){
-      map.fitBounds(b.pad(0.06));            // меньше паддинг → крупнее
-      if (map.getZoom() < 13) map.setZoom(13); // нижняя планка зума
+      map.fitBounds(b.pad(0.06));          // меньше паддинг → крупнее
+      if (map.getZoom() < 13) map.setZoom(13); // нижняя граница зума
     }
   }
 
@@ -197,29 +202,31 @@
       li.addEventListener('click', ()=>{
         map.setView(it.latlng, Math.max(map.getZoom(), 16), { animate:true });
         it.marker.openPopup();
-        // по клику на локацию — закрыть до ручки
-        setOpen(false);
+        setOpen(false); // свернуть до «ручки»
       });
       frag.appendChild(li);
     });
     listEl.appendChild(frag);
   }
 
-  // --- Управление листом (без aria-hidden/inert, чтобы не ломать клики) ---
+  // Управление листом (без aria-hidden; используем inert)
   function setOpen(open){
-    // если закрываем и фокус внутри — переведём фокус на ручку
     if (!open && sidebarEl.contains(document.activeElement)) {
       try { sheetHandle?.focus({ preventScroll: true }); } catch {}
     }
     sidebarEl.classList.toggle('open', open);
+    if (open) sidebarEl.removeAttribute('inert');
+    else      sidebarEl.setAttribute('inert','');
     sheetHandle?.setAttribute('aria-expanded', open ? 'true' : 'false');
     updateArrow();
   }
+  // начальное состояние: закрыт → inert
+  if (!sidebarEl.classList.contains('open')) sidebarEl.setAttribute('inert','');
 
   btnArrow?.addEventListener('click', ()=> setOpen(!isOpen()));
   sheetHandle?.addEventListener('click', ()=> setOpen(!isOpen()));
 
-  // --- UI события ---
+  // UI
   chipsBox.addEventListener('click', (e)=>{
     const btn = e.target.closest('.chip'); if (!btn) return;
     $$('.chip').forEach(c=>c.dataset.active='false'); btn.dataset.active='true';
@@ -242,6 +249,7 @@
 
   // Геолокация
   let following=false;
+  const locateCtrl = L.control.locate;
   function startLocate(){
     following=true; btnLocate.classList.add('active'); locate.start();
     try{
@@ -258,6 +266,6 @@
   function stopLocate(){ following=false; btnLocate.classList.remove('active'); locate.stop(); }
   btnLocate.addEventListener('click', ()=>{ following?stopLocate():startLocate(); });
 
-  // --- Старт ---
+  // Старт
   loadKml();
 })();
