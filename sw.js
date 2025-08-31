@@ -1,5 +1,5 @@
 // sw.js — безопасное кэширование только http/https GET и только same-origin статики
-const CACHE = "chizhik-v1";
+const CACHE = "chizhik-v5";
 const ASSETS = [
   "./",
   "./index.html",
