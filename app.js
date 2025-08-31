@@ -1,6 +1,3 @@
-/* app.js — карта, фильтры, список, гео
- * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
- */
 (function () {
   'use strict';
 
@@ -253,7 +250,7 @@
         const all = state.items; if (!all.length) return;
         const b = L.latLngBounds(all.map(it=>it.latlng));
         const d = user.distanceTo(b.getCenter());
-        if (d > 3000) showToast('Вы далеко от точек. Отключите «Где я?» для свободного просмотра.');
+        if (d > 3000) showToast('Вы далеко от центра Тбилиси. Отключите «Где я?» и нажмите на "Домой" для возвращения к просмотру локаций.');
 
         map.setView(user, Math.max(map.getZoom(), 17), { animate:true }); // ближе
         try { localStorage.setItem('autoLocate','1'); } catch {}
