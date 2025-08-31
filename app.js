@@ -1,4 +1,4 @@
-/* app.js — двухсостояние нижнего листа: ручка ↔ 50vh
+/* app.js — лист: ручка ↔ 50vh, фикс фокуса/aria-hidden/inert
  * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
  */
 (function () {
@@ -183,11 +183,11 @@
     listEl.appendChild(frag);
   }
 
-  // --- Нижний лист: два состояния (closed ↔ open(50vh)) ---
+  // --- Нижний лист: ручка ↔ 50vh, стрелка вверх/вниз ---
   const svgUp = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-  function isOpen(){ return sidebarEl.classList.contains('open'); }
+  const isOpen = () => sidebarEl.classList.contains('open');
 
   function updateArrow(){
     if (isOpen()){
@@ -202,15 +202,22 @@
   }
 
   function setOpen(open){
+    // если закрываем и фокус внутри — переведём фокус на ручку (чтобы не было aria-hidden warning)
+    if (!open && sidebarEl.contains(document.activeElement)) {
+      try { sheetHandle?.focus({ preventScroll: true }); } catch {}
+    }
+
     sidebarEl.classList.toggle('open', open);
+
+    // делаем лист действительно "неактивным" в закрытом состоянии
+    sidebarEl.toggleAttribute('inert', !open);
     sidebarEl.setAttribute('aria-hidden', open ? 'false' : 'true');
+
     sheetHandle?.setAttribute('aria-expanded', open ? 'true' : 'false');
     updateArrow();
   }
 
-  // Стрелка: переключает open/closed
   btnArrow?.addEventListener('click', ()=> setOpen(!isOpen()));
-  // Ручка: тоже переключает
   sheetHandle?.addEventListener('click', ()=> setOpen(!isOpen()));
 
   // --- UI события ---
