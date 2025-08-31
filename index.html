@@ -7,8 +7,18 @@
 
   <meta name="description" content="маршрут по тбилиси от чижика">
   <meta name="application-name" content="chizhik">
+
+  <!-- CSP: добавлены Google Fonts -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com; connect-src 'self'; object-src 'none'; base-uri 'none'; upgrade-insecure-requests">
+        content="default-src 'self';
+                 script-src 'self' https://unpkg.com;
+                 style-src  'self' https://unpkg.com https://fonts.googleapis.com 'unsafe-inline';
+                 font-src   'self' https://fonts.gstatic.com data:;
+                 img-src    'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com;
+                 connect-src 'self';
+                 object-src 'none';
+                 base-uri 'none';
+                 upgrade-insecure-requests">
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.webmanifest?v=3">
@@ -17,6 +27,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="chizhik">
   <meta name="apple-mobile-web-app-status-bar-style" content="white-translucent">
+
+  <!-- Comfortaa -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Vendor CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -78,7 +93,7 @@
     </div>
   </header>
 
-  <!-- Нижний лист (и на десктопе, и на мобиле) -->
+  <!-- Нижний лист -->
   <div id="sidebar" class="panel sidebar" aria-hidden="true">
     <!-- Ручка-липучка -->
     <button id="sheetHandle" class="sheet-handle" aria-controls="sidebar" aria-expanded="false">
@@ -87,7 +102,8 @@
 
     <div class="sidebar-header">
       <div class="sidebar-title">Список локаций</div>
-      <button id="btnCloseSidebar" class="icon-btn" aria-label="Закрыть">×</button>
+      <!-- Кнопка-стрелка (вверх/вниз) -->
+      <button id="btnCloseSidebar" class="icon-btn" aria-label="Развернуть">▲</button>
     </div>
 
     <div id="list" class="list"></div>
