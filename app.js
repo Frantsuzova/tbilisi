@@ -1,19 +1,16 @@
-/* app.js — карта, фильтры, список, гео
- * Основано на твоём текущем коде, объединено в один файл.
- * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
- */
+/* app.js — карта, фильтры, список, геолокация */
 (function () {
   'use strict';
 
-  // ========= Утилиты =========
+  // ==== utils
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
   const norm = (s) => (s || '').toString().trim();
   const lc   = (s) => norm(s).toLowerCase();
   const debounce = (fn, ms=250) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
-  const isSmallScreen = () => Math.min(window.innerWidth, window.innerHeight) <= 420;
+  const isSmallScreen = () => Math.min(innerWidth, innerHeight) <= 420;
 
-  // квантиль и «границы большинства»
+  // квантиль и «границы большинства» (центральные 70%)
   function quantile(sorted, q){
     if (sorted.length === 0) return NaN;
     const pos = (sorted.length - 1) * q;
@@ -25,15 +22,13 @@
     return sorted[base];
   }
   function majorityBounds(list, frac = 0.7){
-    const lowQ = (1 - frac) / 2;   // напр., 0.15
-    const highQ = 1 - lowQ;        // 0.85
+    const lowQ = (1 - frac) / 2, highQ = 1 - lowQ;
     const lats = list.map(it => it.latlng.lat).sort((a,b)=>a-b);
     const lngs = list.map(it => it.latlng.lng).sort((a,b)=>a-b);
-    const minLat = quantile(lats, lowQ);
-    const maxLat = quantile(lats, highQ);
-    const minLng = quantile(lngs, lowQ);
-    const maxLng = quantile(lngs, highQ);
-    const b = L.latLngBounds([[minLat, minLng],[maxLat, maxLng]]);
+    const b = L.latLngBounds(
+      [quantile(lats, lowQ), quantile(lngs, lowQ)],
+      [quantile(lats, highQ), quantile(lngs, highQ)]
+    );
     return b.isValid() ? b : null;
   }
 
@@ -43,10 +38,10 @@
     return s.length === 1 && LETTERS.includes(s.toUpperCase());
   };
 
-  // ========= DOM =========
+  // ==== DOM
   const mapEl        = $('#map');
-  const chipsBox     = $('.chips');
   const searchInput  = $('#search');
+  const chipsBox     = $('.chips');
   const btnShowAll   = $('#btnShowAll');
   const btnLocate    = $('#btnLocate');
   const countCatEl   = $('#countCat');
@@ -58,9 +53,8 @@
   const btnArrow    = $('#btnCloseSidebar');
   const listEl      = $('#list');
 
-  // стрелки (svg)
-  const svgUp   = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const svgUp   = `<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const isOpen = () => sidebarEl.classList.contains('open');
   function updateArrow(){
     if (!btnArrow) return;
@@ -78,46 +72,39 @@
   updateArrow();
 
   // тост
-  let toastEl = null;
-  const showToast = (text, ttl=3500) => {
-    if (!toastEl){
-      toastEl = document.createElement('div');
-      toastEl.className = 'toast-hint';
-      document.body.appendChild(toastEl);
-    }
-    toastEl.textContent = text;
-    toastEl.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>toastEl.classList.remove('show'), ttl);
-  };
+  let toastEl=null;
+  function showToast(txt, ttl=3500){
+    if(!toastEl){ toastEl=document.createElement('div'); toastEl.className='toast-hint'; document.body.appendChild(toastEl); }
+    toastEl.textContent=txt; toastEl.classList.add('show');
+    clearTimeout(showToast._t); showToast._t=setTimeout(()=>toastEl.classList.remove('show'), ttl);
+  }
 
-  // ========= КАРТА =========
+  // ==== Leaflet map
   const map = L.map(mapEl, {
     zoomControl: true,
     attributionControl: true,
-    zoomSnap: 0,     // позволяем дробные уровни
+    preferCanvas: true,   // iOS рендерится стабильнее
+    zoomSnap: 0,
     zoomDelta: 0.25
-  }).setView([41.716, 44.783], 14); // старт ближе, чем раньше (при необходимости поменяй)
+  }).setView([41.716, 44.783], 14);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    subdomains: 'abcd',
+    maxZoom: 19, subdomains: 'abcd',
     attribution: '© OpenStreetMap & CARTO'
   }).addTo(map);
 
   const poiLayer = L.layerGroup().addTo(map);
 
-  // locate
-  const locate = L.control.locate({
-    position: 'topleft', setView: true, keepCurrentZoom: false, flyTo: true,
+  // Locate (плагин используем только для маркера/компаса; кнопку его скрываем)
+  const locateCtl = L.control.locate({
+    position: 'topleft', setView: false, keepCurrentZoom: true, flyTo: false,
     showCompass: true, drawCircle: true, drawMarker: true,
     strings: { title: 'Где я?' }
   }).addTo(map);
-  const lcBtn = $('.leaflet-control-locate a');
-  if (lcBtn) lcBtn.parentElement.style.display = 'none'; // прячем стандартную кнопку
+  $('.leaflet-control-locate')?.classList.add('hidden');
 
-  // ========= Данные/состояние =========
-  const state = { items: [], cat: 'all', q: '' };
+  // ==== state
+  const state = { items: [], cat:'all', q:'' };
 
   const CAT_KEYWORDS = {
     stairs:   [/лестниц/i],
@@ -134,10 +121,8 @@
 
   function buildStyleHrefMap(kmlDoc){
     const m = new Map();
-    const styles = kmlDoc.querySelectorAll('Style,StyleMap');
-    styles.forEach(st=>{
-      const id = st.getAttribute('id');
-      if (!id) return;
+    kmlDoc.querySelectorAll('Style,StyleMap').forEach(st=>{
+      const id = st.getAttribute('id'); if (!id) return;
       if (st.tagName === 'StyleMap'){
         st.querySelectorAll('Pair').forEach(p=>{
           const key = p.querySelector('key')?.textContent.trim();
@@ -157,40 +142,40 @@
     try{
       const res = await fetch('./doc.kml', { cache:'no-store' });
       const txt = await res.text();
-      const kmlDoc = new DOMParser().parseFromString(txt, 'application/xml');
+      const kmlDoc = new DOMParser().parseFromString(txt,'application/xml');
       const styleHref = buildStyleHrefMap(kmlDoc);
       const gj = toGeoJSON.kml(kmlDoc);
-      const feats = Array.isArray(gj.features) ? gj.features : [];
+      const feats = Array.isArray(gj.features)? gj.features : [];
 
-      const items = []; let idSeq = 1;
-      for (const f of feats){
-        if (!f || f.geometry?.type !== 'Point') continue;
+      const items=[]; let idSeq=1;
+      for(const f of feats){
+        if(!f || f.geometry?.type!=='Point') continue;
 
-        const name = norm(f.properties?.name);
-        const desc = norm(f.properties?.description);
+        const name=norm(f.properties?.name);
+        const desc=norm(f.properties?.description);
         if (isLetterMarker(name)) continue;
 
-        let iconNum = null;
-        const styleUrl = norm(f.properties?.styleUrl).replace(/^#/, '');
-        if (styleUrl && styleHref.has(styleUrl)) iconNum = iconNumFromHref(styleHref.get(styleUrl));
-        if (!iconNum && typeof f.properties?.icon === 'string') iconNum = iconNumFromHref(f.properties.icon);
-        if (iconNum && iconNum >= 17 && iconNum <= 25) continue; // служебные иконки
+        let iconNum=null;
+        const styleUrl=norm(f.properties?.styleUrl).replace(/^#/,'');
+        if(styleUrl && styleHref.has(styleUrl)) iconNum=iconNumFromHref(styleHref.get(styleUrl));
+        if(!iconNum && typeof f.properties?.icon==='string') iconNum=iconNumFromHref(f.properties.icon);
+        if(iconNum && iconNum>=17 && iconNum<=25) continue; // служебные
 
-        const [lng, lat] = f.geometry.coordinates || [];
-        if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-        const latlng = L.latLng(lat, lng);
-        const cat = detectCategory(name, desc);
+        const [lng,lat]=f.geometry.coordinates||[];
+        if(typeof lat!=='number'||typeof lng!=='number') continue;
+        const latlng=L.latLng(lat,lng);
+        const cat=detectCategory(name,desc);
 
-        const item = { id:idSeq++, name, desc, latlng, cat, iconNum: iconNum || 1 };
-        const marker = L.marker(latlng, { icon: makeIcon(item.iconNum) });
+        const item={ id:idSeq++, name, desc, latlng, cat, iconNum: iconNum||1 };
+        const marker=L.marker(latlng,{ icon: makeIcon(item.iconNum) });
         marker.bindPopup(`<strong>${escapeHtml(item.name)}</strong>`);
         marker.on('click', ()=> marker.openPopup());
-        item.marker = marker;
+        item.marker=marker;
 
         items.push(item);
       }
 
-      state.items = items;
+      state.items=items;
       countTotalEl.textContent = items.length.toString();
       applyFilters(true);
     }catch(e){
@@ -201,7 +186,7 @@
 
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
-  // ========= Фильтрация / масштаб =========
+  // ==== фильтрация и фокус
   function applyFilters(fitAll=false){
     const q = lc(state.q), cat = state.cat;
     const filtered = state.items.filter(it=>{
@@ -218,7 +203,6 @@
     if (fitAll) fitToItems(filtered.length?filtered:state.items);
   }
 
-  // фокус по «большинству» маркеров; на мобилке ближе
   function fitToItems(list){
     if (!list.length) return;
 
@@ -234,34 +218,32 @@
     }
 
     const small = isSmallScreen();
-    const pad   = small ? 0.015 : 0.03;        // ближе рамка — ближе обзор
-    map.fitBounds(target.pad(pad));
-
+    map.fitBounds(target.pad(small ? 0.015 : 0.03));
     const minZoom = small ? 15.5 : 14;
     if (map.getZoom() < minZoom) map.setZoom(minZoom);
   }
 
   function renderList(arr){
-    listEl.innerHTML = '';
-    const frag = document.createDocumentFragment();
+    listEl.innerHTML='';
+    const frag=document.createDocumentFragment();
     arr.forEach(it=>{
-      const li = document.createElement('div');
-      li.className = 'list-item'; li.dataset.id = it.id;
-      li.innerHTML = `<div class="title">${escapeHtml(it.name)}</div>`;
+      const li=document.createElement('div');
+      li.className='list-item'; li.dataset.id=it.id;
+      li.innerHTML=`<div class="title">${escapeHtml(it.name)}</div>`;
       li.addEventListener('click', ()=>{
         map.setView(it.latlng, Math.max(map.getZoom(), 17), { animate:true });
         it.marker.openPopup();
-        setOpen(false); // свернуть лист
+        setOpen(false);
       });
       frag.appendChild(li);
     });
     listEl.appendChild(frag);
   }
 
-  // ========= Лист (открыть/закрыть) =========
+  // ==== нижний лист
   function setOpen(open){
-    if (!open && sidebarEl.contains(document.activeElement)){
-      try { sheetHandle?.focus({ preventScroll:true }); } catch {}
+    if(!open && sidebarEl.contains(document.activeElement)){
+      try { sheetHandle?.focus({ preventScroll:true }); } catch{}
     }
     sidebarEl.classList.toggle('open', open);
     sheetHandle?.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -270,9 +252,9 @@
   btnArrow?.addEventListener('click', ()=> setOpen(!isOpen()));
   sheetHandle?.addEventListener('click', ()=> setOpen(!isOpen()));
 
-  // ========= UI =========
+  // ==== UI
   chipsBox.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.chip'); if (!btn) return;
+    const btn=e.target.closest('.chip'); if(!btn) return;
     $$('.chip').forEach(c=>c.dataset.active='false'); btn.dataset.active='true';
     state.cat = btn.getAttribute('data-cat') || 'all';
     applyFilters(true);
@@ -285,57 +267,66 @@
     applyFilters(true);
   });
 
-  const handleSearch = debounce(()=>{
+  searchInput.addEventListener('input', debounce(()=>{
     state.q = searchInput.value || '';
     applyFilters(false);
-  }, 200);
-  searchInput.addEventListener('input', handleSearch);
+  }, 200));
 
-  // ========= Геолокация =========
-  let following = false;
+  // ==== Геолокация
+  let locating = false;
+  const hasGeo = 'geolocation' in navigator;
 
   function startLocate(){
-    following = true; btnLocate.classList.add('active'); locate.start();
-    try{
-      map.once('locationfound', (ev)=>{
-        const user = ev.latlng;
-        const all = state.items; if (!all.length) return;
-        const b = L.latLngBounds(all.map(it=>it.latlng));
-        const d = user.distanceTo(b.getCenter());
-        if (d > 3000) showToast('Вы далеко от точек. Отключите «Где я?» для свободного просмотра.');
+    if (locating) return;
+    locating = true; btnLocate.classList.add('active');
 
-        map.setView(user, Math.max(map.getZoom(), 17), { animate:true });
-        try { localStorage.setItem('autoLocate','1'); } catch {}
-      });
-    }catch{}
+    if (hasGeo){
+      // Прямой запрос (iOS надёжнее)
+      navigator.geolocation.getCurrentPosition(
+        (pos)=>{
+          const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+          map.setView(latlng, Math.max(map.getZoom(), 17), { animate:true });
+          // включим плагин для маркера/компаса (без повторного запроса)
+          try { locateCtl.start(); } catch {}
+          try { localStorage.setItem('autoLocate','1'); } catch {}
+          locating = false;
+        },
+        (err)=>{
+          showToast('Геолокация недоступна: ' + (err && err.message ? err.message : 'ошибка'));
+          btnLocate.classList.remove('active');
+          locating = false;
+        },
+        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+      );
+    } else {
+      // на всякий случай — fallback к плагину
+      try { locateCtl.start(); } catch {}
+      locating = false;
+    }
   }
   function stopLocate(){
-    following = false; btnLocate.classList.remove('active'); locate.stop();
+    btnLocate.classList.remove('active');
+    try { locateCtl.stop(); } catch {}
     try { localStorage.setItem('autoLocate','0'); } catch {}
+    locating = false;
   }
-  btnLocate.addEventListener('click', ()=>{ following ? stopLocate() : startLocate(); });
+  btnLocate.addEventListener('click', ()=> (btnLocate.classList.contains('active') ? stopLocate() : startLocate()));
 
-  // не переспрашивать: автостарт, если уже выдано и ранее включали
+  // не переспрашивать — автозапуск, если уже разрешено и ранее включали
   async function initGeoPermission(){
     try{
       const auto = localStorage.getItem('autoLocate') === '1';
       if ('permissions' in navigator) {
         const p = await navigator.permissions.query({ name:'geolocation' });
         if (p.state === 'granted' && auto) startLocate();
-        p.onchange = () => {
-          if (p.state !== 'granted') {
-            stopLocate();
-            try { localStorage.setItem('autoLocate','0'); } catch {}
-          }
-        };
+        p.onchange = () => { if (p.state !== 'granted') stopLocate(); };
       } else {
-        if (auto) startLocate(); // iOS Safari без Permissions API
+        if (auto) startLocate(); // Safari iOS без Permissions API
       }
     } catch {}
   }
   initGeoPermission();
 
-  // ========= Старт =========
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  // ==== старт
   loadKml();
 })();
