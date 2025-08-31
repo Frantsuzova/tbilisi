@@ -8,7 +8,7 @@
   <meta name="description" content="маршрут по тбилиси от чижика">
   <meta name="application-name" content="chizhik">
 
-  <!-- CSP: добавлены Google Fonts -->
+  <!-- CSP: Google Fonts + CDN -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src 'self' https://unpkg.com;
@@ -51,9 +51,8 @@
         Показано: <span id="countCat">0</span> / <span id="countTotal">0</span>
       </div>
 
-      <!-- Весь интерфейс внутри .filters -->
       <div class="filters">
-        <!-- Лого слева (занимает две верхние строки) -->
+        <!-- Лого слева (на две строки) -->
         <img class="brand-ui" src="./icons/ui-logo-white.png?v=1" alt="chizhik" loading="lazy" />
 
         <!-- 1-й ряд: действия -->
@@ -68,7 +67,7 @@
           <!-- Где я? -->
           <button class="btn btn-primary" id="btnLocate" title="Где я?">Где я?</button>
 
-          <!-- Установить (Android; показывается из beforeinstallprompt) -->
+          <!-- Установить (появится из beforeinstallprompt) -->
           <button class="btn icon-round" id="btnInstall" style="display:none"
                   title="Установить приложение" aria-label="Установить приложение">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -78,7 +77,7 @@
           </button>
         </div>
 
-        <!-- 2-й ряд: поиск (в линию с логотипом) -->
+        <!-- 2-й ряд: поиск -->
         <input id="search" class="search" type="search" placeholder="Поиск по названию/описанию…" />
 
         <!-- 3-й ряд: фильтры -->
@@ -94,7 +93,7 @@
   </header>
 
   <!-- Нижний лист -->
-  <div id="sidebar" class="panel sidebar" aria-hidden="true">
+  <div id="sidebar" class="panel sidebar">
     <!-- Ручка-липучка -->
     <button id="sheetHandle" class="sheet-handle" aria-controls="sidebar" aria-expanded="false">
       Список точек
@@ -102,8 +101,8 @@
 
     <div class="sidebar-header">
       <div class="sidebar-title">Список локаций</div>
-      <!-- Кнопка-стрелка (вверх/вниз) -->
-      <button id="btnCloseSidebar" class="icon-btn" aria-label="Развернуть">▲</button>
+      <!-- Стрелка (появится после инициализации JS) -->
+      <button id="btnCloseSidebar" class="icon-btn" aria-label="Развернуть" style="visibility:hidden;"></button>
     </div>
 
     <div id="list" class="list"></div>
