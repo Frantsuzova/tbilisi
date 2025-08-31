@@ -296,7 +296,7 @@
           btnLocate.classList.remove('active');
           locating = false;
         },
-        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+        { enableHighAccuracy:true, timeout:30000, maximumAge:10000 }
       );
     } else {
       // на всякий случай — fallback к плагину
