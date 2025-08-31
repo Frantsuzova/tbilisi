@@ -1,63 +1,83 @@
-// Анти-embed (JS-костыль: блокируем показ во фреймах на чужих сайтах)
-(function antiEmbed(){
+// ======================= anti-embed (защита от <iframe>) =======================
+(function antiEmbed() {
   try {
     if (window.top !== window.self) {
-      window.top.location = window.self.location;
+      window.top.location = window.location.href;
     }
   } catch (e) {
+    // если нарушение CSP/сопровождение — просто не показываем документ
     document.documentElement.innerHTML = "";
   }
 })();
 
-// Service Worker: регистрация и авто-перезагрузка при первом контроле
-(function sw(){
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.addEventListener("controllerchange", function () {
-      if (sessionStorage.getItem("sw-refreshed")) return;
-      sessionStorage.setItem("sw-refreshed", "1");
-      window.location.reload();
-    });
-    window.addEventListener("load", async function () {
-      try { await navigator.serviceWorker.register("./sw.js", { scope: "./" }); }
-      catch (e) { console.warn(e); }
-    });
-  }
+// ======================= Service Worker =======================
+(function sw() {
+  if (!("serviceWorker" in navigator)) return;
+
+  let refreshed = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshed) return;
+    refreshed = true;
+    // перезагрузка один раз, когда SW впервые берёт под контроль страницу
+    window.location.reload();
+  });
+
+  window.addEventListener("load", async () => {
+    try {
+      await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    } catch (e) {
+      console.warn("[sw] register error:", e);
+    }
+  });
 })();
 
-// Установка PWA: своя кнопка на Android; на десктопе системный баннер скрываем
-(function installBtn(){
-  var deferredPrompt = null;
-  var btn = null;
+// ======================= Установка PWA (Android) =======================
+(function installBtn() {
+  const isAndroid   = /Android/i.test(navigator.userAgent);
+  const isIOS       = /iPad|iPhone|iPod/i.test(navigator.userAgent);
+  const isStandalone = () =>
+    (typeof navigator.standalone === "boolean" && navigator.standalone) ||
+    window.matchMedia("(display-mode: standalone)").matches;
 
-  function isStandalone() {
-    if ("standalone" in navigator && navigator.standalone) return true; // iOS
-    return window.matchMedia("(display-mode: standalone)").matches;     // Chrome
-  }
+  let deferredPrompt = null;
+  const btn = document.getElementById("btnInstall");
+  if (btn) btn.style.display = "none"; // по умолчанию скрыто
 
-  window.addEventListener("beforeinstallprompt", function (e) {
-    var isAndroid = /Android/i.test(navigator.userAgent);
-    if (!isAndroid) { e.preventDefault(); return; } // десктоп — скрыть
+  // Показываем кнопку только когда браузер прислал событие и мы не в PWA
+  window.addEventListener("beforeinstallprompt", (e) => {
+    // На iOS официального beforeinstallprompt нет — скрываем кнопку
+    if (isIOS) return;
+    // На десктопе не показываем (по задаче нужна именно Android-кнопка)
+    if (!isAndroid) { e.preventDefault(); return; }
+
     e.preventDefault();
     deferredPrompt = e;
-
-    btn = document.getElementById("btnInstall");
     if (btn && !isStandalone()) btn.style.display = "inline-grid";
   });
 
-  window.addEventListener("DOMContentLoaded", function () {
-    btn = document.getElementById("btnInstall");
-    if (!btn) return;
+  // Клик по нашей кнопке
+  btn?.addEventListener("click", async () => {
+    if (!deferredPrompt) {
+      // Фолбэк: если событие потеряно (редкий случай)
+      alert('Откройте меню браузера и выберите «Установить приложение».');
+      return;
+    }
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch {}
+    deferredPrompt = null;
+    btn.style.display = "none";
+  });
 
-    btn.addEventListener("click", async function () {
-      if (!deferredPrompt) {
-        alert('Откройте меню Chrome и выберите «Установить приложение».');
-        return;
-      }
-      deferredPrompt.prompt();
-      try { await deferredPrompt.userChoice; }
-      finally { deferredPrompt = null; btn.style.display = "none"; }
-    });
+  // Если приложение установили — кнопку больше не показываем
+  window.addEventListener("appinstalled", () => {
+    if (btn) btn.style.display = "none";
+    try { localStorage.setItem("pwa-installed", "1"); } catch {}
+  });
 
-    if (isStandalone() && btn) btn.style.display = "none";
+  // Если вошли уже как PWA (standalone), кнопку также прячем
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && isStandalone() && btn) {
+      btn.style.display = "none";
+    }
   });
 })();
