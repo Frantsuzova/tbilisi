@@ -146,7 +146,7 @@ body{
   .btn.icon-round svg{ width: 16px; height: 16px; }
 }
 
-/* ===== НИЖНИЙ ЛИСТ (два состояния: ручка ↔ 1/2 экрана) ===== */
+/* ===== НИЖНИЙ ЛИСТ (ручка ↔ 1/2 экрана) ===== */
 .sidebar{
   left: 12px !important;
   right: 12px !important;
@@ -162,21 +162,26 @@ body{
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0,0,0,.18);
   padding: 0;
-  overflow: hidden;
 
-  /* цвет как у кнопки «Все» */
+  /* ключ: делаем колонку, чтобы #list заполнял остаток и скроллился */
+  display: flex;
+  flex-direction: column;
+
+  /* цвет как у «Все» */
   background: var(--chip-active);
   border: 1px solid transparent;
 
-  /* по умолчанию спрятан до ручки (видна только плашка) */
+  /* по умолчанию спрятан до ручки */
   transform: translateY(calc(100% - var(--sheet-h)));
   transition: transform .25s ease;
+  will-change: transform;
+  overflow: hidden; /* содержимое внутри скроллится, сам лист — нет */
 }
 .sidebar.open{
   transform: translateY(0);
 }
 
-/* шапка листа — в тон листу */
+/* шапка листа — фикс сверху */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
@@ -194,12 +199,16 @@ body{
 }
 .icon-btn:hover{ background:#e2e8ff; }
 
-/* список внутри листа */
+/* список: растягиваем по оставшемуся месту и разрешаем скролл */
 #list{
+  flex: 1 1 auto;
+  min-height: 0;                 /* критично для скролла во flex-контейнере */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+
   padding:10px 12px 14px;
-  overflow-y:auto;
-  max-height:calc(100% - 52px);
-  -webkit-overflow-scrolling:touch;
 }
 .list{ display:flex; flex-direction:column; gap:8px; }
 .list-item{
@@ -256,7 +265,7 @@ body{
     --panel-bg: rgba(17,24,39,.72);
     --panel-border: rgba(255,255,255,.08);
     --chip-bg: rgba(255,255,255,.06);
-    --chip-active: #cfe6ff;  /* сохраняем светло-голубой */
+    --chip-active: #cfe6ff;
     --accent: #cfe6ff;
     --btn-bg: #eaf6ff;
     --btn-bg-hover: #e1f1ff;
@@ -267,7 +276,7 @@ body{
 /* утилиты */
 .hidden{ display:none !important; }
 
-/* ===== очень узкие (≤ 360px): компакт + анти-нахлёст на статистику ===== */
+/* ===== очень узкие (≤ 360px) ===== */
 @media (max-width: 360px){
   :root{ --ctrl-h: 30px; }
   .panel-header{ padding: 8px 10px; }
