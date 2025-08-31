@@ -1,4 +1,4 @@
-/* app.js — лист: ручка ↔ 50vh, фикс фокуса/aria-hidden/inert
+/* app.js — лист: ручка ↔ 50vh, фиксы стрелки/повторного открытия и более крупный старт
  * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
  */
 (function () {
@@ -28,6 +28,25 @@
   const btnArrow = $('#btnCloseSidebar'); // стрелка вверх/вниз
   const listEl = $('#list');
 
+  // SVG для стрелки
+  const svgUp = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  const isOpen = () => sidebarEl.classList.contains('open');
+  function updateArrow(){
+    if (isOpen()){
+      btnArrow.innerHTML = svgDown;
+      btnArrow.title = 'Свернуть';
+      btnArrow.setAttribute('aria-label','Свернуть');
+    } else {
+      btnArrow.innerHTML = svgUp;
+      btnArrow.title = 'Развернуть (1/2)';
+      btnArrow.setAttribute('aria-label','Развернуть (1/2)');
+    }
+  }
+  // отрисуем SVG сразу (иначе останется символ ▲ из HTML)
+  updateArrow();
+
   // Тост
   let toastEl = null;
   const showToast = (text, ttl = 3500) => {
@@ -44,7 +63,7 @@
 
   // --- Map ---
   const map = L.map(mapEl, { zoomControl: true, attributionControl: true })
-    .setView([41.716, 44.783], 12);
+    .setView([41.716, 44.783], 13); // крупнее старт
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap & CARTO'
@@ -162,7 +181,10 @@
   function fitToItems(list){
     if (!list.length) return;
     const b = L.latLngBounds(list.map(it=>it.latlng));
-    if (b.isValid()) map.fitBounds(b.pad(0.12));
+    if (b.isValid()){
+      map.fitBounds(b.pad(0.06));            // меньше паддинг → крупнее
+      if (map.getZoom() < 13) map.setZoom(13); // нижняя планка зума
+    }
   }
 
   function renderList(arr){
@@ -183,36 +205,13 @@
     listEl.appendChild(frag);
   }
 
-  // --- Нижний лист: ручка ↔ 50vh, стрелка вверх/вниз ---
-  const svgUp = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-  const isOpen = () => sidebarEl.classList.contains('open');
-
-  function updateArrow(){
-    if (isOpen()){
-      btnArrow.innerHTML = svgDown;
-      btnArrow.title = 'Свернуть';
-      btnArrow.setAttribute('aria-label','Свернуть');
-    } else {
-      btnArrow.innerHTML = svgUp;
-      btnArrow.title = 'Развернуть (1/2)';
-      btnArrow.setAttribute('aria-label','Развернуть (1/2)');
-    }
-  }
-
+  // --- Управление листом (без aria-hidden/inert, чтобы не ломать клики) ---
   function setOpen(open){
-    // если закрываем и фокус внутри — переведём фокус на ручку (чтобы не было aria-hidden warning)
+    // если закрываем и фокус внутри — переведём фокус на ручку
     if (!open && sidebarEl.contains(document.activeElement)) {
       try { sheetHandle?.focus({ preventScroll: true }); } catch {}
     }
-
     sidebarEl.classList.toggle('open', open);
-
-    // делаем лист действительно "неактивным" в закрытом состоянии
-    sidebarEl.toggleAttribute('inert', !open);
-    sidebarEl.setAttribute('aria-hidden', open ? 'false' : 'true');
-
     sheetHandle?.setAttribute('aria-expanded', open ? 'true' : 'false');
     updateArrow();
   }
