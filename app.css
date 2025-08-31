@@ -5,7 +5,7 @@
   --muted: #475569;
 
   --chip-bg: rgba(15,23,42,.06);
-  --chip-active: #bfe3ff;      /* цвет «Все» — используем и для листа */
+  --chip-active: #bfe3ff;      /* цвет «Все» и листа */
   --accent: #bfe3ff;
 
   --shadow: 0 8px 24px rgba(0,0,0,.18);
@@ -15,13 +15,13 @@
   --btn-bg-hover: #e1f1ff;
   --btn-border: #b9dcff;
 
-  --ctrl-h: 36px;             /* единая высота контролов */
-  --filters-row-gap: 8px;     /* gap внутри .filters */
+  --ctrl-h: 36px;
+  --filters-row-gap: 8px;
 
-  --locate-active-bg: #ffd7ec; /* розовая подсветка locate */
+  --locate-active-bg: #ffd7ec;
   --locate-active-br: #ffb8de;
 
-  --sheet-h: 46px;            /* высота «ручки» нижнего листа */
+  --sheet-h: 46px; /* высота «ручки» листа */
 }
 
 /* База */
@@ -36,7 +36,7 @@ body{
 .leaflet-marker-pane{ z-index:1050 !important; }
 .leaflet-popup-pane{ z-index:10000 !important; }
 
-/* ===== общая панель ===== */
+/* Общая панель */
 .panel{
   position:fixed; z-index:5000;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -48,7 +48,7 @@ body{
 }
 .panel *{ pointer-events:auto; }
 
-/* ===== верхняя панель ===== */
+/* Верхняя панель */
 .panel-header{
   top:calc(12px + env(safe-area-inset-top));
   left:12px; right:12px;
@@ -57,7 +57,7 @@ body{
 .header-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; }
 .counts{ flex:1 0 100%; font-size:12px; color:var(--muted); }
 
-/* === filters: 3 ряда справа от лого (действия, поиск, чипы) === */
+/* filters: 3 ряда справа от лого */
 .filters{
   flex: 1 1 520px;
   display: grid;
@@ -68,7 +68,7 @@ body{
   align-items: center;
 }
 
-/* логотип — высота = actions + gap + search */
+/* Лого: высота = actions + gap + search */
 .brand-ui{
   grid-column: 1;
   grid-row: 1 / span 2;
@@ -83,14 +83,14 @@ body{
   align-self: start;
 }
 
-/* верхний ряд кнопок */
+/* 1-й ряд */
 .actions-top{
   grid-column: 2; grid-row: 1;
   display:flex; flex-wrap:wrap; gap:8px; align-items:center;
   min-width:0;
 }
 
-/* поиск — сжимается по ширине */
+/* Поиск */
 .search{
   grid-column: 2; grid-row: 2;
   width: 100%;
@@ -104,7 +104,7 @@ body{
 }
 .search::placeholder{ color:#64748b; }
 
-/* чипы — переносятся */
+/* 3-й ряд — чипы */
 .chips{
   grid-column: 2; grid-row: 3;
   display:flex; flex-wrap:wrap; gap:8px; align-items:center;
@@ -120,7 +120,7 @@ body{
 }
 .chip[data-active="true"]{ background:var(--chip-active); border-color:transparent; }
 
-/* кнопки */
+/* Кнопки */
 .btn{
   height:var(--ctrl-h);
   border:1px solid var(--btn-border, var(--panel-border));
@@ -132,7 +132,7 @@ body{
 .btn:hover{ transform:translateY(-1px); background:var(--btn-bg-hover); }
 .btn-primary{ background:var(--accent); border-color:transparent; }
 
-/* круглые иконки (дом/установить) */
+/* круглые иконки */
 .btn.icon-round{
   width: var(--ctrl-h);
   min-width: var(--ctrl-h);
@@ -146,42 +146,52 @@ body{
   .btn.icon-round svg{ width: 16px; height: 16px; }
 }
 
-/* ===== НИЖНИЙ ЛИСТ (ручка ↔ 1/2 экрана) ===== */
+/* ===== Нижний лист ===== */
 .sidebar{
   left: 12px !important;
   right: 12px !important;
   bottom: calc(12px + env(safe-area-inset-bottom)) !important;
   top: auto !important;
   width: calc(100% - 24px) !important;
-  max-width: none !important;
-  min-width: 0;
 
-  /* высота при открытии — 1/2 экрана */
-  max-height: 50vh !important;
-
+  max-height: 50vh !important;          /* развернуто = половина экрана */
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0,0,0,.18);
   padding: 0;
 
-  /* ключ: делаем колонку, чтобы #list заполнял остаток и скроллился */
   display: flex;
   flex-direction: column;
 
-  /* цвет как у «Все» */
   background: var(--chip-active);
   border: 1px solid transparent;
 
-  /* по умолчанию спрятан до ручки */
+  /* по умолчанию спрятан (видна ручка) */
   transform: translateY(calc(100% - var(--sheet-h)));
   transition: transform .25s ease;
   will-change: transform;
-  overflow: hidden; /* содержимое внутри скроллится, сам лист — нет */
+  overflow: hidden;
 }
-.sidebar.open{
-  transform: translateY(0);
+.sidebar.open{ transform: translateY(0); }
+
+/* Ручка-липучка */
+.sheet-handle{
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  top: 0;
+  translate: 0 -8px;
+  padding: 8px 14px;
+  height: var(--sheet-h);
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: var(--chip-active);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  font-weight: 700;
+  cursor: pointer;
 }
 
-/* шапка листа — фикс сверху */
+/* Шапка листа */
 .sidebar-header{
   position:sticky; top:0; z-index:1;
   display:flex; align-items:center; justify-content:space-between;
@@ -191,15 +201,7 @@ body{
 }
 .sidebar-title{ font-weight:700; }
 
-/* стрелка (вверх/вниз) */
-.icon-btn{
-  min-width:32px; height:32px; line-height:30px;
-  border:0; border-radius:10px; cursor:pointer;
-  background:#eef2ff; font-size:18px;
-}
-.icon-btn:hover{ background:#e2e8ff; }
-
-/* список: растягиваем по оставшемуся месту и разрешаем скролл */
+/* список: занимает остаток и скроллится */
 #list{
   flex: 1 1 auto;
   min-height: 0;                 /* критично для скролла во flex-контейнере */
@@ -220,25 +222,15 @@ body{
 .list-item .title{ margin:0; font-weight:600; font-size:15px; line-height:1.35; }
 .list-item .meta{ display:none; }
 
-/* ручка-липучка */
-.sheet-handle{
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  top: 0;
-  translate: 0 -8px;                /* нависает над листом */
-  padding: 8px 14px;
-  height: var(--sheet-h);
-  border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.10);
-  background: var(--chip-active);
-  color: var(--text);
-  box-shadow: 0 4px 12px rgba(0,0,0,.12);
-  font-weight: 700;
-  cursor: pointer;
+/* Стрелка */
+.icon-btn{
+  min-width:32px; height:32px; line-height:30px;
+  border:0; border-radius:10px; cursor:pointer;
+  background:#eef2ff; font-size:18px;
 }
+.icon-btn:hover{ background:#e2e8ff; }
 
-/* locate подсветка */
+/* locate-подсветка */
 .leaflet-control-locate.active a,
 .leaflet-control-locate.following a,
 .leaflet-control-locate.requesting a{
@@ -247,7 +239,7 @@ body{
 }
 #btnLocate.active{ background:var(--locate-active-bg); border-color:var(--locate-active-br); }
 
-/* тост */
+/* Тост */
 .toast-hint{
   position:fixed; z-index:9000;
   right:16px; top:100px;
@@ -259,7 +251,7 @@ body{
 }
 .toast-hint.show{ opacity:1; transform:none; }
 
-/* тёмная тема */
+/* Тёмная тема */
 @media (prefers-color-scheme: dark){
   :root{
     --panel-bg: rgba(17,24,39,.72);
@@ -273,16 +265,13 @@ body{
   }
 }
 
-/* утилиты */
-.hidden{ display:none !important; }
-
-/* ===== очень узкие (≤ 360px) ===== */
+/* Компакт ≤360px: даём запас под перенос */
 @media (max-width: 360px){
   :root{ --ctrl-h: 30px; }
   .panel-header{ padding: 8px 10px; }
   .header-row{ gap: 6px 8px; }
   .filters{ column-gap: 8px; row-gap: 10px; }
-  .counts{ font-size: 11px; margin-bottom: 12px; }  /* гарантируем зазор */
+  .counts{ font-size: 11px; margin-bottom: 12px; }
 
   .brand-ui{
     height: calc(var(--ctrl-h) * 2 + var(--filters-row-gap));
