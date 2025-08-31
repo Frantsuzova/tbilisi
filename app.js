@@ -1,16 +1,18 @@
-/* app.js — карта, фильтры, список, геолокация */
 (function () {
   'use strict';
 
-  // ==== utils
+  // ========= Утилиты =========
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
   const norm = (s) => (s || '').toString().trim();
   const lc   = (s) => norm(s).toLowerCase();
   const debounce = (fn, ms=250) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
-  const isSmallScreen = () => Math.min(innerWidth, innerHeight) <= 420;
+  const isSmallScreen = () => Math.min(window.innerWidth, window.innerHeight) <= 420;
+  const defer = (fn) => ('requestIdleCallback' in window)
+    ? requestIdleCallback(fn, { timeout: 2000 })
+    : setTimeout(fn, 0);
 
-  // квантиль и «границы большинства» (центральные 70%)
+  // квантиль и «границы большинства»
   function quantile(sorted, q){
     if (sorted.length === 0) return NaN;
     const pos = (sorted.length - 1) * q;
@@ -26,7 +28,7 @@
     const lats = list.map(it => it.latlng.lat).sort((a,b)=>a-b);
     const lngs = list.map(it => it.latlng.lng).sort((a,b)=>a-b);
     const b = L.latLngBounds(
-      [quantile(lats, lowQ), quantile(lngs, lowQ)],
+      [quantile(lats, lowQ),  quantile(lngs, lowQ)],
       [quantile(lats, highQ), quantile(lngs, highQ)]
     );
     return b.isValid() ? b : null;
@@ -38,10 +40,10 @@
     return s.length === 1 && LETTERS.includes(s.toUpperCase());
   };
 
-  // ==== DOM
+  // ========= DOM =========
   const mapEl        = $('#map');
-  const searchInput  = $('#search');
   const chipsBox     = $('.chips');
+  const searchInput  = $('#search');
   const btnShowAll   = $('#btnShowAll');
   const btnLocate    = $('#btnLocate');
   const countCatEl   = $('#countCat');
@@ -53,8 +55,9 @@
   const btnArrow    = $('#btnCloseSidebar');
   const listEl      = $('#list');
 
-  const svgUp   = `<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // стрелки
+  const svgUp   = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const isOpen = () => sidebarEl.classList.contains('open');
   function updateArrow(){
     if (!btnArrow) return;
@@ -72,39 +75,51 @@
   updateArrow();
 
   // тост
-  let toastEl=null;
-  function showToast(txt, ttl=3500){
-    if(!toastEl){ toastEl=document.createElement('div'); toastEl.className='toast-hint'; document.body.appendChild(toastEl); }
-    toastEl.textContent=txt; toastEl.classList.add('show');
-    clearTimeout(showToast._t); showToast._t=setTimeout(()=>toastEl.classList.remove('show'), ttl);
-  }
+  let toastEl = null;
+  const showToast = (text, ttl=3500) => {
+    if (!toastEl){ toastEl = document.createElement('div'); toastEl.className = 'toast-hint'; document.body.appendChild(toastEl); }
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toastEl.classList.remove('show'), ttl);
+  };
 
-  // ==== Leaflet map
+  // ========= КАРТА =========
   const map = L.map(mapEl, {
     zoomControl: true,
     attributionControl: true,
-    preferCanvas: true,   // iOS рендерится стабильнее
+    preferCanvas: true, // на iOS/моб. быстрее
     zoomSnap: 0,
-    zoomDelta: 0.25
+    zoomDelta: 0.25,
+    updateWhenIdle: true,
+    inertia: true
   }).setView([41.716, 44.783], 14);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, subdomains: 'abcd',
+    maxZoom: 19,
+    maxNativeZoom: 18,     // последние тайлы будут масштабироваться → меньше загрузок
+    detectRetina: false,   // не тянуть «ретина»-тайлы на мобилке
+    subdomains: 'abcd',
+    crossOrigin: true,
+    noWrap: true,
+    updateWhenIdle: true,
+    keepBuffer: 2,
     attribution: '© OpenStreetMap & CARTO'
   }).addTo(map);
 
   const poiLayer = L.layerGroup().addTo(map);
 
-  // Locate (плагин используем только для маркера/компаса; кнопку его скрываем)
+  // locate (кнопку плагина мы скрываем в CSS, используем для маркера/компаса)
   const locateCtl = L.control.locate({
-    position: 'topleft', setView: false, keepCurrentZoom: true, flyTo: false,
+    position: 'topleft',
+    setView: false, keepCurrentZoom: true, flyTo: false,
     showCompass: true, drawCircle: true, drawMarker: true,
     strings: { title: 'Где я?' }
   }).addTo(map);
   $('.leaflet-control-locate')?.classList.add('hidden');
 
-  // ==== state
-  const state = { items: [], cat:'all', q:'' };
+  // ========= Состояние/категории =========
+  const state = { items: [], cat: 'all', q: '' };
 
   const CAT_KEYWORDS = {
     stairs:   [/лестниц/i],
@@ -138,6 +153,29 @@
   const iconNumFromHref = (href) => { const mm=(href||'').match(/icon-(\d+)\.png/i); return mm?parseInt(mm[1],10):null; };
   const makeIcon = (num) => L.icon({ iconUrl:`./icon-${num}.png`, iconSize:[30,30], iconAnchor:[15,29], popupAnchor:[0,-28] });
 
+  // ========= Маркеры порциями =========
+  function addMarkersChunked(list, layer, batch=120){
+    let i = 0;
+    function step(){
+      const end = Math.min(i + batch, list.length);
+      for (; i < end; i++){
+        const it = list[i];
+        if (!it.marker){
+          const m = L.marker(it.latlng, { icon: makeIcon(it.iconNum) });
+          m.bindPopup(`<strong>${escapeHtml(it.name)}</strong>`);
+          m.on('click', ()=> m.openPopup());
+          it.marker = m;
+        }
+        it.marker.addTo(layer);
+      }
+      if (i < list.length) {
+        requestAnimationFrame(step);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ========= Загрузка данных =========
   async function loadKml(){
     try{
       const res = await fetch('./doc.kml', { cache:'no-store' });
@@ -166,18 +204,15 @@
         const latlng=L.latLng(lat,lng);
         const cat=detectCategory(name,desc);
 
-        const item={ id:idSeq++, name, desc, latlng, cat, iconNum: iconNum||1 };
-        const marker=L.marker(latlng,{ icon: makeIcon(item.iconNum) });
-        marker.bindPopup(`<strong>${escapeHtml(item.name)}</strong>`);
-        marker.on('click', ()=> marker.openPopup());
-        item.marker=marker;
-
-        items.push(item);
+        items.push({ id:idSeq++, name, desc, latlng, cat, iconNum: iconNum||1, marker:null });
       }
 
-      state.items=items;
+      state.items = items;
       countTotalEl.textContent = items.length.toString();
-      applyFilters(true);
+      applyFilters(true); // сначала фокус/список…
+
+      // …а маркеры добавим в слой плавно (если активно есть фильтр — добавятся текущие)
+      // (applyFilters сам вызовет addMarkersChunked для текущего набора)
     }catch(e){
       console.error('[KML] load error', e);
       showToast('Ошибка загрузки данных.');
@@ -186,7 +221,7 @@
 
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
-  // ==== фильтрация и фокус
+  // ========= Фильтрация / фокус =========
   function applyFilters(fitAll=false){
     const q = lc(state.q), cat = state.cat;
     const filtered = state.items.filter(it=>{
@@ -195,12 +230,18 @@
       return true;
     });
 
-    poiLayer.clearLayers();
-    filtered.forEach(it=>it.marker.addTo(poiLayer));
-    countCatEl.textContent = filtered.length.toString();
-
+    // список
     renderList(filtered);
+
+    // фокус сразу (без ожидания создания маркеров)
     if (fitAll) fitToItems(filtered.length?filtered:state.items);
+
+    // слой: очищаем и добавляем порциями
+    poiLayer.clearLayers();
+    if (filtered.length > 120) addMarkersChunked(filtered, poiLayer, 140);
+    else addMarkersChunked(filtered, poiLayer, filtered.length || 1);
+
+    countCatEl.textContent = filtered.length.toString();
   }
 
   function fitToItems(list){
@@ -232,6 +273,11 @@
       li.innerHTML=`<div class="title">${escapeHtml(it.name)}</div>`;
       li.addEventListener('click', ()=>{
         map.setView(it.latlng, Math.max(map.getZoom(), 17), { animate:true });
+        if (!it.marker){
+          it.marker = L.marker(it.latlng, { icon: makeIcon(it.iconNum) })
+            .bindPopup(`<strong>${escapeHtml(it.name)}</strong>`)
+            .addTo(poiLayer);
+        }
         it.marker.openPopup();
         setOpen(false);
       });
@@ -240,9 +286,9 @@
     listEl.appendChild(frag);
   }
 
-  // ==== нижний лист
+  // ========= Лист =========
   function setOpen(open){
-    if(!open && sidebarEl.contains(document.activeElement)){
+    if (!open && sidebarEl.contains(document.activeElement)){
       try { sheetHandle?.focus({ preventScroll:true }); } catch{}
     }
     sidebarEl.classList.toggle('open', open);
@@ -252,7 +298,7 @@
   btnArrow?.addEventListener('click', ()=> setOpen(!isOpen()));
   sheetHandle?.addEventListener('click', ()=> setOpen(!isOpen()));
 
-  // ==== UI
+  // ========= UI =========
   chipsBox.addEventListener('click', (e)=>{
     const btn=e.target.closest('.chip'); if(!btn) return;
     $$('.chip').forEach(c=>c.dataset.active='false'); btn.dataset.active='true';
@@ -272,7 +318,7 @@
     applyFilters(false);
   }, 200));
 
-  // ==== Геолокация
+  // ========= Геолокация =========
   let locating = false;
   const hasGeo = 'geolocation' in navigator;
 
@@ -281,12 +327,10 @@
     locating = true; btnLocate.classList.add('active');
 
     if (hasGeo){
-      // Прямой запрос (iOS надёжнее)
       navigator.geolocation.getCurrentPosition(
         (pos)=>{
           const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
           map.setView(latlng, Math.max(map.getZoom(), 17), { animate:true });
-          // включим плагин для маркера/компаса (без повторного запроса)
           try { locateCtl.start(); } catch {}
           try { localStorage.setItem('autoLocate','1'); } catch {}
           locating = false;
@@ -296,10 +340,9 @@
           btnLocate.classList.remove('active');
           locating = false;
         },
-        { enableHighAccuracy:true, timeout:30000, maximumAge:10000 }
+        { enableHighAccuracy:true, timeout:30000, maximumAge:10000 } // терпимее к медленному GPS
       );
     } else {
-      // на всякий случай — fallback к плагину
       try { locateCtl.start(); } catch {}
       locating = false;
     }
@@ -312,7 +355,7 @@
   }
   btnLocate.addEventListener('click', ()=> (btnLocate.classList.contains('active') ? stopLocate() : startLocate()));
 
-  // не переспрашивать — автозапуск, если уже разрешено и ранее включали
+  // не переспрашивать — автозапуск, если уже выдано и ранее включали
   async function initGeoPermission(){
     try{
       const auto = localStorage.getItem('autoLocate') === '1';
@@ -321,12 +364,13 @@
         if (p.state === 'granted' && auto) startLocate();
         p.onchange = () => { if (p.state !== 'granted') stopLocate(); };
       } else {
-        if (auto) startLocate(); // Safari iOS без Permissions API
+        if (auto) startLocate(); // iOS Safari без Permissions API
       }
     } catch {}
   }
   initGeoPermission();
 
-  // ==== старт
-  loadKml();
+  // ========= Старт =========
+  // Сначала рендерятся тайлы, потом — в idle загрузим и распарсим KML
+  defer(loadKml);
 })();
