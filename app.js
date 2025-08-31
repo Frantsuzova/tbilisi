@@ -63,8 +63,13 @@
   };
 
   // --- Map ---
-  const map = L.map(mapEl, { zoomControl: true, attributionControl: true })
-    .setView([41.716, 44.783], 13); // крупнее стартовый зум
+  const baseZoom = 14; 
+  const map = L.map(mapEl, {
+    zoomControl: true,
+    attributionControl: true,
+    zoomSnap: 0,        // разрешаем дробные уровни
+    zoomDelta: 0.25     // шаг жестов/кнопок (необязательно)
+  }).setView([41.716, 44.783], baseZoom + Math.log2(1.5));
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap & CARTO'
