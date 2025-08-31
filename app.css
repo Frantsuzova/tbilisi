@@ -173,6 +173,10 @@ body{
 }
 .sidebar.open{ transform: translateY(0); }
 
+/* Пока закрыт — клики только по ручке */
+.sidebar:not(.open) .sidebar-header,
+.sidebar:not(.open) #list{ pointer-events: none; }
+
 /* Ручка-липучка */
 .sheet-handle{
   position: absolute;
@@ -265,7 +269,7 @@ body{
   }
 }
 
-/* Компакт ≤360px: даём запас под перенос */
+/* Компакт ≤360px */
 @media (max-width: 360px){
   :root{ --ctrl-h: 30px; }
   .panel-header{ padding: 8px 10px; }
