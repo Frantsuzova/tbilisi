@@ -1,4 +1,4 @@
-/* app.js — нижний лист: ручка ↔ 50vh, фиксы a11y и крупнее карта
+/* app.js — нижний лист без inert, клики по списку, крупнее карта
  * Зависимости: Leaflet, togeojson, leaflet.locatecontrol
  */
 (function () {
@@ -25,15 +25,12 @@
   // Нижний лист
   const sidebarEl = $('#sidebar');
   const sheetHandle = $('#sheetHandle');
-  const btnArrow = $('#btnCloseSidebar'); // стрелка вверх/вниз
+  const btnArrow = $('#btnCloseSidebar'); // стрелка
   const listEl = $('#list');
 
   // SVG стрелок
   const svgUp = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const svgDown = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-  // A11y: на всякий случай удалим aria-hidden, если осталось из старой разметки
-  sidebarEl?.removeAttribute('aria-hidden');
 
   const isOpen = () => sidebarEl.classList.contains('open');
   function updateArrow(){
@@ -47,7 +44,6 @@
       btnArrow.title = 'Развернуть (1/2)';
       btnArrow.setAttribute('aria-label','Развернуть (1/2)');
     }
-    // стрелка готова — показать кнопку (в HTML она скрыта во избежание «▲»)
     btnArrow.style.visibility = 'visible';
   }
   updateArrow();
@@ -209,19 +205,15 @@
     listEl.appendChild(frag);
   }
 
-  // Управление листом (без aria-hidden; используем inert)
+  // Управление листом (без inert / aria-hidden)
   function setOpen(open){
     if (!open && sidebarEl.contains(document.activeElement)) {
       try { sheetHandle?.focus({ preventScroll: true }); } catch {}
     }
     sidebarEl.classList.toggle('open', open);
-    if (open) sidebarEl.removeAttribute('inert');
-    else      sidebarEl.setAttribute('inert','');
     sheetHandle?.setAttribute('aria-expanded', open ? 'true' : 'false');
     updateArrow();
   }
-  // начальное состояние: закрыт → inert
-  if (!sidebarEl.classList.contains('open')) sidebarEl.setAttribute('inert','');
 
   btnArrow?.addEventListener('click', ()=> setOpen(!isOpen()));
   sheetHandle?.addEventListener('click', ()=> setOpen(!isOpen()));
@@ -249,7 +241,6 @@
 
   // Геолокация
   let following=false;
-  const locateCtrl = L.control.locate;
   function startLocate(){
     following=true; btnLocate.classList.add('active'); locate.start();
     try{
